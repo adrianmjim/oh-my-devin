@@ -1,0 +1,23 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:best-practices"],
+  "packageRules": [
+    {
+      "description": "Keep GitHub Actions pinned to version tags (e.g. v7.0.0), not commit SHA digests.",
+      "matchManagers": ["github-actions"],
+      "pinDigests": false
+    },
+    {
+      "description": "Non-major updates (patch + minor): grouped into a single PR and automerged once CI is green. typescript is excluded so its bumps get their own, manually reviewed PR (a minor TS release can surface new type errors).",
+      "matchUpdateTypes": ["patch", "minor"],
+      "matchPackageNames": ["!typescript"],
+      "groupName": "non-major dependencies",
+      "automerge": true
+    },
+    {
+      "description": "Major updates: one PR per dependency, reviewed and merged by hand, never automerged.",
+      "matchUpdateTypes": ["major"],
+      "automerge": false
+    }
+  ]
+}
