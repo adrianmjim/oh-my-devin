@@ -4,6 +4,7 @@ import { UsageError } from '../run/usage-error';
 import type { CliCommand } from './cli-command';
 
 const SCOPE_PREFIX: string = '--scope=';
+const OUT_PREFIX: string = '--out=';
 
 function isFlag(arg: string): boolean {
   return arg.startsWith('--');
@@ -49,6 +50,36 @@ function parseSetupScope(
   return components;
 }
 
+function parsePluginBuild(rest: readonly string[]): CliCommand {
+  const usage: string = 'usage: omd plugin build [--out <dir>]';
+  if (rest[0] !== 'build') {
+    throw new UsageError(usage);
+  }
+  let out: string | null = null;
+  for (let index: number = 1; index < rest.length; index += 1) {
+    const arg: string = rest[index] ?? '';
+    if (arg === '--out') {
+      const value: string | undefined = rest[index + 1];
+      if (value === undefined || isFlag(value)) {
+        throw new UsageError(usage);
+      }
+      out = value;
+      index += 1;
+      continue;
+    }
+    if (arg.startsWith(OUT_PREFIX)) {
+      const value: string = arg.slice(OUT_PREFIX.length);
+      if (value.length === 0) {
+        throw new UsageError(usage);
+      }
+      out = value;
+      continue;
+    }
+    throw new UsageError(usage);
+  }
+  return { kind: 'plugin-build', out };
+}
+
 export function parseCliArgs(argv: readonly string[]): CliCommand {
   if (argv.length === 0 || argv.includes('--help') || argv.includes('-h')) {
     return { kind: 'help' };
@@ -88,6 +119,8 @@ export function parseCliArgs(argv: readonly string[]): CliCommand {
     }
     case 'setup':
       return { kind: 'setup', scope: parseSetupScope(rest) };
+    case 'plugin':
+      return parsePluginBuild(rest);
     case 'team': {
       if (positionals[0] !== 'run') {
         throw new UsageError('usage: omd team run <team> "<task>" [--json]');
@@ -101,7 +134,7 @@ export function parseCliArgs(argv: readonly string[]): CliCommand {
     }
     case 'council': {
       const usage: string =
-        'usage: omd council run <council> "<question>" [--proposal=<text>] [--team=<team>] [--sign] [--json]';
+        'usage: omd council run <council> "<question>" [--proposal=<path>] [--then=<team>] [--sign] [--json]';
       if (positionals[0] !== 'run') {
         throw new UsageError(usage);
       }
@@ -115,7 +148,7 @@ export function parseCliArgs(argv: readonly string[]): CliCommand {
         council,
         question,
         proposal: readValueFlag(rest, '--proposal='),
-        team: readValueFlag(rest, '--team='),
+        team: readValueFlag(rest, '--then='),
         sign: rest.includes('--sign'),
         json,
       };

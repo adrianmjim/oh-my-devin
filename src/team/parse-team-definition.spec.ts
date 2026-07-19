@@ -100,6 +100,47 @@ describe('parseTeamDefinition', () => {
     expect(() => parseTeamDefinition(yaml, KNOWN)).toThrow(/ghost/);
   });
 
+  it('accepts every outcome token of the consent vocabulary', () => {
+    const yaml: string = [
+      'name: t',
+      'members:',
+      '  - role: executor',
+      '    count: 1',
+      '  - role: reviewer',
+      '    count: 1',
+      'workflow:',
+      '  executor:',
+      '    then: reviewer',
+      '  reviewer:',
+      '    on_passed: done',
+      '    on_blocked: executor',
+      '    on_bankrupt: done',
+    ].join('\n');
+
+    const team: TeamDefinition = parseTeamDefinition(yaml, KNOWN);
+    const reviewer = team.workflow.find((t) => t.from === 'reviewer');
+    expect(reviewer?.outcomes.map((o) => o.outcome)).toEqual([
+      'passed',
+      'blocked',
+      'bankrupt',
+    ]);
+  });
+
+  it('rejects an outcome key outside the consent vocabulary naming the key', () => {
+    const yaml: string = [
+      'name: t',
+      'members:',
+      '  - role: reviewer',
+      '    count: 1',
+      'workflow:',
+      '  reviewer:',
+      '    on_accept: done',
+    ].join('\n');
+
+    expect(() => parseTeamDefinition(yaml, KNOWN)).toThrow(TeamDefinitionError);
+    expect(() => parseTeamDefinition(yaml, KNOWN)).toThrow(/on_accept/);
+  });
+
   it('rejects a workflow successor that is neither a member nor done', () => {
     const yaml: string = [
       'name: t',

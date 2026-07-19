@@ -91,6 +91,28 @@ describe('compileAgentConfigBundle', () => {
     ).toThrow(ContractCompilationError);
   });
 
+  it('passes a non-artifact write deny through beside an exec allowance', () => {
+    const bundle: AgentConfigBundle = compileAgentConfigBundle(
+      role({
+        permissions: {
+          allow: ['Exec(npm test)'],
+          deny: ['Write(src/**)'],
+          ask: [],
+        },
+      }),
+    );
+
+    expect(bundle.permissions.deny).toEqual(['Write(src/**)']);
+    expect(bundle.permissions.allow).toEqual([
+      'Write(review.json)',
+      'Exec(npm test)',
+    ]);
+    const writable: readonly string[] = bundle.permissions.allow.filter(
+      (rule: string): boolean => rule.startsWith('Write('),
+    );
+    expect(writable).toEqual(['Write(review.json)']);
+  });
+
   it('preserves red-line deny rules that do not touch the artifact', () => {
     const bundle: AgentConfigBundle = compileAgentConfigBundle(
       role({ permissions: { allow: [], deny: ['Bash(rm*)'], ask: [] } }),

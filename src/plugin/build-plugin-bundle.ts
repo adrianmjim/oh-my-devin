@@ -17,7 +17,13 @@ const MODE_SKILL_FILES: readonly BundleFile[] = MODE_CATALOG.map(
   }),
 );
 
+const PLUGIN_MANIFEST: string = `${JSON.stringify({ name: 'oh-my-devin' }, null, 2)}\n`;
+
 const BUNDLE_FILES: readonly BundleFile[] = [
+  {
+    relativePath: join('.devin-plugin', 'plugin.json'),
+    content: PLUGIN_MANIFEST,
+  },
   { relativePath: 'AGENTS.md', content: RULES_FILE },
   {
     relativePath: join('skills', 'omd-delegate', 'SKILL.md'),

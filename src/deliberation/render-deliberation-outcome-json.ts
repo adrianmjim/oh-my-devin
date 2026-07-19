@@ -17,6 +17,7 @@ export function renderDeliberationOutcomeJson(
     humanDecisionRequired: record.humanDecisionRequired,
     objections: record.objections.length,
     dissent: outcome.authority.dissent.length,
+    utilityTurns: outcome.utilityTurns,
     bridgeLaunched: outcome.bridge.launched,
     exitCode: exitCodeForClosure(record.consent),
   };

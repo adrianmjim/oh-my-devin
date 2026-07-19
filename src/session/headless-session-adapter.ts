@@ -13,6 +13,7 @@ export class HeadlessSessionAdapter implements TurnSender {
   private readonly engine: Engine;
   private readonly config: SessionConfig;
   private sessionId: string | null;
+  private probed: boolean;
 
   public constructor(
     runner: CommandRunner,
@@ -23,6 +24,7 @@ export class HeadlessSessionAdapter implements TurnSender {
     this.engine = engine;
     this.config = config;
     this.sessionId = null;
+    this.probed = false;
   }
 
   public get currentSessionId(): string | null {
@@ -30,17 +32,18 @@ export class HeadlessSessionAdapter implements TurnSender {
   }
 
   public async sendTurn(prompt: string): Promise<SessionTurnResult> {
+    const resumeSessionId: string | null = await this.resolveSessionId();
     const turn: PromptTurn = {
       prompt,
       agentConfigPath: this.config.agentConfigPath,
       model: this.config.model,
-      resumeSessionId: this.sessionId,
+      resumeSessionId,
     };
     const invocation: CommandInvocation = this.engine.turnInvocation(turn);
     const result: CommandResult = await this.runner.run(invocation);
 
     const sessionId: string | null =
-      this.sessionId ?? (await this.discoverSessionId());
+      resumeSessionId ?? (await this.discoverSessionId());
     this.sessionId = sessionId;
 
     return {
@@ -49,6 +52,14 @@ export class HeadlessSessionAdapter implements TurnSender {
       stderr: result.stderr,
       exitCode: result.exitCode,
     };
+  }
+
+  private async resolveSessionId(): Promise<string | null> {
+    if (this.sessionId === null && !this.probed) {
+      this.probed = true;
+      this.sessionId = await this.discoverSessionId();
+    }
+    return this.sessionId;
   }
 
   private async discoverSessionId(): Promise<string | null> {

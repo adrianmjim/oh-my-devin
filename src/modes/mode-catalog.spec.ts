@@ -39,6 +39,49 @@ describe('MODE_CATALOG', () => {
     expect(deepDive.content).not.toContain('omd run');
   });
 
+  it('instructs every mode to write its state file on activation', () => {
+    for (const skill of MODE_CATALOG) {
+      expect(skill.content).toContain('On activation, write `.omd/mode.json`');
+      expect(skill.content).toContain(`"mode": "${skill.name}"`);
+      expect(skill.content).toContain('"context": ');
+    }
+  });
+
+  it('names mode-appropriate verification criteria in each state file', () => {
+    expect(mode('autopilot').content).toContain(
+      '"verification": ["pipeline terminal outcome reported"]',
+    );
+    expect(mode('team').content).toContain(
+      '"verification": ["pipeline terminal outcome reported"]',
+    );
+    expect(mode('ralph').content).toContain(
+      '"verification": ["validate-repair loop reached a valid artifact or a classified failure"]',
+    );
+    expect(mode('plan').content).toContain(
+      '"verification": ["plan artifact produced"]',
+    );
+    expect(mode('verify').content).toContain(
+      '"verification": ["verification evidence recorded"]',
+    );
+  });
+
+  it('instructs clearing the state with an empty verification array once criteria are met', () => {
+    for (const skill of MODE_CATALOG) {
+      if (skill.name === 'deep-dive') {
+        continue;
+      }
+      expect(skill.content).toContain('empty `verification` array');
+    }
+  });
+
+  it('gives deep-dive an empty verification array and keeps it read-only', () => {
+    const deepDive: ModeSkill = mode('deep-dive');
+    expect(deepDive.content).toContain('"verification": []');
+    expect(deepDive.content).not.toContain('omd run');
+    expect(deepDive.content).toContain('read-only');
+    expect(deepDive.lane).toBe('conversational');
+  });
+
   it('gives each mode a SKILL.md front matter naming the mode', () => {
     for (const skill of MODE_CATALOG) {
       expect(skill.content.startsWith('---\n')).toBe(true);

@@ -26,6 +26,7 @@ describe('attemptRepair', () => {
     const stub = new DevinStub({
       turns: [turn('initial'), turn('repaired')],
       listResponse: LISTING,
+      listResponses: [turn('[]')],
     });
     const adapter = new HeadlessSessionAdapter(
       stub,

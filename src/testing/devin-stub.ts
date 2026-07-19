@@ -6,11 +6,13 @@ import type { DevinStubScript } from './devin-stub-script';
 export class DevinStub implements CommandRunner {
   private readonly pendingTurns: CommandResult[];
   private readonly listResponse: CommandResult | null;
+  private readonly pendingListResponses: CommandResult[];
   private readonly recorded: CommandInvocation[];
 
   public constructor(script: DevinStubScript) {
     this.pendingTurns = [...script.turns];
     this.listResponse = script.listResponse;
+    this.pendingListResponses = [...(script.listResponses ?? [])];
     this.recorded = [];
   }
 
@@ -18,6 +20,11 @@ export class DevinStub implements CommandRunner {
     this.recorded.push(invocation);
 
     if (invocation.args.includes('list')) {
+      const queued: CommandResult | undefined =
+        this.pendingListResponses.shift();
+      if (queued !== undefined) {
+        return Promise.resolve(queued);
+      }
       if (this.listResponse === null) {
         return Promise.reject(
           new Error(

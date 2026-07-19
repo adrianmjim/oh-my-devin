@@ -1,37 +1,38 @@
 import { join } from 'node:path';
 import type { RunReport } from '../outcome/run-report';
 import type { Worktree } from '../worktree/worktree';
+import { WorktreePool } from '../worktree/worktree-pool';
+import type { ClarificationAnswer } from './clarification-answer';
 import { DeliberationError } from './deliberation-error';
 import type { ProposerAction } from './proposer-action';
 import type { ProposerRequest } from './proposer-request';
+import type { ProposerResult } from './proposer-result';
 import type { SeatSessionDeps } from './seat-session-deps';
 import type { TypedPosition } from './typed-position';
 
-export function createProposerAction(deps: SeatSessionDeps): ProposerAction {
-  return async (request: ProposerRequest): Promise<string> => {
-    const worktree: Worktree = await deps.worktrees.create(
-      `proposer-${request.seat.role}`,
-    );
-    try {
-      const report: RunReport = await deps.runRole({
-        roleName: request.seat.role,
-        task: composeProposerPrompt(request),
-        workingDirectory: worktree.path,
-        runner: deps.runnerFor(worktree.path),
-        clock: deps.clock,
-      });
-      if (report.failureTier !== null || !report.artifactValid) {
-        throw new DeliberationError(
-          `proposer seat "${request.seat.role}" did not produce a proposal`,
-        );
-      }
-      const raw: string = await deps.readArtifact(
-        join(worktree.path, report.artifactPath),
+export function createProposerAction(
+  deps: SeatSessionDeps,
+  pool: WorktreePool,
+): ProposerAction {
+  return async (request: ProposerRequest): Promise<ProposerResult> => {
+    const worktree: Worktree = await pool.acquire(`seat-${request.seat.role}`);
+    const report: RunReport = await deps.runRole({
+      roleName: request.seat.role,
+      task: composeProposerPrompt(request),
+      workingDirectory: worktree.path,
+      model: request.seat.model,
+      runner: deps.runnerFor(worktree.path),
+      clock: deps.clock,
+    });
+    if (report.failureTier !== null || !report.artifactValid) {
+      throw new DeliberationError(
+        `proposer seat "${request.seat.role}" did not produce a proposal`,
       );
-      return parseProposal(request.seat.role, raw);
-    } finally {
-      await deps.worktrees.remove(worktree);
     }
+    const raw: string = await deps.readArtifact(
+      join(worktree.path, report.artifactPath),
+    );
+    return parseProposerResult(request.seat.role, raw);
   };
 }
 
@@ -42,9 +43,24 @@ function composeProposerPrompt(request: ProposerRequest): string {
     return sections.join('\n\n');
   }
   sections.push(`## Current proposal\n${request.currentProposal}`);
+  if (request.clarificationQuestions.length > 0) {
+    sections.push(
+      `## Clarification questions\n${renderQuestions(request.clarificationQuestions)}`,
+    );
+    sections.push(
+      'Answer each clarification question about the current proposal in a "clarifications" array of {"question", "answer"} entries, and restate the proposal unchanged in "proposal".',
+    );
+    return sections.join('\n\n');
+  }
   sections.push(`## Blocking objections\n${renderBlocking(request.blocking)}`);
   sections.push('Revise the proposal to resolve the blocking objections.');
   return sections.join('\n\n');
+}
+
+function renderQuestions(questions: readonly string[]): string {
+  return questions
+    .map((question: string): string => `- ${question}`)
+    .join('\n');
 }
 
 function renderBlocking(blocking: readonly TypedPosition[]): string {
@@ -59,7 +75,7 @@ function renderBlocking(blocking: readonly TypedPosition[]): string {
     .join('\n');
 }
 
-function parseProposal(seatRole: string, raw: string): string {
+function parseProposerResult(seatRole: string, raw: string): ProposerResult {
   let parsed: unknown;
   try {
     parsed = JSON.parse(raw);
@@ -73,11 +89,45 @@ function parseProposal(seatRole: string, raw: string): string {
       `proposer seat "${seatRole}" proposal must be a JSON object`,
     );
   }
-  const proposal: unknown = (parsed as Record<string, unknown>)['proposal'];
+  const fields: Record<string, unknown> = parsed as Record<string, unknown>;
+  const proposal: unknown = fields['proposal'];
   if (typeof proposal !== 'string' || proposal.length === 0) {
     throw new DeliberationError(
       `proposer seat "${seatRole}" must produce a non-empty "proposal" string`,
     );
   }
-  return proposal;
+  return {
+    proposal,
+    clarifications: parseClarifications(seatRole, fields['clarifications']),
+  };
+}
+
+function parseClarifications(
+  seatRole: string,
+  value: unknown,
+): readonly ClarificationAnswer[] {
+  if (value === undefined) {
+    return [];
+  }
+  if (!Array.isArray(value)) {
+    throw new DeliberationError(
+      `proposer seat "${seatRole}" clarifications must be an array`,
+    );
+  }
+  return value.map((entry: unknown): ClarificationAnswer => {
+    if (entry === null || typeof entry !== 'object' || Array.isArray(entry)) {
+      throw new DeliberationError(
+        `proposer seat "${seatRole}" clarifications entries must be objects`,
+      );
+    }
+    const fields: Record<string, unknown> = entry as Record<string, unknown>;
+    const question: unknown = fields['question'];
+    const answer: unknown = fields['answer'];
+    if (typeof question !== 'string' || typeof answer !== 'string') {
+      throw new DeliberationError(
+        `proposer seat "${seatRole}" clarifications entries must carry string "question" and "answer"`,
+      );
+    }
+    return { question, answer };
+  });
 }

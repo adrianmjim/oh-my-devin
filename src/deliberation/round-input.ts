@@ -9,6 +9,7 @@ export interface RoundInput {
   readonly round: number;
   readonly incomingProposal: string | null;
   readonly priorPositions: readonly TypedPosition[];
+  readonly evidenceSummary: string | null;
   readonly seatInvoker: SeatInvoker;
   readonly proposerAction: ProposerAction;
 }

@@ -1,16 +1,18 @@
 #!/usr/bin/env node
+import { join, resolve } from 'node:path';
 import { createInterface } from 'node:readline';
 import type { Interface } from 'node:readline';
 import { discoverRoles } from './catalog/discover-roles';
 import { loadCouncilDeclaration } from './council/load-council-declaration';
 import type { CouncilDeclaration } from './council/council-declaration';
+import { createEchoClusterer } from './deliberation/create-echo-clusterer';
+import { createEvidenceSummarizer } from './deliberation/create-evidence-summarizer';
 import { createPipelineLauncher } from './deliberation/create-pipeline-launcher';
 import { createProcessSeatDeps } from './deliberation/create-process-seat-deps';
 import { createProposerAction } from './deliberation/create-proposer-action';
 import { createSeatInvoker } from './deliberation/create-seat-invoker';
 import type { DeliberationOutcome } from './deliberation/deliberation-outcome';
 import { exitCodeForClosure } from './deliberation/exit-code-for-closure';
-import { normalizeClaimKey } from './deliberation/normalize-claim-key';
 import { persistDecisionRecord } from './deliberation/persist-decision-record';
 import { renderDeliberationOutcome } from './deliberation/render-deliberation-outcome';
 import { renderDeliberationOutcomeJson } from './deliberation/render-deliberation-outcome-json';
@@ -22,16 +24,18 @@ import { renderRolesListJson } from './catalog/render-roles-list-json';
 import { renderRolesListText } from './catalog/render-roles-list-text';
 import type { RoleDiscovery } from './catalog/role-discovery';
 import type { CliCommand } from './cli/cli-command';
+import type { CliErrorRendering } from './cli/cli-error-rendering';
 import { parseCliArgs } from './cli/parse-cli-args';
+import { readProposalFile } from './cli/read-proposal-file';
+import { renderCliError } from './cli/render-cli-error';
 import { runDoctor } from './doctor/run-doctor';
 import type { DoctorReport } from './doctor/doctor-report';
 import { ProcessCommandRunner } from './engine/process-command-runner';
-import type { LineReader } from './io/line-reader';
+import { readRequirements } from './handoff/read-requirements';
 import { exitCodeForOutcome } from './outcome/exit-code-for-outcome';
 import { renderHumanReport } from './outcome/render-human-report';
 import { renderJsonReport } from './outcome/render-json-report';
 import type { RunReport } from './outcome/run-report';
-import { USAGE_ERROR_EXIT_CODE } from './outcome/usage-error-exit-code';
 import { createProcessStageRunner } from './pipeline/create-process-stage-runner';
 import { createStdinGate } from './pipeline/create-stdin-gate';
 import { exitCodeForPipelineOutcome } from './pipeline/exit-code-for-pipeline-outcome';
@@ -39,6 +43,8 @@ import type { PipelineReport } from './pipeline/pipeline-report';
 import { renderPipelineReport } from './pipeline/render-pipeline-report';
 import { renderPipelineReportJson } from './pipeline/render-pipeline-report-json';
 import { runPipeline } from './pipeline/run-pipeline';
+import type { RunPipelineOptions } from './pipeline/run-pipeline-options';
+import { buildPluginBundle } from './plugin/build-plugin-bundle';
 import { loadRoleDefinition } from './role/load-role-definition';
 import type { RoleDefinition } from './role/role-definition';
 import { runRole } from './run/run-role';
@@ -47,6 +53,7 @@ import { setupLayer } from './setup/setup-layer';
 import type { SetupResult } from './setup/setup-result';
 import { loadTeamDefinition } from './team/load-team-definition';
 import type { TeamDefinition } from './team/team-definition';
+import { WorktreePool } from './worktree/worktree-pool';
 
 const USAGE: string = [
   'omd — an organizational layer over the Devin CLI',
@@ -57,8 +64,9 @@ const USAGE: string = [
   '  omd roles list [--json]            List the project’s roles',
   '  omd roles show <role> [--json]     Show a role’s expanded contract',
   '  omd setup [--scope=<parts>]        Install the in-session layer (parts: rules,roles,skills,hooks)',
+  '  omd plugin build [--out <dir>]     Build the installable devin plugin bundle',
   '  omd team run <team> "<task>"       Run a team pipeline (architect → executor → reviewer)',
-  '  omd council run <c> "<question>"   Run a deliberation council [--proposal= --team= --sign --json]',
+  '  omd council run <c> "<question>"   Run a deliberation council [--proposal= --then= --sign --json]',
   '',
 ].join('\n');
 
@@ -80,6 +88,7 @@ async function dispatch(
         roleName: command.role,
         task: command.task,
         workingDirectory: cwd,
+        model: null,
         runner,
         clock: (): number => Date.now(),
       });
@@ -138,24 +147,30 @@ async function dispatch(
       }
       return 0;
     }
+    case 'plugin-build': {
+      const outDir: string = resolve(
+        cwd,
+        command.out ?? join('.omd', 'plugin'),
+      );
+      await buildPluginBundle(outDir);
+      write(process.stdout, outDir);
+      return 0;
+    }
     case 'team-run': {
       const team: TeamDefinition = await loadTeamDefinition(cwd, command.team);
+      const requirements: string | null = await readRequirements(cwd);
       const reader: Interface = createInterface({ input: process.stdin });
-      const readLine: LineReader = (): Promise<string> =>
-        new Promise<string>((resolve: (line: string) => void): void => {
-          reader.once('line', (line: string): void => {
-            resolve(line);
-          });
-        });
       try {
-        const report: PipelineReport = await runPipeline({
+        const options: RunPipelineOptions = {
           team,
           task: command.task,
           runStage: createProcessStageRunner(cwd),
-          gate: createStdinGate(readLine, (text: string): void => {
+          gate: createStdinGate(reader, (text: string): void => {
             write(process.stdout, text);
           }),
-        });
+          ...(requirements === null ? {} : { requirements }),
+        };
+        const report: PipelineReport = await runPipeline(options);
         write(
           process.stdout,
           command.json
@@ -168,6 +183,10 @@ async function dispatch(
       }
     }
     case 'council-run': {
+      const proposal: string | null =
+        command.proposal !== null
+          ? await readProposalFile(cwd, command.proposal)
+          : null;
       const council: CouncilDeclaration = await loadCouncilDeclaration(
         cwd,
         command.council,
@@ -177,26 +196,22 @@ async function dispatch(
           ? await loadTeamDefinition(cwd, command.team)
           : null;
       const seatDeps: SeatSessionDeps = createProcessSeatDeps(cwd);
+      const seatWorktrees: WorktreePool = new WorktreePool(seatDeps.worktrees);
       const reader: Interface = createInterface({ input: process.stdin });
-      const readLine: LineReader = (): Promise<string> =>
-        new Promise<string>((resolve: (line: string) => void): void => {
-          reader.once('line', (line: string): void => {
-            resolve(line);
-          });
-        });
       try {
         const outcome: DeliberationOutcome = await runDeliberation({
           council,
           question: command.question,
-          attachedProposal: command.proposal,
+          attachedProposal: proposal,
           team,
           humanSigned: command.sign,
-          seatInvoker: createSeatInvoker(seatDeps),
-          proposerAction: createProposerAction(seatDeps),
-          claimKeyOf: normalizeClaimKey,
+          seatInvoker: createSeatInvoker(seatDeps, seatWorktrees),
+          proposerAction: createProposerAction(seatDeps, seatWorktrees),
+          clusterArguments: createEchoClusterer(runner),
+          summarizeEvidence: createEvidenceSummarizer(runner),
           launch: createPipelineLauncher({
             runStage: createProcessStageRunner(cwd),
-            gate: createStdinGate(readLine, (text: string): void => {
+            gate: createStdinGate(reader, (text: string): void => {
               write(process.stdout, text);
             }),
           }),
@@ -215,6 +230,7 @@ async function dispatch(
         );
         return exitCodeForClosure(outcome.record.consent);
       } finally {
+        await seatWorktrees.closeAll();
         reader.close();
       }
     }
@@ -252,14 +268,10 @@ main()
     process.exitCode = code;
   })
   .catch((error: unknown): void => {
-    if (error instanceof UsageError) {
-      write(process.stderr, `usage error: ${error.message}`);
-      process.exitCode = USAGE_ERROR_EXIT_CODE;
-      return;
-    }
-    write(
-      process.stderr,
-      `error: ${error instanceof Error ? error.message : String(error)}`,
+    const rendering: CliErrorRendering = renderCliError(
+      error,
+      process.argv.slice(2).includes('--json'),
     );
-    process.exitCode = 1;
+    write(process.stderr, rendering.stderrText);
+    process.exitCode = rendering.exitCode;
   });

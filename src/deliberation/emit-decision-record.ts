@@ -13,14 +13,18 @@ export function emitDecisionRecord(input: RecordInput): DecisionRecord {
       endorsements: cluster.endorsements,
     }));
 
-  const objections: readonly RecordedObjection[] = input.objections
-    .filter((position: TypedPosition): boolean => position.kind === 'objection')
-    .map((position: TypedPosition): RecordedObjection => ({
-      seat: position.seat,
-      domain: position.domain,
-      severity: position.severity,
-      concern: position.concern,
-    }));
+  const objections: readonly RecordedObjection[] = dedupeObjections(
+    input.objections
+      .filter(
+        (position: TypedPosition): boolean => position.kind === 'objection',
+      )
+      .map((position: TypedPosition): RecordedObjection => ({
+        seat: position.seat,
+        domain: position.domain,
+        severity: position.severity,
+        concern: position.concern,
+      })),
+  );
 
   return {
     question: input.question,
@@ -35,4 +39,25 @@ export function emitDecisionRecord(input: RecordInput): DecisionRecord {
     humanDecisionRequired:
       input.closure !== 'passed' || input.authority === 'human',
   };
+}
+
+function dedupeObjections(
+  objections: readonly RecordedObjection[],
+): readonly RecordedObjection[] {
+  const seen: Set<string> = new Set<string>();
+  const unique: RecordedObjection[] = [];
+  for (const objection of objections) {
+    const key: string = JSON.stringify([
+      objection.seat,
+      objection.domain,
+      objection.severity,
+      objection.concern,
+    ]);
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    unique.push(objection);
+  }
+  return unique;
 }

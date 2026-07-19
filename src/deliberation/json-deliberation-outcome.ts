@@ -13,6 +13,7 @@ export interface JsonDeliberationOutcome {
   readonly humanDecisionRequired: boolean;
   readonly objections: number;
   readonly dissent: number;
+  readonly utilityTurns: number;
   readonly bridgeLaunched: boolean;
   readonly exitCode: number;
 }

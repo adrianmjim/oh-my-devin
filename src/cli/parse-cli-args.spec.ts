@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { UsageError } from '../run/usage-error';
 import type {
   CouncilRunCommand,
+  PluginBuildCommand,
   RolesShowCommand,
   RunCommand,
   SetupCommand,
@@ -78,6 +79,38 @@ describe('parseCliArgs', () => {
     expect(() => parseCliArgs(['frobnicate'])).toThrow(UsageError);
   });
 
+  it('parses `plugin build` with the default output directory', () => {
+    const command = parseCliArgs(['plugin', 'build']);
+    expect(command.kind).toBe('plugin-build');
+    expect((command as PluginBuildCommand).out).toBeNull();
+  });
+
+  it('parses `plugin build --out <dir>`', () => {
+    const command = parseCliArgs(['plugin', 'build', '--out', 'dist/plugin']);
+    expect((command as PluginBuildCommand).out).toBe('dist/plugin');
+  });
+
+  it('parses `plugin build --out=<dir>`', () => {
+    const command = parseCliArgs(['plugin', 'build', '--out=dist/plugin']);
+    expect((command as PluginBuildCommand).out).toBe('dist/plugin');
+  });
+
+  it('rejects `plugin build --out` without a directory', () => {
+    expect(() => parseCliArgs(['plugin', 'build', '--out'])).toThrow(
+      UsageError,
+    );
+  });
+
+  it('rejects an unknown plugin build flag', () => {
+    expect(() => parseCliArgs(['plugin', 'build', '--bogus'])).toThrow(
+      UsageError,
+    );
+  });
+
+  it('rejects an unknown plugin subcommand', () => {
+    expect(() => parseCliArgs(['plugin', 'install'])).toThrow(UsageError);
+  });
+
   it('parses `team run <team> <task>` with the default text output', () => {
     const command = parseCliArgs(['team', 'run', 'feature-team', 'build it']);
     expect(command.kind).toBe('team-run');
@@ -122,22 +155,33 @@ describe('parseCliArgs', () => {
     expect(councilRun.json).toBe(false);
   });
 
-  it('parses council run flags: --proposal, --team, --sign, --json', () => {
+  it('parses council run flags: --proposal, --then, --sign, --json', () => {
     const command = parseCliArgs([
       'council',
       'run',
       'design',
       'ship it?',
-      '--proposal=behind a flag',
-      '--team=feature-team',
+      '--proposal=proposal.md',
+      '--then=feature-team',
       '--sign',
       '--json',
     ]);
     const councilRun = command as CouncilRunCommand;
-    expect(councilRun.proposal).toBe('behind a flag');
+    expect(councilRun.proposal).toBe('proposal.md');
     expect(councilRun.team).toBe('feature-team');
     expect(councilRun.sign).toBe(true);
     expect(councilRun.json).toBe(true);
+  });
+
+  it('no longer recognizes the renamed --team flag on council run', () => {
+    const command = parseCliArgs([
+      'council',
+      'run',
+      'design',
+      'ship it?',
+      '--team=feature-team',
+    ]);
+    expect((command as CouncilRunCommand).team).toBeNull();
   });
 
   it('rejects `council run` without a question', () => {

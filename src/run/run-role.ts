@@ -53,7 +53,7 @@ export async function runRole(options: RunRoleOptions): Promise<RunReport> {
       engine,
       {
         agentConfigPath: bundlePath,
-        model: role.model,
+        model: options.model ?? role.model,
         workingDirectory: options.workingDirectory,
       },
     );

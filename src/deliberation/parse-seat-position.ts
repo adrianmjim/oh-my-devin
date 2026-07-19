@@ -2,22 +2,32 @@ import type { CouncilSeat } from '../council/council-seat';
 import { isSeverity } from '../council/severity';
 import { DeliberationError } from './deliberation-error';
 import type { PositionKind } from './position-kind';
-import type { TypedPosition } from './typed-position';
+import type { SeatPosition } from './seat-position';
 
 function isPositionKind(value: unknown): value is PositionKind {
   return value === 'objection' || value === 'preference';
 }
 
+function isStringArray(value: unknown): value is readonly string[] {
+  return (
+    Array.isArray(value) &&
+    value.every((entry: unknown): boolean => typeof entry === 'string')
+  );
+}
+
 export function parseSeatPosition(
   seat: CouncilSeat,
   raw: string,
-): TypedPosition {
+): SeatPosition {
   const fields: Record<string, unknown> = parseObject(seat, raw);
 
   const kind: unknown = fields['kind'];
+  if (kind === 'clarification') {
+    return parseClarification(seat, fields);
+  }
   if (!isPositionKind(kind)) {
     throw new DeliberationError(
-      `seat "${seat.role}" position.kind must be "objection" or "preference"`,
+      `seat "${seat.role}" position.kind must be "objection", "preference", or "clarification"`,
     );
   }
   const severity: unknown = fields['severity'];
@@ -34,7 +44,51 @@ export function parseSeatPosition(
     );
   }
 
-  return { seat: seat.role, lens: seat.lens, kind, domain, severity, concern };
+  return {
+    seat: seat.role,
+    lens: seat.lens,
+    kind,
+    domain,
+    severity,
+    concern,
+    assumptions: parseOptionalStrings(seat, fields, 'assumptions'),
+    reconsiderWhen: parseOptionalStrings(seat, fields, 'reconsider_when'),
+  };
+}
+
+function parseClarification(
+  seat: CouncilSeat,
+  fields: Record<string, unknown>,
+): SeatPosition {
+  const questions: unknown = fields['questions'];
+  if (!isStringArray(questions)) {
+    throw new DeliberationError(
+      `seat "${seat.role}" clarification must carry a string array "questions"`,
+    );
+  }
+  return {
+    seat: seat.role,
+    lens: seat.lens,
+    kind: 'clarification',
+    questions,
+  };
+}
+
+function parseOptionalStrings(
+  seat: CouncilSeat,
+  fields: Record<string, unknown>,
+  name: string,
+): readonly string[] {
+  const value: unknown = fields[name];
+  if (value === undefined) {
+    return [];
+  }
+  if (!isStringArray(value)) {
+    throw new DeliberationError(
+      `seat "${seat.role}" position.${name} must be a string array`,
+    );
+  }
+  return value;
 }
 
 function parseObject(seat: CouncilSeat, raw: string): Record<string, unknown> {

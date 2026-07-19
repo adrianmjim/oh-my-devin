@@ -79,6 +79,30 @@ describe('parseRoleDefinition', () => {
     expect(role.promptBody).toBe('Do the work.');
   });
 
+  it('ignores unrecognized omd-* keys and other unknown frontmatter keys', () => {
+    const md: string = [
+      '---',
+      'omd-output: out.json',
+      'omd-schema: out.schema.json',
+      'omd-max-turns: 5',
+      'omd-council: quorum',
+      'omd-retry-policy: exponential',
+      'description: used by another tool',
+      'color: cyan',
+      '---',
+      '',
+      'Do the work.',
+    ].join('\n');
+
+    const role: RoleDefinition = parseRoleDefinition(md, 'worker');
+    const baseline: RoleDefinition = parseRoleDefinition(
+      MINIMAL_AGENT_MD,
+      'worker',
+    );
+
+    expect(role).toEqual(baseline);
+  });
+
   it('throws when there is no frontmatter', () => {
     expect(() =>
       parseRoleDefinition('just a body, no frontmatter', 'x'),

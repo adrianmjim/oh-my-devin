@@ -3,11 +3,14 @@ import type { CommandRunner } from '../engine/command-runner';
 import type { RunReport } from '../outcome/run-report';
 import type { RunRoleOptions } from '../run/run-role-options';
 import type { Worktree } from '../worktree/worktree';
+import { WorktreePool } from '../worktree/worktree-pool';
 import type { WorktreeProvisioner } from '../worktree/worktree-provisioner';
 import type { CouncilSeat } from '../council/council-seat';
 import { createProposerAction } from './create-proposer-action';
 import { DeliberationError } from './deliberation-error';
 import type { ProposerAction } from './proposer-action';
+import type { ProposerRequest } from './proposer-request';
+import type { ProposerResult } from './proposer-result';
 import type { SeatSessionDeps } from './seat-session-deps';
 
 class FakeWorktrees implements WorktreeProvisioner {
@@ -61,16 +64,27 @@ function report(overrides: Partial<RunReport> = {}): RunReport {
 }
 
 function makeDeps(
-  runRole: (options: RunRoleOptions) => Promise<RunReport>,
+  runProposerRole: (options: RunRoleOptions) => Promise<RunReport>,
   worktrees: FakeWorktrees,
   read: (path: string) => Promise<string>,
 ): SeatSessionDeps {
   return {
     worktrees,
-    runRole,
+    runRole: runProposerRole,
     runnerFor: (): CommandRunner => NOOP_RUNNER,
     readArtifact: read,
     clock: (): number => 0,
+  };
+}
+
+function request(overrides: Partial<ProposerRequest> = {}): ProposerRequest {
+  return {
+    seat: PROPOSER,
+    question: 'what should we build?',
+    currentProposal: null,
+    blocking: [],
+    clarificationQuestions: [],
+    ...overrides,
   };
 }
 
@@ -88,19 +102,34 @@ describe('createProposerAction', () => {
         (): Promise<string> =>
           Promise.resolve(JSON.stringify({ proposal: 'do the thing' })),
       ),
+      new WorktreePool(worktrees),
     );
 
-    const proposal: string = await propose({
-      seat: PROPOSER,
-      question: 'what should we build?',
-      currentProposal: null,
-      blocking: [],
-    });
+    const result: ProposerResult = await propose(request({}));
 
-    expect(proposal).toBe('do the thing');
+    expect(result.proposal).toBe('do the thing');
+    expect(result.clarifications).toEqual([]);
     expect(task.toLowerCase()).toContain('draft');
-    expect(worktrees.created).toEqual(['proposer-architect']);
-    expect(worktrees.removed).toEqual(['proposer-architect']);
+    expect(worktrees.created).toEqual(['seat-architect']);
+  });
+
+  it('keeps the proposer worktree alive across consecutive requests', async () => {
+    const worktrees = new FakeWorktrees();
+    const propose: ProposerAction = createProposerAction(
+      makeDeps(
+        (): Promise<RunReport> => Promise.resolve(report()),
+        worktrees,
+        (): Promise<string> =>
+          Promise.resolve(JSON.stringify({ proposal: 'v1' })),
+      ),
+      new WorktreePool(worktrees),
+    );
+
+    await propose(request({}));
+    await propose(request({ currentProposal: 'v1' }));
+
+    expect(worktrees.created).toEqual(['seat-architect']);
+    expect(worktrees.removed).toEqual([]);
   });
 
   it('revises an existing proposal against blocking objections', async () => {
@@ -116,26 +145,86 @@ describe('createProposerAction', () => {
         (): Promise<string> =>
           Promise.resolve(JSON.stringify({ proposal: 'revised' })),
       ),
+      new WorktreePool(worktrees),
     );
 
-    await propose({
-      seat: PROPOSER,
-      question: 'q',
-      currentProposal: 'v1',
-      blocking: [
-        {
-          seat: 'security',
-          lens: 'threat',
-          kind: 'objection',
-          domain: 'auth',
-          severity: 'high',
-          concern: 'token leak',
-        },
-      ],
-    });
+    await propose(
+      request({
+        question: 'q',
+        currentProposal: 'v1',
+        blocking: [
+          {
+            seat: 'security',
+            lens: 'threat',
+            kind: 'objection',
+            domain: 'auth',
+            severity: 'high',
+            concern: 'token leak',
+            assumptions: [],
+            reconsiderWhen: [],
+          },
+        ],
+      }),
+    );
 
     expect(task.toLowerCase()).toContain('revise');
     expect(task).toContain('token leak');
+  });
+
+  it('answers posed clarification questions about the current proposal', async () => {
+    const worktrees = new FakeWorktrees();
+    let task: string = '';
+    const propose: ProposerAction = createProposerAction(
+      makeDeps(
+        (options: RunRoleOptions): Promise<RunReport> => {
+          task = options.task;
+          return Promise.resolve(report());
+        },
+        worktrees,
+        (): Promise<string> =>
+          Promise.resolve(
+            JSON.stringify({
+              proposal: 'v1',
+              clarifications: [
+                { question: 'what is the rollout plan?', answer: 'canary' },
+              ],
+            }),
+          ),
+      ),
+      new WorktreePool(worktrees),
+    );
+
+    const result: ProposerResult = await propose(
+      request({
+        currentProposal: 'v1',
+        clarificationQuestions: ['what is the rollout plan?'],
+      }),
+    );
+
+    expect(task.toLowerCase()).toContain('answer');
+    expect(task).toContain('what is the rollout plan?');
+    expect(result.clarifications).toEqual([
+      { question: 'what is the rollout plan?', answer: 'canary' },
+    ]);
+  });
+
+  it('rejects a malformed clarifications answer shape', async () => {
+    const worktrees = new FakeWorktrees();
+    const propose: ProposerAction = createProposerAction(
+      makeDeps(
+        (): Promise<RunReport> => Promise.resolve(report()),
+        worktrees,
+        (): Promise<string> =>
+          Promise.resolve(
+            JSON.stringify({ proposal: 'v1', clarifications: [{ q: 'x' }] }),
+          ),
+      ),
+      new WorktreePool(worktrees),
+    );
+
+    await expect(
+      propose(request({ clarificationQuestions: ['x'] })),
+    ).rejects.toThrow(DeliberationError);
   });
 
   it('throws when the proposer produces no valid proposal', async () => {
@@ -146,15 +235,9 @@ describe('createProposerAction', () => {
         worktrees,
         (): Promise<string> => Promise.resolve(JSON.stringify({ notes: 'x' })),
       ),
+      new WorktreePool(worktrees),
     );
 
-    await expect(
-      propose({
-        seat: PROPOSER,
-        question: 'q',
-        currentProposal: null,
-        blocking: [],
-      }),
-    ).rejects.toThrow(DeliberationError);
+    await expect(propose(request({}))).rejects.toThrow(DeliberationError);
   });
 });

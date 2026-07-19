@@ -11,6 +11,7 @@ describe('renderDeliberationOutcome', () => {
     expect(text).toContain('should we ship?');
     expect(text).toContain('proceed');
     expect(text).toContain('team pipeline launched: true');
+    expect(text).toContain('utility turns: 3');
   });
 
   it('shows escalation and carried dissent when the gate escalates', () => {

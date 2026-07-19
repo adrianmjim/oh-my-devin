@@ -21,6 +21,13 @@ const TEAM_SKILL: string = [
   'reviewer) with a binary human decision gate between stages. The pipeline owns',
   'orchestration; this skill is only the in-session entry point to it.',
   '',
+  'On activation, write `.omd/mode.json` with:',
+  '',
+  '    { "mode": "team", "context": "team mode active: run the declared team through the fixed three-stage pipeline.", "verification": ["pipeline terminal outcome reported"] }',
+  '',
+  'Once the criteria are met, clear the state: write `.omd/mode.json` again with',
+  'an empty `verification` array.',
+  '',
 ].join('\n');
 
 const RALPH_SKILL: string = [
@@ -44,6 +51,13 @@ const RALPH_SKILL: string = [
   'attempt to bring the declared artifact into conformance before reporting the',
   'outcome. This skill owns no loop of its own — omd run owns the validate-repair',
   'loop.',
+  '',
+  'On activation, write `.omd/mode.json` with:',
+  '',
+  '    { "mode": "ralph", "context": "ralph mode active: grind a single role through omd run and its validate-repair loop.", "verification": ["validate-repair loop reached a valid artifact or a classified failure"] }',
+  '',
+  'Once the criteria are met, clear the state: write `.omd/mode.json` again with',
+  'an empty `verification` array.',
   '',
 ].join('\n');
 
@@ -70,6 +84,13 @@ const AUTOPILOT_SKILL: string = [
   'yet fixed; until it is, autopilot behaves as the human-gated pipeline. This',
   'skill owns no orchestration of its own.',
   '',
+  'On activation, write `.omd/mode.json` with:',
+  '',
+  '    { "mode": "autopilot", "context": "autopilot mode active: run the team pipeline under the automatic gate policy.", "verification": ["pipeline terminal outcome reported"] }',
+  '',
+  'Once the criteria are met, clear the state: write `.omd/mode.json` again with',
+  'an empty `verification` array.',
+  '',
 ].join('\n');
 
 const PLAN_SKILL: string = [
@@ -94,6 +115,13 @@ const PLAN_SKILL: string = [
   'planning-role correspondence above is recorded as non-normative direction',
   'until the mapping is resolved.',
   '',
+  'On activation, write `.omd/mode.json` with:',
+  '',
+  '    { "mode": "plan", "context": "plan mode active: produce a plan artifact before implementation begins.", "verification": ["plan artifact produced"] }',
+  '',
+  'Once the criteria are met, clear the state: write `.omd/mode.json` again with',
+  'an empty `verification` array.',
+  '',
 ].join('\n');
 
 const VERIFY_SKILL: string = [
@@ -115,6 +143,13 @@ const VERIFY_SKILL: string = [
   'fixed; the validation correspondence is recorded as non-normative direction',
   'until the mapping is resolved.',
   '',
+  'On activation, write `.omd/mode.json` with:',
+  '',
+  '    { "mode": "verify", "context": "verify mode active: check the artifact against its contract and record evidence.", "verification": ["verification evidence recorded"] }',
+  '',
+  'Once the criteria are met, clear the state: write `.omd/mode.json` again with',
+  'an empty `verification` array.',
+  '',
 ].join('\n');
 
 const DEEP_DIVE_SKILL: string = [
@@ -132,6 +167,13 @@ const DEEP_DIVE_SKILL: string = [
   'conversational lane. deep-dive explores and explains only: it performs no',
   'delegation to the contractual lane and carries no write contract, so it never',
   'enters the validated-artifact path.',
+  '',
+  'On activation, write `.omd/mode.json` with:',
+  '',
+  '    { "mode": "deep-dive", "context": "deep-dive mode active: read-only exploration in the conversational lane.", "verification": [] }',
+  '',
+  'deep-dive carries no verification criteria — its empty `verification` array',
+  'never blocks a stop — and the exploration itself stays read-only.',
   '',
 ].join('\n');
 

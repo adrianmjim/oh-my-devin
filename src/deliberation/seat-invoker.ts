@@ -1,6 +1,6 @@
 import type { SeatInvocation } from './seat-invocation';
-import type { TypedPosition } from './typed-position';
+import type { SeatPosition } from './seat-position';
 
 export type SeatInvoker = (
-  invocation: SeatInvocation,
-) => Promise<TypedPosition>;
+  invocations: readonly SeatInvocation[],
+) => Promise<readonly SeatPosition[]>;
