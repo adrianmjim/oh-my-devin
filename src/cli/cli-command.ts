@@ -1,0 +1,59 @@
+import type { LayerComponent } from '../setup/layer-component';
+
+export interface RunCommand {
+  readonly kind: 'run';
+  readonly role: string;
+  readonly task: string;
+  readonly json: boolean;
+}
+
+export interface DoctorCommand {
+  readonly kind: 'doctor';
+}
+
+export interface RolesListCommand {
+  readonly kind: 'roles-list';
+  readonly json: boolean;
+}
+
+export interface RolesShowCommand {
+  readonly kind: 'roles-show';
+  readonly role: string;
+  readonly json: boolean;
+}
+
+export interface SetupCommand {
+  readonly kind: 'setup';
+  readonly scope: readonly LayerComponent[] | null;
+}
+
+export interface HelpCommand {
+  readonly kind: 'help';
+}
+
+export interface TeamRunCommand {
+  readonly kind: 'team-run';
+  readonly team: string;
+  readonly task: string;
+  readonly json: boolean;
+}
+
+export interface CouncilRunCommand {
+  readonly kind: 'council-run';
+  readonly council: string;
+  readonly question: string;
+  readonly proposal: string | null;
+  readonly team: string | null;
+  readonly sign: boolean;
+  readonly json: boolean;
+}
+
+export type CliCommand =
+  | RunCommand
+  | DoctorCommand
+  | RolesListCommand
+  | RolesShowCommand
+  | SetupCommand
+  | HelpCommand
+  | TeamRunCommand
+  | CouncilRunCommand;
