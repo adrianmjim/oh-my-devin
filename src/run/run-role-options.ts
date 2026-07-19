@@ -6,6 +6,7 @@ export interface RunRoleOptions {
   readonly roleName: string;
   readonly task: string;
   readonly workingDirectory: string;
+  readonly model: string | null;
   readonly runner: CommandRunner;
   readonly clock: Clock;
   readonly detectDeny?: DenyDetector;

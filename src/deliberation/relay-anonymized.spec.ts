@@ -11,6 +11,8 @@ const POSITIONS: readonly TypedPosition[] = [
     domain: 'operability',
     severity: 'high',
     concern: 'deployment_coupling',
+    assumptions: ['stable_traffic'],
+    reconsiderWhen: ['traffic_doubles'],
   },
   {
     seat: 'security-reviewer',
@@ -19,6 +21,8 @@ const POSITIONS: readonly TypedPosition[] = [
     domain: 'threats',
     severity: 'low',
     concern: 'prefers_defense_in_depth',
+    assumptions: [],
+    reconsiderWhen: [],
   },
 ];
 

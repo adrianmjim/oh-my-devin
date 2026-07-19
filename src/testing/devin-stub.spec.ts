@@ -55,6 +55,24 @@ describe('DevinStub', () => {
     expect(listed.stdout).toBe('[{"id":"s1"}]');
   });
 
+  it('plays queued list responses in order before falling back to the standing one', async () => {
+    const stub: DevinStub = new DevinStub({
+      turns: [],
+      listResponse: turn('[{"id":"later"}]'),
+      listResponses: [turn('[]')],
+    });
+    const list: CommandInvocation = {
+      command: 'devin',
+      args: ['list', '--format', 'json'],
+    };
+
+    const first: CommandResult = await stub.run(list);
+    const second: CommandResult = await stub.run(list);
+
+    expect(first.stdout).toBe('[]');
+    expect(second.stdout).toBe('[{"id":"later"}]');
+  });
+
   it('rejects when a turn is requested but no scripted turn response remains', async () => {
     const stub: DevinStub = new DevinStub({ turns: [], listResponse: null });
 

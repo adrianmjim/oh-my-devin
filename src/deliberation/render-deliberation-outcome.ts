@@ -13,6 +13,7 @@ export function renderDeliberationOutcome(
     `human decision required: ${record.humanDecisionRequired}`,
     `objections: ${record.objections.length}`,
     `dissent carried: ${outcome.authority.dissent.length}`,
+    `utility turns: ${outcome.utilityTurns}`,
     `team pipeline launched: ${outcome.bridge.launched}`,
   ].join('\n');
 }

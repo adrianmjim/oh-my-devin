@@ -39,6 +39,43 @@ describe('MODE_CATALOG', () => {
     expect(deepDive.content).not.toContain('omd run');
   });
 
+  it('instructs every stateful mode to set its state through the CLI on activation', () => {
+    for (const skill of MODE_CATALOG) {
+      if (skill.name === 'deep-dive') {
+        continue;
+      }
+      expect(skill.content).toContain('On activation, run:');
+      expect(skill.content).toContain(`omd mode set ${skill.name}`);
+    }
+  });
+
+  it('instructs every stateful mode to clear its state through the CLI once criteria are met', () => {
+    for (const skill of MODE_CATALOG) {
+      if (skill.name === 'deep-dive') {
+        continue;
+      }
+      expect(skill.content).toContain('Once the criteria are met, run:');
+      expect(skill.content).toContain('omd mode clear');
+    }
+  });
+
+  it('never instructs writing the state file directly', () => {
+    for (const skill of MODE_CATALOG) {
+      expect(skill.content).not.toContain('.omd/mode.json');
+    }
+  });
+
+  it('keeps deep-dive stateless and read-only', () => {
+    const deepDive: ModeSkill = mode('deep-dive');
+    expect(deepDive.content).not.toContain('omd mode');
+    expect(deepDive.content).not.toContain('omd run');
+    expect(deepDive.content).toContain('read-only');
+    expect(deepDive.content).toContain('- read');
+    expect(deepDive.content).toContain('- grep');
+    expect(deepDive.content).not.toContain('- exec');
+    expect(deepDive.lane).toBe('conversational');
+  });
+
   it('gives each mode a SKILL.md front matter naming the mode', () => {
     for (const skill of MODE_CATALOG) {
       expect(skill.content.startsWith('---\n')).toBe(true);

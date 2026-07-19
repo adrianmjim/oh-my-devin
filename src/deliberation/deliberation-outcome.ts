@@ -6,4 +6,5 @@ export interface DeliberationOutcome {
   readonly record: DecisionRecord;
   readonly authority: AuthorityOutcome;
   readonly bridge: BridgeResult;
+  readonly utilityTurns: number;
 }

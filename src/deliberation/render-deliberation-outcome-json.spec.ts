@@ -12,6 +12,7 @@ describe('renderDeliberationOutcomeJson', () => {
     expect(json.exitCode).toBe(0);
     expect(json.bridgeLaunched).toBe(true);
     expect(json.objections).toBe(1);
+    expect(json.utilityTurns).toBe(3);
   });
 
   it('projects a blocked outcome with a non-zero exit code and dissent', () => {

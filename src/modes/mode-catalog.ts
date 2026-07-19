@@ -21,6 +21,14 @@ const TEAM_SKILL: string = [
   'reviewer) with a binary human decision gate between stages. The pipeline owns',
   'orchestration; this skill is only the in-session entry point to it.',
   '',
+  'On activation, run:',
+  '',
+  '    omd mode set team',
+  '',
+  'Once the criteria are met, run:',
+  '',
+  '    omd mode clear',
+  '',
 ].join('\n');
 
 const RALPH_SKILL: string = [
@@ -44,6 +52,14 @@ const RALPH_SKILL: string = [
   'attempt to bring the declared artifact into conformance before reporting the',
   'outcome. This skill owns no loop of its own — omd run owns the validate-repair',
   'loop.',
+  '',
+  'On activation, run:',
+  '',
+  '    omd mode set ralph',
+  '',
+  'Once the criteria are met, run:',
+  '',
+  '    omd mode clear',
   '',
 ].join('\n');
 
@@ -70,6 +86,14 @@ const AUTOPILOT_SKILL: string = [
   'yet fixed; until it is, autopilot behaves as the human-gated pipeline. This',
   'skill owns no orchestration of its own.',
   '',
+  'On activation, run:',
+  '',
+  '    omd mode set autopilot',
+  '',
+  'Once the criteria are met, run:',
+  '',
+  '    omd mode clear',
+  '',
 ].join('\n');
 
 const PLAN_SKILL: string = [
@@ -94,6 +118,14 @@ const PLAN_SKILL: string = [
   'planning-role correspondence above is recorded as non-normative direction',
   'until the mapping is resolved.',
   '',
+  'On activation, run:',
+  '',
+  '    omd mode set plan',
+  '',
+  'Once the criteria are met, run:',
+  '',
+  '    omd mode clear',
+  '',
 ].join('\n');
 
 const VERIFY_SKILL: string = [
@@ -115,6 +147,14 @@ const VERIFY_SKILL: string = [
   'fixed; the validation correspondence is recorded as non-normative direction',
   'until the mapping is resolved.',
   '',
+  'On activation, run:',
+  '',
+  '    omd mode set verify',
+  '',
+  'Once the criteria are met, run:',
+  '',
+  '    omd mode clear',
+  '',
 ].join('\n');
 
 const DEEP_DIVE_SKILL: string = [
@@ -132,6 +172,9 @@ const DEEP_DIVE_SKILL: string = [
   'conversational lane. deep-dive explores and explains only: it performs no',
   'delegation to the contractual lane and carries no write contract, so it never',
   'enters the validated-artifact path.',
+  '',
+  'deep-dive carries no persistent mode state and no verification criteria; the',
+  'exploration itself stays read-only.',
   '',
 ].join('\n');
 

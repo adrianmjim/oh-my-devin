@@ -29,5 +29,6 @@ export function deliberationOutcome(
       dissent: resolution === 'escalate' ? record.objections : [],
     },
     bridge: { launched: bridgeLaunched, pipeline: null },
+    utilityTurns: 3,
   };
 }

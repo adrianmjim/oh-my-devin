@@ -8,4 +8,6 @@ export interface TypedPosition {
   readonly domain: string;
   readonly severity: Severity;
   readonly concern: string;
+  readonly assumptions: readonly string[];
+  readonly reconsiderWhen: readonly string[];
 }

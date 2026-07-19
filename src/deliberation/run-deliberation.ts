@@ -11,6 +11,7 @@ import type { EchoCluster } from './echo-cluster';
 import { emitDecisionRecord } from './emit-decision-record';
 import { evaluateTermination } from './evaluate-termination';
 import type { ProposalSource } from './proposal-source';
+import { relayAnonymized } from './relay-anonymized';
 import { runRound } from './run-round';
 import type { RoundResult } from './round-result';
 import type { SeatArgument } from './seat-argument';
@@ -22,9 +23,12 @@ export async function runDeliberation(
 ): Promise<DeliberationOutcome> {
   const start: number = input.clock();
   const allPositions: TypedPosition[] = [];
+  const supporting: EchoCluster[] = [];
   const proposalSource: ProposalSource =
     input.attachedProposal !== null ? 'attached' : 'proposer';
 
+  let utilityTurns: number = 0;
+  let evidenceSummary: string | null = null;
   let proposal: string | null = input.attachedProposal;
   let priorPositions: readonly TypedPosition[] = [];
   let priorBlocking: readonly TypedPosition[] = [];
@@ -39,11 +43,26 @@ export async function runDeliberation(
       round,
       incomingProposal: proposal,
       priorPositions,
+      evidenceSummary,
       seatInvoker: input.seatInvoker,
       proposerAction: input.proposerAction,
     });
     allPositions.push(...result.positions);
     decidedProposal = result.proposal;
+
+    const roundSupporting: readonly SeatArgument[] = supportingArguments(
+      result.positions,
+    );
+    if (roundSupporting.length > 0) {
+      utilityTurns += 1;
+      supporting.push(
+        ...(await detectEchoes(
+          roundSupporting,
+          input.clusterArguments,
+          `round-${round}`,
+        )),
+      );
+    }
 
     const termination: TerminationDecision = evaluateTermination({
       consented: result.consent.consented,
@@ -60,16 +79,15 @@ export async function runDeliberation(
       break;
     }
 
+    utilityTurns += 1;
+    evidenceSummary = await input.summarizeEvidence(
+      relayAnonymized(result.positions),
+    );
     priorPositions = result.positions;
     priorBlocking = result.consent.blocking;
     proposal = result.proposal;
     round += 1;
   }
-
-  const supporting: readonly EchoCluster[] = detectEchoes(
-    supportingArguments(allPositions),
-    input.claimKeyOf,
-  );
 
   const record: DecisionRecord = emitDecisionRecord({
     question: input.question,
@@ -79,8 +97,16 @@ export async function runDeliberation(
     authority: input.council.authority,
     supporting,
     objections: allPositions,
-    assumptions: [],
-    reconsiderWhen: [],
+    assumptions: dedupe(
+      allPositions.flatMap(
+        (position: TypedPosition): readonly string[] => position.assumptions,
+      ),
+    ),
+    reconsiderWhen: dedupe(
+      allPositions.flatMap(
+        (position: TypedPosition): readonly string[] => position.reconsiderWhen,
+      ),
+    ),
   });
 
   const authority: AuthorityOutcome = applyAuthorityGate(record);
@@ -91,7 +117,7 @@ export async function runDeliberation(
     launch: input.launch,
   });
 
-  return { record, authority, bridge };
+  return { record, authority, bridge, utilityTurns };
 }
 
 function supportingArguments(
@@ -105,6 +131,16 @@ function supportingArguments(
       seat: position.seat,
       claim: position.concern,
     }));
+}
+
+function dedupe(values: readonly string[]): readonly string[] {
+  const unique: string[] = [];
+  for (const value of values) {
+    if (!unique.includes(value)) {
+      unique.push(value);
+    }
+  }
+  return unique;
 }
 
 function wallTimeExceeded(input: DeliberationInput, start: number): boolean {

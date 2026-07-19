@@ -1,4 +1,4 @@
-import { access, mkdtemp, rm } from 'node:fs/promises';
+import { access, mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -38,7 +38,29 @@ describe('buildPluginBundle', () => {
         true,
       );
     }
-    expect(result.writtenPaths.length).toBe(2 + MODE_CATALOG.length);
+    expect(result.writtenPaths.length).toBe(3 + MODE_CATALOG.length);
+  });
+
+  it('writes the .devin-plugin manifest naming the plugin', async () => {
+    await buildPluginBundle(dir);
+
+    const manifest: string = await readFile(
+      join(dir, '.devin-plugin', 'plugin.json'),
+      'utf8',
+    );
+    expect(JSON.parse(manifest)).toStrictEqual({ name: 'oh-my-devin' });
+  });
+
+  it('writes exactly the manifest, the rules file, and the skills', async () => {
+    const result: PluginBundleResult = await buildPluginBundle(dir);
+
+    const expected: readonly string[] = [
+      join('.devin-plugin', 'plugin.json'),
+      'AGENTS.md',
+      join('skills', 'omd-delegate', 'SKILL.md'),
+      ...MODE_CATALOG.map((skill) => join('skills', skill.name, 'SKILL.md')),
+    ];
+    expect([...result.writtenPaths].sort()).toEqual([...expected].sort());
   });
 
   it('bundles no hooks, subagents, or project roles', async () => {
@@ -47,5 +69,8 @@ describe('buildPluginBundle', () => {
     expect(await exists(join(dir, '.devin', 'hooks.v1.json'))).toBe(false);
     expect(await exists(join(dir, '.devin', 'agents'))).toBe(false);
     expect(await exists(join(dir, '.devin', 'schemas'))).toBe(false);
+    expect(await exists(join(dir, 'hooks'))).toBe(false);
+    expect(await exists(join(dir, 'agents'))).toBe(false);
+    expect(await exists(join(dir, 'roles'))).toBe(false);
   });
 });

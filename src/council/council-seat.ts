@@ -1,4 +1,5 @@
 export interface CouncilSeat {
+  readonly id: string;
   readonly role: string;
   readonly lens: string;
   readonly proposer: boolean;

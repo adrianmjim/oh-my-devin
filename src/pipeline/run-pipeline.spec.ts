@@ -4,6 +4,7 @@ import type { PipelineStage } from '../handoff/pipeline-stage';
 import type { RunReport } from '../outcome/run-report';
 import { parseTeamDefinition } from '../team/parse-team-definition';
 import type { TeamDefinition } from '../team/team-definition';
+import { exitCodeForPipelineOutcome } from './exit-code-for-pipeline-outcome';
 import type { GateDecision } from './gate-decision';
 import type { GatePresentation } from './gate-presentation';
 import type { PipelineReport } from './pipeline-report';
@@ -266,6 +267,23 @@ describe('runPipeline', () => {
     expect(result.outcome).toBe('halted');
     expect(result.haltedAt).toBe('architect');
     expect(stages.count('executor')).toBe(0);
+  });
+
+  it('halts with a terminal report and a non-zero exit when no decision ever arrives', async () => {
+    const stages = new RecordingStages({});
+    const gate = new RecordingGate(['none', 'none', 'none']);
+
+    const result: PipelineReport = await runPipeline({
+      team: team(),
+      task: 'build the widget',
+      runStage: stages.run,
+      gate: gate.decide,
+    });
+
+    expect(result.outcome).toBe('halted');
+    expect(result.stages).toHaveLength(1);
+    expect(result.stages[0]?.decision).toBe('none');
+    expect(exitCodeForPipelineOutcome(result.outcome)).not.toBe(0);
   });
 
   it('succeeds at the terminal reviewer gate on approval', async () => {

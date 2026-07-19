@@ -6,4 +6,5 @@ export interface ProposerRequest {
   readonly question: string;
   readonly currentProposal: string | null;
   readonly blocking: readonly TypedPosition[];
+  readonly clarificationQuestions: readonly string[];
 }

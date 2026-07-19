@@ -16,6 +16,8 @@ const CONFIG: SessionConfig = {
   workingDirectory: '/repo/a',
 };
 
+const EMPTY_LISTING: CommandResult = turn('[]');
+
 const LISTING: CommandResult = turn(
   '[{"id":"s1","working_directory":"/repo/a"}]',
 );
@@ -25,10 +27,11 @@ function adapter(stub: DevinStub): HeadlessSessionAdapter {
 }
 
 describe('HeadlessSessionAdapter', () => {
-  it('drives the first turn as a single fresh `-p` invocation and discovers its session id by working directory', async () => {
+  it('drives the first turn of a new session as a fresh `-p` invocation and discovers its session id by working directory', async () => {
     const stub = new DevinStub({
       turns: [turn('first')],
       listResponse: LISTING,
+      listResponses: [EMPTY_LISTING],
     });
 
     const result: SessionTurnResult = await adapter(stub).sendTurn('do work');
@@ -42,10 +45,31 @@ describe('HeadlessSessionAdapter', () => {
     expect(turnInvocations[0]?.args).not.toContain('--resume');
   });
 
+  it('resumes an existing session for the working directory on the first turn', async () => {
+    const stub = new DevinStub({
+      turns: [turn('back again')],
+      listResponse: LISTING,
+    });
+
+    const result: SessionTurnResult = await adapter(stub).sendTurn('continue');
+
+    expect(result.sessionId).toBe('s1');
+    const first = stub.invocations.find((i) => i.args.includes('-p'));
+    expect(first?.args).toEqual([
+      '--resume',
+      's1',
+      '-p',
+      'continue',
+      '--agent-config',
+      '/tmp/bundle.json',
+    ]);
+  });
+
   it('resumes the discovered session by identifier without re-supplying earlier context', async () => {
     const stub = new DevinStub({
       turns: [turn('first'), turn('second')],
       listResponse: LISTING,
+      listResponses: [EMPTY_LISTING],
     });
     const session = adapter(stub);
 
@@ -64,7 +88,7 @@ describe('HeadlessSessionAdapter', () => {
     ]);
   });
 
-  it('enumerates only once and caches the session id', async () => {
+  it('enumerates only once and caches the session id once it is known', async () => {
     const stub = new DevinStub({
       turns: [turn('a'), turn('b')],
       listResponse: LISTING,
@@ -94,7 +118,11 @@ describe('HeadlessSessionAdapter', () => {
   });
 
   it('exposes the current session id only after discovery', async () => {
-    const stub = new DevinStub({ turns: [turn('x')], listResponse: LISTING });
+    const stub = new DevinStub({
+      turns: [turn('x')],
+      listResponse: LISTING,
+      listResponses: [EMPTY_LISTING],
+    });
     const session = adapter(stub);
 
     expect(session.currentSessionId).toBeNull();

@@ -25,20 +25,28 @@ interface TurnScript {
 }
 
 class FakeRunner implements CommandRunner {
+  public readonly invocations: CommandInvocation[] = [];
   private index = 0;
+  private listed = false;
 
   public constructor(
     private readonly artifactPath: string,
     private readonly scripts: readonly TurnScript[],
     private readonly workingDirectory: string,
+    private readonly firstListingEmpty: boolean = false,
   ) {}
 
   public async run(inv: CommandInvocation): Promise<CommandResult> {
+    this.invocations.push(inv);
     if (inv.args.includes('list')) {
+      const empty: boolean = this.firstListingEmpty && !this.listed;
+      this.listed = true;
       return {
-        stdout: JSON.stringify([
-          { id: 's1', working_directory: this.workingDirectory },
-        ]),
+        stdout: empty
+          ? '[]'
+          : JSON.stringify([
+              { id: 's1', working_directory: this.workingDirectory },
+            ]),
         stderr: '',
         exitCode: 0,
       };
@@ -58,11 +66,30 @@ class FakeRunner implements CommandRunner {
   }
 }
 
+class ClockAdvancingRunner implements CommandRunner {
+  public constructor(
+    private readonly inner: CommandRunner,
+    private readonly advance: () => void,
+  ) {}
+
+  public async run(inv: CommandInvocation): Promise<CommandResult> {
+    const result: CommandResult = await this.inner.run(inv);
+    if (inv.args.includes('-p')) {
+      this.advance();
+    }
+    return result;
+  }
+}
+
 describe('runRole', () => {
   let dir: string;
   let artifactPath: string;
 
-  async function scaffold(maxTurns: number): Promise<void> {
+  async function scaffold(
+    maxTurns: number,
+    roleModel: string | null = null,
+    wallTime: string | null = null,
+  ): Promise<void> {
     const roleDir: string = join(dir, '.devin', 'agents', 'reviewer');
     await mkdir(roleDir, { recursive: true });
     const agentMd: string = [
@@ -70,6 +97,8 @@ describe('runRole', () => {
       'omd-output: review.json',
       'omd-schema: review.schema.json',
       `omd-max-turns: ${maxTurns}`,
+      ...(roleModel === null ? [] : [`model: ${roleModel}`]),
+      ...(wallTime === null ? [] : [`omd-wall-time: ${wallTime}`]),
       '---',
       'You are the reviewer.',
     ].join('\n');
@@ -77,11 +106,15 @@ describe('runRole', () => {
     await writeFile(join(dir, 'review.schema.json'), JSON.stringify(SCHEMA));
   }
 
-  function run(scripts: readonly TurnScript[]): Promise<RunReport> {
+  function run(
+    scripts: readonly TurnScript[],
+    model: string | null = null,
+  ): Promise<RunReport> {
     return runRole({
       roleName: 'reviewer',
       task: 'assess the diff',
       workingDirectory: dir,
+      model,
       runner: new FakeRunner(artifactPath, scripts, dir),
       clock: (): number => 0,
     });
@@ -143,6 +176,47 @@ describe('runRole', () => {
     expect(report.repairAttempted).toBe(false);
   });
 
+  it('ends tier budget when wall time expires with turns remaining', async () => {
+    await scaffold(8, null, '10s');
+    let now: number = 0;
+    const runner = new ClockAdvancingRunner(
+      new FakeRunner(
+        artifactPath,
+        [{ write: JSON.stringify({ verdict: 7 }) }],
+        dir,
+      ),
+      (): void => {
+        now = 60000;
+      },
+    );
+    const report: RunReport = await runRole({
+      roleName: 'reviewer',
+      task: 'assess the diff',
+      workingDirectory: dir,
+      model: null,
+      runner,
+      clock: (): number => now,
+    });
+
+    expect(report.failureTier).toBe('budget');
+    expect(report.repairAttempted).toBe(false);
+    expect(report.turnsUsed).toBe(1);
+    expect(report.wallTimeMs).toBe(60000);
+  });
+
+  it('classifies a failed repair as invalid_artifact even when it exhausts the budget', async () => {
+    await scaffold(2);
+    const report: RunReport = await run([
+      { write: JSON.stringify({ verdict: 7 }) },
+      { write: JSON.stringify({ verdict: 7 }) },
+    ]);
+
+    expect(report.failureTier).toBe('invalid_artifact');
+    expect(report.repairAttempted).toBe(true);
+    expect(report.turnsUsed).toBe(2);
+    expect(report.maxTurns).toBe(2);
+  });
+
   it('reports tier 1 and skips repair on a deny hit', async () => {
     await scaffold(8);
     const report: RunReport = await run([
@@ -161,6 +235,87 @@ describe('runRole', () => {
     ).rejects.toThrow(EngineError);
   });
 
+  it('resumes the prior session on a second run in the same working directory', async () => {
+    await scaffold(8);
+    const first = new FakeRunner(
+      artifactPath,
+      [{ write: JSON.stringify({ verdict: 'pass' }) }],
+      dir,
+      true,
+    );
+    const firstReport: RunReport = await runRole({
+      roleName: 'reviewer',
+      task: 'assess the diff',
+      workingDirectory: dir,
+      model: null,
+      runner: first,
+      clock: (): number => 0,
+    });
+    const second = new FakeRunner(
+      artifactPath,
+      [{ write: JSON.stringify({ verdict: 'pass' }) }],
+      dir,
+    );
+    const secondReport: RunReport = await runRole({
+      roleName: 'reviewer',
+      task: 'assess it again',
+      workingDirectory: dir,
+      model: null,
+      runner: second,
+      clock: (): number => 0,
+    });
+
+    const firstTurn = first.invocations.find((i) => i.args.includes('-p'));
+    expect(firstTurn?.args).not.toContain('--resume');
+    const secondTurn = second.invocations.find((i) => i.args.includes('-p'));
+    expect(secondTurn?.args.slice(0, 2)).toEqual(['--resume', 's1']);
+    expect(firstReport.sessionId).toBe('s1');
+    expect(secondReport.sessionId).toBe('s1');
+  });
+
+  it('forwards a model override to the engine invocation over the role model', async () => {
+    await scaffold(8, 'role-tier');
+    const runner = new FakeRunner(
+      artifactPath,
+      [{ write: JSON.stringify({ verdict: 'pass' }) }],
+      dir,
+    );
+    await runRole({
+      roleName: 'reviewer',
+      task: 'assess the diff',
+      workingDirectory: dir,
+      model: 'seat-tier',
+      runner,
+      clock: (): number => 0,
+    });
+
+    const turn = runner.invocations.find((i) => i.args.includes('-p'));
+    expect(turn?.args).toContain('--model');
+    expect(turn?.args).toContain('seat-tier');
+    expect(turn?.args).not.toContain('role-tier');
+  });
+
+  it('falls back to the role model when no override is given', async () => {
+    await scaffold(8, 'role-tier');
+    const runner = new FakeRunner(
+      artifactPath,
+      [{ write: JSON.stringify({ verdict: 'pass' }) }],
+      dir,
+    );
+    await runRole({
+      roleName: 'reviewer',
+      task: 'assess the diff',
+      workingDirectory: dir,
+      model: null,
+      runner,
+      clock: (): number => 0,
+    });
+
+    const turn = runner.invocations.find((i) => i.args.includes('-p'));
+    expect(turn?.args).toContain('--model');
+    expect(turn?.args).toContain('role-tier');
+  });
+
   it('rejects an unknown role as a usage error before launching a session', async () => {
     await scaffold(8);
     await expect(
@@ -168,6 +323,7 @@ describe('runRole', () => {
         roleName: 'ghost',
         task: 'x',
         workingDirectory: dir,
+        model: null,
         runner: new FakeRunner(artifactPath, [], dir),
         clock: (): number => 0,
       }),
@@ -181,6 +337,7 @@ describe('runRole', () => {
         roleName: 'reviewer',
         task: '   ',
         workingDirectory: dir,
+        model: null,
         runner: new FakeRunner(artifactPath, [], dir),
         clock: (): number => 0,
       }),

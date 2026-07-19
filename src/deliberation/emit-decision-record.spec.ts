@@ -23,6 +23,8 @@ const NON_BLOCKING: TypedPosition = {
   domain: 'operability',
   severity: 'medium',
   concern: 'deployment_coupling',
+  assumptions: [],
+  reconsiderWhen: [],
 };
 
 function input(
@@ -70,6 +72,31 @@ describe('emitDecisionRecord', () => {
         seat: 'sre',
         domain: 'operability',
         severity: 'medium',
+        concern: 'deployment_coupling',
+      },
+    ]);
+  });
+
+  it('dedupes identical re-raised objections in the ledger', () => {
+    const record: DecisionRecord = emitDecisionRecord(
+      input('blocked', 'human', [
+        NON_BLOCKING,
+        NON_BLOCKING,
+        { ...NON_BLOCKING, severity: 'high' },
+      ]),
+    );
+
+    expect(record.objections).toEqual([
+      {
+        seat: 'sre',
+        domain: 'operability',
+        severity: 'medium',
+        concern: 'deployment_coupling',
+      },
+      {
+        seat: 'sre',
+        domain: 'operability',
+        severity: 'high',
         concern: 'deployment_coupling',
       },
     ]);

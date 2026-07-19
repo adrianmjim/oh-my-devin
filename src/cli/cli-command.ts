@@ -31,6 +31,11 @@ export interface HelpCommand {
   readonly kind: 'help';
 }
 
+export interface PluginBuildCommand {
+  readonly kind: 'plugin-build';
+  readonly out: string | null;
+}
+
 export interface TeamRunCommand {
   readonly kind: 'team-run';
   readonly team: string;
@@ -48,6 +53,15 @@ export interface CouncilRunCommand {
   readonly json: boolean;
 }
 
+export interface ModeSetCommand {
+  readonly kind: 'mode-set';
+  readonly mode: string;
+}
+
+export interface ModeClearCommand {
+  readonly kind: 'mode-clear';
+}
+
 export type CliCommand =
   | RunCommand
   | DoctorCommand
@@ -55,5 +69,8 @@ export type CliCommand =
   | RolesShowCommand
   | SetupCommand
   | HelpCommand
+  | PluginBuildCommand
   | TeamRunCommand
-  | CouncilRunCommand;
+  | CouncilRunCommand
+  | ModeSetCommand
+  | ModeClearCommand;

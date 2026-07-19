@@ -1,51 +1,44 @@
-import type { ClaimKeyOf } from './claim-key-of';
+import type { ArgumentClusterer } from './argument-clusterer';
+import type { ClaimClusters } from './claim-clusters';
 import type { EchoCluster } from './echo-cluster';
 import type { SeatArgument } from './seat-argument';
 
-interface ClusterAccumulator {
-  readonly claim: string;
-  readonly seats: string[];
-}
-
-export function detectEchoes(
+export async function detectEchoes(
   args: readonly SeatArgument[],
-  claimKeyOf: ClaimKeyOf,
-): readonly EchoCluster[] {
-  const byKey: Map<string, ClusterAccumulator> = new Map<
-    string,
-    ClusterAccumulator
-  >();
-  const order: string[] = [];
+  clusterArguments: ArgumentClusterer,
+  idPrefix: string,
+): Promise<readonly EchoCluster[]> {
+  const groups: ClaimClusters = await clusterArguments(
+    args.map((argument: SeatArgument): string => argument.claim),
+  );
 
-  for (const argument of args) {
-    const key: string = claimKeyOf(argument);
-    const existing: ClusterAccumulator | undefined = byKey.get(key);
-    if (existing === undefined) {
-      byKey.set(key, { claim: argument.claim, seats: [argument.seat] });
-      order.push(key);
+  const clusters: EchoCluster[] = [];
+  for (const group of groups) {
+    const members: readonly SeatArgument[] = group
+      .filter((index: number): boolean => index >= 0 && index < args.length)
+      .map((index: number): SeatArgument => requireArgument(args[index]));
+    if (members.length === 0) {
       continue;
     }
-    if (!existing.seats.includes(argument.seat)) {
-      existing.seats.push(argument.seat);
+    const seats: string[] = [];
+    for (const member of members) {
+      if (!seats.includes(member.seat)) {
+        seats.push(member.seat);
+      }
     }
+    clusters.push({
+      id: `${idPrefix}-cluster-${clusters.length}`,
+      claim: requireArgument(members[0]).claim,
+      endorsements: seats.length,
+      seats,
+    });
   }
-
-  return order.map((key: string): EchoCluster => {
-    const accumulator: ClusterAccumulator = required(byKey.get(key));
-    return {
-      id: key,
-      claim: accumulator.claim,
-      endorsements: accumulator.seats.length,
-      seats: accumulator.seats,
-    };
-  });
+  return clusters;
 }
 
-function required(
-  accumulator: ClusterAccumulator | undefined,
-): ClusterAccumulator {
-  if (accumulator === undefined) {
-    throw new Error('echo cluster accumulator vanished');
+function requireArgument(argument: SeatArgument | undefined): SeatArgument {
+  if (argument === undefined) {
+    throw new Error('echo cluster member vanished');
   }
-  return accumulator;
+  return argument;
 }

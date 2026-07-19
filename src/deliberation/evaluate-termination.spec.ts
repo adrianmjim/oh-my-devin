@@ -15,6 +15,8 @@ function blocker(seat: string, domain: string): TypedPosition {
     domain,
     severity: 'high',
     concern: `${seat}-concern`,
+    assumptions: [],
+    reconsiderWhen: [],
   };
 }
 

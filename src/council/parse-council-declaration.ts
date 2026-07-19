@@ -36,6 +36,14 @@ function requireString(value: unknown, field: string): string {
   return value;
 }
 
+interface SeatDraft {
+  readonly role: string;
+  readonly lens: string;
+  readonly proposer: boolean;
+  readonly contrarian: boolean;
+  readonly model: string | null;
+}
+
 function parseSeats(
   value: unknown,
   knownRoles: readonly string[],
@@ -43,16 +51,45 @@ function parseSeats(
   if (!Array.isArray(value) || value.length === 0) {
     throw new CouncilDeclarationError('"seats" must be a non-empty list');
   }
-  return value.map((entry: unknown, index: number): CouncilSeat =>
-    parseSeat(entry, index, knownRoles),
+  const drafts: readonly SeatDraft[] = value.map(
+    (entry: unknown, index: number): SeatDraft =>
+      parseSeat(entry, index, knownRoles),
   );
+  return assignSeatIds(drafts);
+}
+
+function assignSeatIds(drafts: readonly SeatDraft[]): readonly CouncilSeat[] {
+  const totals: Map<string, number> = new Map<string, number>();
+  for (const draft of drafts) {
+    totals.set(draft.role, (totals.get(draft.role) ?? 0) + 1);
+  }
+  const occurrences: Map<string, number> = new Map<string, number>();
+  const seats: readonly CouncilSeat[] = drafts.map(
+    (draft: SeatDraft): CouncilSeat => {
+      const total: number = totals.get(draft.role) ?? 0;
+      const occurrence: number = (occurrences.get(draft.role) ?? 0) + 1;
+      occurrences.set(draft.role, occurrence);
+      const id: string = total > 1 ? `${draft.role}-${occurrence}` : draft.role;
+      return { id, ...draft };
+    },
+  );
+  const seen: Set<string> = new Set<string>();
+  for (const seat of seats) {
+    if (seen.has(seat.id)) {
+      throw new CouncilDeclarationError(
+        `seat id "${seat.id}" is claimed by more than one seat`,
+      );
+    }
+    seen.add(seat.id);
+  }
+  return seats;
 }
 
 function parseSeat(
   entry: unknown,
   index: number,
   knownRoles: readonly string[],
-): CouncilSeat {
+): SeatDraft {
   if (entry === null || typeof entry !== 'object' || Array.isArray(entry)) {
     throw new CouncilDeclarationError(`seat ${index} must be a mapping`);
   }

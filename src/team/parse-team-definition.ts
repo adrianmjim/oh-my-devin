@@ -6,6 +6,7 @@ import type { TeamMember } from './team-member';
 import type { TeamStrategy } from './team-strategy';
 import { isTeamStrategy } from './team-strategy';
 import type { TeamTransition } from './team-transition';
+import { isWorkflowOutcome } from './workflow-outcome';
 
 const TERMINAL_NODE: string = 'done';
 const OUTCOME_KEY: RegExp = /^on_(.+)$/;
@@ -156,7 +157,13 @@ function parseTransition(
         `workflow stage "${from}" has an unrecognized transition key "${key}"`,
       );
     }
-    outcomes.push({ outcome: match[1] ?? '', to: target });
+    const outcome: string = match[1] ?? '';
+    if (!isWorkflowOutcome(outcome)) {
+      throw new TeamDefinitionError(
+        `workflow stage "${from}" declares an unknown outcome in key "${key}" (expected: on_passed, on_blocked, on_bankrupt)`,
+      );
+    }
+    outcomes.push({ outcome, to: target });
   }
   return { from, then, outcomes };
 }

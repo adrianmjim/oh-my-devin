@@ -22,6 +22,7 @@ export function createStageRunner(deps: StageRunnerDeps): StageRunner {
         roleName: request.stage,
         task: composePrompt(request),
         workingDirectory: worktree.path,
+        model: null,
         runner: deps.runnerFor(worktree.path),
         clock: deps.clock,
       });

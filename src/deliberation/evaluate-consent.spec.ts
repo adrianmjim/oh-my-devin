@@ -12,6 +12,8 @@ function objection(overrides: Partial<TypedPosition>): TypedPosition {
     domain: 'operability',
     severity: 'high',
     concern: 'deployment_coupling',
+    assumptions: [],
+    reconsiderWhen: [],
     ...overrides,
   };
 }
