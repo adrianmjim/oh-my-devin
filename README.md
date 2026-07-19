@@ -22,6 +22,11 @@ npm test        # unit suite (runs against a devin stub; never spends Devin quot
 npm run build   # compile src/ to dist/
 ```
 
+## Contributing
+
+Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). All
+contributors sign the project's [CLA](CLA.md) on their first pull request.
+
 ## License
 
 [MIT](LICENSE)
