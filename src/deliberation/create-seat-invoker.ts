@@ -21,18 +21,31 @@ export function createSeatInvoker(
   return async (
     invocations: readonly SeatInvocation[],
   ): Promise<readonly SeatPosition[]> => {
-    const instances: ParallelInstance<SeatPosition>[] = [];
-    for (const invocation of invocations) {
-      const worktree: Worktree = await pool.acquire(
-        `seat-${invocation.seat.role}`,
+    const worktrees: readonly Worktree[] = await Promise.all(
+      invocations.map((invocation: SeatInvocation): Promise<Worktree> =>
+        pool.acquire(`seat-${invocation.seat.id}`),
+      ),
+    );
+    const instances: readonly ParallelInstance<SeatPosition>[] =
+      invocations.map(
+        (
+          invocation: SeatInvocation,
+          index: number,
+        ): ParallelInstance<SeatPosition> => {
+          const worktree: Worktree | undefined = worktrees[index];
+          if (worktree === undefined) {
+            throw new DeliberationError(
+              `seat "${invocation.seat.id}" has no acquired worktree`,
+            );
+          }
+          return {
+            instanceId: worktree.instanceId,
+            workingDirectory: worktree.path,
+            run: (): Promise<SeatPosition> =>
+              invokeSeat(deps, invocation, worktree),
+          };
+        },
       );
-      instances.push({
-        instanceId: worktree.instanceId,
-        workingDirectory: worktree.path,
-        run: (): Promise<SeatPosition> =>
-          invokeSeat(deps, invocation, worktree),
-      });
-    }
     const settlements: readonly ParallelSettlement<SeatPosition>[] =
       await runInParallel(instances);
     return settlements.map(
@@ -61,7 +74,7 @@ async function invokeSeat(
   });
   if (report.failureTier !== null || !report.artifactValid) {
     throw new DeliberationError(
-      `seat "${invocation.seat.role}" did not produce a valid position`,
+      `seat "${invocation.seat.id}" did not produce a valid position`,
     );
   }
   const raw: string = await deps.readArtifact(

@@ -42,6 +42,12 @@ describe('parseCouncilDeclaration', () => {
       'sre',
       'security-reviewer',
     ]);
+    expect(council.seats.map((s) => s.id)).toEqual([
+      'architect',
+      'product-manager',
+      'sre',
+      'security-reviewer',
+    ]);
     expect(council.seats[0]?.proposer).toBe(true);
     expect(council.seats[2]?.model).toBe('sonnet');
     expect(council.seats[3]?.contrarian).toBe(true);
@@ -82,6 +88,55 @@ describe('parseCouncilDeclaration', () => {
 
     const council: CouncilDeclaration = parseCouncilDeclaration(yaml, KNOWN);
     expect(council.tunables.wallTimeMs).toBe(60000);
+  });
+
+  it('numbers every occurrence of a role held by multiple seats', () => {
+    const yaml: string = [
+      'name: doubled',
+      'seats:',
+      '  - role: architect',
+      '    lens: system-boundaries',
+      '  - role: sre',
+      '    lens: operability',
+      '  - role: architect',
+      '    lens: data-model',
+      'deliberation:',
+      '  rounds_cap: 2',
+    ].join('\n');
+
+    const council: CouncilDeclaration = parseCouncilDeclaration(yaml, KNOWN);
+
+    expect(council.seats.map((s) => s.id)).toEqual([
+      'architect-1',
+      'sre',
+      'architect-2',
+    ]);
+    expect(council.seats.map((s) => s.role)).toEqual([
+      'architect',
+      'sre',
+      'architect',
+    ]);
+  });
+
+  it('rejects a literal role name that collides with a generated seat id', () => {
+    const known: readonly string[] = [...KNOWN, 'architect-1'];
+    const yaml: string = [
+      'name: colliding',
+      'seats:',
+      '  - role: architect',
+      '    lens: system-boundaries',
+      '  - role: architect',
+      '    lens: data-model',
+      '  - role: architect-1',
+      '    lens: operability',
+      'deliberation:',
+      '  rounds_cap: 2',
+    ].join('\n');
+
+    expect(() => parseCouncilDeclaration(yaml, known)).toThrow(
+      CouncilDeclarationError,
+    );
+    expect(() => parseCouncilDeclaration(yaml, known)).toThrow(/architect-1/);
   });
 
   it('rejects a seat naming an unknown role', () => {

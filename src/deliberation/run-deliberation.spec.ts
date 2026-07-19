@@ -21,7 +21,14 @@ const TEAM: TeamDefinition = {
 };
 
 function seat(role: string, proposer: boolean): CouncilSeat {
-  return { role, lens: role, proposer, contrarian: false, model: null };
+  return {
+    id: role,
+    role,
+    lens: role,
+    proposer,
+    contrarian: false,
+    model: null,
+  };
 }
 
 function council(

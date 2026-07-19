@@ -53,6 +53,15 @@ export interface CouncilRunCommand {
   readonly json: boolean;
 }
 
+export interface ModeSetCommand {
+  readonly kind: 'mode-set';
+  readonly mode: string;
+}
+
+export interface ModeClearCommand {
+  readonly kind: 'mode-clear';
+}
+
 export type CliCommand =
   | RunCommand
   | DoctorCommand
@@ -62,4 +71,6 @@ export type CliCommand =
   | HelpCommand
   | PluginBuildCommand
   | TeamRunCommand
-  | CouncilRunCommand;
+  | CouncilRunCommand
+  | ModeSetCommand
+  | ModeClearCommand;

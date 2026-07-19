@@ -45,10 +45,13 @@ import { renderPipelineReportJson } from './pipeline/render-pipeline-report-json
 import { runPipeline } from './pipeline/run-pipeline';
 import type { RunPipelineOptions } from './pipeline/run-pipeline-options';
 import { buildPluginBundle } from './plugin/build-plugin-bundle';
+import { ModeStateStore } from './modes/mode-state-store';
+import { resolveModeState } from './modes/resolve-mode-state';
 import { loadRoleDefinition } from './role/load-role-definition';
 import type { RoleDefinition } from './role/role-definition';
 import { runRole } from './run/run-role';
 import { UsageError } from './run/usage-error';
+import type { ModeState } from './setup/mode-state';
 import { setupLayer } from './setup/setup-layer';
 import type { SetupResult } from './setup/setup-result';
 import { loadTeamDefinition } from './team/load-team-definition';
@@ -66,7 +69,8 @@ const USAGE: string = [
   '  omd setup [--scope=<parts>]        Install the in-session layer (parts: rules,roles,skills,hooks)',
   '  omd plugin build [--out <dir>]     Build the installable devin plugin bundle',
   '  omd team run <team> "<task>"       Run a team pipeline (architect → executor → reviewer)',
-  '  omd council run <c> "<question>"   Run a deliberation council [--proposal= --then= --sign --json]',
+  '  omd council run <c> "<question>"   Run a deliberation council [--proposal <path>] [--then <team>] [--sign] [--json]',
+  '  omd mode <set|clear> [<mode>]      Set or clear the persistent mode state read by the session hooks',
   '',
 ].join('\n');
 
@@ -233,6 +237,17 @@ async function dispatch(
         await seatWorktrees.closeAll();
         reader.close();
       }
+    }
+    case 'mode-set': {
+      const state: ModeState = resolveModeState(command.mode);
+      await new ModeStateStore(cwd).set(state);
+      write(process.stdout, `mode set: ${state.mode}`);
+      return 0;
+    }
+    case 'mode-clear': {
+      await new ModeStateStore(cwd).clear();
+      write(process.stdout, 'mode cleared');
+      return 0;
     }
   }
 }

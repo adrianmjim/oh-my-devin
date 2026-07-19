@@ -27,6 +27,34 @@ class FakeProvisioner implements WorktreeProvisioner {
   }
 }
 
+class PendingProvisioner implements WorktreeProvisioner {
+  public readonly created: string[] = [];
+  private release: () => void = (): void => undefined;
+
+  public create(instanceId: string): Promise<Worktree> {
+    this.created.push(instanceId);
+    return new Promise<Worktree>(
+      (resolve: (worktree: Worktree) => void): void => {
+        this.release = (): void => {
+          resolve({ instanceId, path: `/wt/${instanceId}` });
+        };
+      },
+    );
+  }
+
+  public complete(): void {
+    this.release();
+  }
+
+  public captureDiff(): Promise<string> {
+    return Promise.resolve('');
+  }
+
+  public remove(): Promise<void> {
+    return Promise.resolve();
+  }
+}
+
 describe('WorktreePool', () => {
   it('creates a worktree on first acquire and reuses it afterwards', async () => {
     const provisioner = new FakeProvisioner();
@@ -51,6 +79,32 @@ describe('WorktreePool', () => {
 
     expect(a).toEqual(b);
     expect(provisioner.created).toEqual(['seat-security']);
+  });
+
+  it('shares a single creation among acquires issued while it is pending', async () => {
+    const provisioner = new PendingProvisioner();
+    const pool = new WorktreePool(provisioner);
+
+    const first: Promise<Worktree> = pool.acquire('seat-sre');
+    const second: Promise<Worktree> = pool.acquire('seat-sre');
+    provisioner.complete();
+    const [a, b] = await Promise.all([first, second]);
+
+    expect(a).toEqual(b);
+    expect(provisioner.created).toEqual(['seat-sre']);
+  });
+
+  it('retries creation on the next acquire after a failed one', async () => {
+    const provisioner = new FakeProvisioner();
+    const pool = new WorktreePool(provisioner);
+    provisioner.failing = true;
+    await expect(pool.acquire('seat-sre')).rejects.toThrow(WorktreeError);
+    provisioner.failing = false;
+
+    const recovered: Worktree = await pool.acquire('seat-sre');
+
+    expect(recovered.path).toBe('/wt/seat-sre');
+    expect(provisioner.created).toEqual(['seat-sre']);
   });
 
   it('removes every pooled worktree on closeAll and empties the pool', async () => {

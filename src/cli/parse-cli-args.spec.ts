@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { UsageError } from '../run/usage-error';
 import type {
   CouncilRunCommand,
+  ModeSetCommand,
   PluginBuildCommand,
   RolesShowCommand,
   RunCommand,
@@ -155,7 +156,7 @@ describe('parseCliArgs', () => {
     expect(councilRun.json).toBe(false);
   });
 
-  it('parses council run flags: --proposal, --then, --sign, --json', () => {
+  it('parses council run flags in the = form: --proposal=, --then=, --sign, --json', () => {
     const command = parseCliArgs([
       'council',
       'run',
@@ -173,15 +174,64 @@ describe('parseCliArgs', () => {
     expect(councilRun.json).toBe(true);
   });
 
-  it('no longer recognizes the renamed --team flag on council run', () => {
+  it('parses council run flags in the space form: --proposal <path> --then <team>', () => {
     const command = parseCliArgs([
       'council',
       'run',
       'design',
       'ship it?',
-      '--team=feature-team',
+      '--proposal',
+      'proposal.md',
+      '--then',
+      'feature-team',
+      '--sign',
+      '--json',
     ]);
-    expect((command as CouncilRunCommand).team).toBeNull();
+    const councilRun = command as CouncilRunCommand;
+    expect(councilRun.proposal).toBe('proposal.md');
+    expect(councilRun.team).toBe('feature-team');
+    expect(councilRun.sign).toBe(true);
+    expect(councilRun.json).toBe(true);
+  });
+
+  it('rejects a space-form council flag whose value is missing', () => {
+    expect(() =>
+      parseCliArgs(['council', 'run', 'design', 'ship it?', '--proposal']),
+    ).toThrow(UsageError);
+    expect(() =>
+      parseCliArgs([
+        'council',
+        'run',
+        'design',
+        'ship it?',
+        '--then',
+        '--sign',
+      ]),
+    ).toThrow(UsageError);
+  });
+
+  it('rejects an empty = form council flag value', () => {
+    expect(() =>
+      parseCliArgs(['council', 'run', 'design', 'ship it?', '--proposal=']),
+    ).toThrow(UsageError);
+  });
+
+  it('rejects an unknown council run flag', () => {
+    expect(() =>
+      parseCliArgs([
+        'council',
+        'run',
+        'design',
+        'ship it?',
+        '--team=feature-team',
+      ]),
+    ).toThrow(UsageError);
+  });
+
+  it('rejects a surplus council run positional', () => {
+    expect(() =>
+      parseCliArgs(['council', 'run', 'design', 'ship it?', 'extra']),
+    ).toThrow(UsageError);
   });
 
   it('rejects `council run` without a question', () => {
@@ -194,5 +244,31 @@ describe('parseCliArgs', () => {
     expect(() => parseCliArgs(['council', 'convene', 'design'])).toThrow(
       UsageError,
     );
+  });
+
+  it('parses `mode set <mode>`', () => {
+    const command = parseCliArgs(['mode', 'set', 'team']);
+    expect(command.kind).toBe('mode-set');
+    expect((command as ModeSetCommand).mode).toBe('team');
+  });
+
+  it('parses `mode clear`', () => {
+    expect(parseCliArgs(['mode', 'clear']).kind).toBe('mode-clear');
+  });
+
+  it('rejects `mode set` without a mode name', () => {
+    expect(() => parseCliArgs(['mode', 'set'])).toThrow(UsageError);
+  });
+
+  it('rejects an unknown mode subcommand', () => {
+    expect(() => parseCliArgs(['mode'])).toThrow(UsageError);
+    expect(() => parseCliArgs(['mode', 'frobnicate'])).toThrow(UsageError);
+  });
+
+  it('rejects surplus mode arguments', () => {
+    expect(() => parseCliArgs(['mode', 'set', 'team', 'extra'])).toThrow(
+      UsageError,
+    );
+    expect(() => parseCliArgs(['mode', 'clear', 'extra'])).toThrow(UsageError);
   });
 });

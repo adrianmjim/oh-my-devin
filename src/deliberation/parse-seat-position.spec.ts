@@ -5,11 +5,17 @@ import { parseSeatPosition } from './parse-seat-position';
 import type { SeatPosition } from './seat-position';
 
 const SEAT: CouncilSeat = {
+  id: 'security',
   role: 'security',
   lens: 'threat-model',
   proposer: false,
   contrarian: false,
   model: null,
+};
+
+const NUMBERED_SEAT: CouncilSeat = {
+  ...SEAT,
+  id: 'security-2',
 };
 
 function raw(overrides: Record<string, unknown> = {}): string {
@@ -35,6 +41,28 @@ describe('parseSeatPosition', () => {
       assumptions: [],
       reconsiderWhen: [],
     });
+  });
+
+  it('attributes a position to the seat instance id, not the role', () => {
+    const position: SeatPosition = parseSeatPosition(NUMBERED_SEAT, raw());
+    expect(position.seat).toBe('security-2');
+  });
+
+  it('attributes a clarification to the seat instance id', () => {
+    const position: SeatPosition = parseSeatPosition(
+      NUMBERED_SEAT,
+      JSON.stringify({ kind: 'clarification', questions: [] }),
+    );
+    expect(position.seat).toBe('security-2');
+  });
+
+  it('names the seat instance id in parse errors', () => {
+    expect(() => parseSeatPosition(NUMBERED_SEAT, 'not json')).toThrow(
+      /security-2/,
+    );
+    expect(() =>
+      parseSeatPosition(NUMBERED_SEAT, raw({ kind: 'veto' })),
+    ).toThrow(/security-2/);
   });
 
   it('extracts declared assumptions and reconsider_when triggers', () => {

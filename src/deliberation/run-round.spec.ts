@@ -14,6 +14,7 @@ import { runRound } from './run-round';
 
 function seat(role: string, overrides: Partial<CouncilSeat>): CouncilSeat {
   return {
+    id: role,
     role,
     lens: role,
     proposer: false,

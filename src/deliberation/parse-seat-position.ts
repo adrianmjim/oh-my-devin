@@ -27,25 +27,25 @@ export function parseSeatPosition(
   }
   if (!isPositionKind(kind)) {
     throw new DeliberationError(
-      `seat "${seat.role}" position.kind must be "objection", "preference", or "clarification"`,
+      `seat "${seat.id}" position.kind must be "objection", "preference", or "clarification"`,
     );
   }
   const severity: unknown = fields['severity'];
   if (!isSeverity(severity)) {
     throw new DeliberationError(
-      `seat "${seat.role}" position.severity must be low|medium|high|critical`,
+      `seat "${seat.id}" position.severity must be low|medium|high|critical`,
     );
   }
   const domain: unknown = fields['domain'];
   const concern: unknown = fields['concern'];
   if (typeof domain !== 'string' || typeof concern !== 'string') {
     throw new DeliberationError(
-      `seat "${seat.role}" position must carry string "domain" and "concern"`,
+      `seat "${seat.id}" position must carry string "domain" and "concern"`,
     );
   }
 
   return {
-    seat: seat.role,
+    seat: seat.id,
     lens: seat.lens,
     kind,
     domain,
@@ -63,11 +63,11 @@ function parseClarification(
   const questions: unknown = fields['questions'];
   if (!isStringArray(questions)) {
     throw new DeliberationError(
-      `seat "${seat.role}" clarification must carry a string array "questions"`,
+      `seat "${seat.id}" clarification must carry a string array "questions"`,
     );
   }
   return {
-    seat: seat.role,
+    seat: seat.id,
     lens: seat.lens,
     kind: 'clarification',
     questions,
@@ -85,7 +85,7 @@ function parseOptionalStrings(
   }
   if (!isStringArray(value)) {
     throw new DeliberationError(
-      `seat "${seat.role}" position.${name} must be a string array`,
+      `seat "${seat.id}" position.${name} must be a string array`,
     );
   }
   return value;
@@ -96,11 +96,11 @@ function parseObject(seat: CouncilSeat, raw: string): Record<string, unknown> {
   try {
     parsed = JSON.parse(raw);
   } catch {
-    throw new DeliberationError(`seat "${seat.role}" produced invalid JSON`);
+    throw new DeliberationError(`seat "${seat.id}" produced invalid JSON`);
   }
   if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
     throw new DeliberationError(
-      `seat "${seat.role}" position must be a JSON object`,
+      `seat "${seat.id}" position must be a JSON object`,
     );
   }
   return parsed as Record<string, unknown>;

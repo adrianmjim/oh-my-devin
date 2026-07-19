@@ -37,6 +37,7 @@ const NOOP_RUNNER: CommandRunner = {
 };
 
 const PROPOSER: CouncilSeat = {
+  id: 'architect',
   role: 'architect',
   lens: 'design',
   proposer: true,
@@ -206,6 +207,48 @@ describe('createProposerAction', () => {
     expect(result.clarifications).toEqual([
       { question: 'what is the rollout plan?', answer: 'canary' },
     ]);
+  });
+
+  it('keys the proposer worktree by the seat instance id', async () => {
+    const worktrees = new FakeWorktrees();
+    const seen: RunRoleOptions[] = [];
+    const propose: ProposerAction = createProposerAction(
+      makeDeps(
+        (options: RunRoleOptions): Promise<RunReport> => {
+          seen.push(options);
+          return Promise.resolve(report());
+        },
+        worktrees,
+        (): Promise<string> =>
+          Promise.resolve(JSON.stringify({ proposal: 'v1' })),
+      ),
+      new WorktreePool(worktrees),
+    );
+
+    await propose(request({ seat: { ...PROPOSER, id: 'architect-2' } }));
+
+    expect(worktrees.created).toEqual(['seat-architect-2']);
+    expect(seen[0]?.roleName).toBe('architect');
+    expect(seen[0]?.workingDirectory).toBe('/wt/seat-architect-2');
+  });
+
+  it('names the seat instance id when the proposer fails', async () => {
+    const worktrees = new FakeWorktrees();
+    const propose: ProposerAction = createProposerAction(
+      makeDeps(
+        (): Promise<RunReport> =>
+          Promise.resolve(
+            report({ failureTier: 'invalid_artifact', artifactValid: false }),
+          ),
+        worktrees,
+        (): Promise<string> => Promise.resolve(JSON.stringify({})),
+      ),
+      new WorktreePool(worktrees),
+    );
+
+    await expect(
+      propose(request({ seat: { ...PROPOSER, id: 'architect-2' } })),
+    ).rejects.toThrow(/architect-2/);
   });
 
   it('rejects a malformed clarifications answer shape', async () => {

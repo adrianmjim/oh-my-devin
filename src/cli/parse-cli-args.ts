@@ -5,20 +5,11 @@ import type { CliCommand } from './cli-command';
 
 const SCOPE_PREFIX: string = '--scope=';
 const OUT_PREFIX: string = '--out=';
+const PROPOSAL_PREFIX: string = '--proposal=';
+const THEN_PREFIX: string = '--then=';
 
 function isFlag(arg: string): boolean {
   return arg.startsWith('--');
-}
-
-function readValueFlag(rest: readonly string[], prefix: string): string | null {
-  const flag: string | undefined = rest.find((arg: string): boolean =>
-    arg.startsWith(prefix),
-  );
-  if (flag === undefined) {
-    return null;
-  }
-  const value: string = flag.slice(prefix.length);
-  return value.length > 0 ? value : null;
 }
 
 function parseSetupScope(
@@ -48,6 +39,85 @@ function parseSetupScope(
     components.push(part);
   }
   return components;
+}
+
+function parseCouncilRun(rest: readonly string[]): CliCommand {
+  const usage: string =
+    'usage: omd council run <council> "<question>" [--proposal <path>] [--then <team>] [--sign] [--json]';
+  if (rest[0] !== 'run') {
+    throw new UsageError(usage);
+  }
+  const council: string | undefined = rest[1];
+  const question: string | undefined = rest[2];
+  if (
+    council === undefined ||
+    question === undefined ||
+    isFlag(council) ||
+    isFlag(question)
+  ) {
+    throw new UsageError(usage);
+  }
+  let proposal: string | null = null;
+  let team: string | null = null;
+  let sign: boolean = false;
+  let json: boolean = false;
+  for (let index: number = 3; index < rest.length; index += 1) {
+    const arg: string = rest[index] ?? '';
+    if (arg === '--proposal' || arg === '--then') {
+      const value: string | undefined = rest[index + 1];
+      if (value === undefined || isFlag(value)) {
+        throw new UsageError(usage);
+      }
+      if (arg === '--proposal') {
+        proposal = value;
+      } else {
+        team = value;
+      }
+      index += 1;
+      continue;
+    }
+    if (arg.startsWith(PROPOSAL_PREFIX)) {
+      const value: string = arg.slice(PROPOSAL_PREFIX.length);
+      if (value.length === 0) {
+        throw new UsageError(usage);
+      }
+      proposal = value;
+      continue;
+    }
+    if (arg.startsWith(THEN_PREFIX)) {
+      const value: string = arg.slice(THEN_PREFIX.length);
+      if (value.length === 0) {
+        throw new UsageError(usage);
+      }
+      team = value;
+      continue;
+    }
+    if (arg === '--sign') {
+      sign = true;
+      continue;
+    }
+    if (arg === '--json') {
+      json = true;
+      continue;
+    }
+    throw new UsageError(usage);
+  }
+  return { kind: 'council-run', council, question, proposal, team, sign, json };
+}
+
+function parseMode(rest: readonly string[]): CliCommand {
+  const usage: string = 'usage: omd mode <set|clear> [<mode>]';
+  if (rest[0] === 'set') {
+    const mode: string | undefined = rest[1];
+    if (mode === undefined || isFlag(mode) || rest.length > 2) {
+      throw new UsageError(usage);
+    }
+    return { kind: 'mode-set', mode };
+  }
+  if (rest[0] === 'clear' && rest.length === 1) {
+    return { kind: 'mode-clear' };
+  }
+  throw new UsageError(usage);
 }
 
 function parsePluginBuild(rest: readonly string[]): CliCommand {
@@ -132,27 +202,10 @@ export function parseCliArgs(argv: readonly string[]): CliCommand {
       }
       return { kind: 'team-run', team, task, json };
     }
-    case 'council': {
-      const usage: string =
-        'usage: omd council run <council> "<question>" [--proposal=<path>] [--then=<team>] [--sign] [--json]';
-      if (positionals[0] !== 'run') {
-        throw new UsageError(usage);
-      }
-      const council: string | undefined = positionals[1];
-      const question: string | undefined = positionals[2];
-      if (council === undefined || question === undefined) {
-        throw new UsageError(usage);
-      }
-      return {
-        kind: 'council-run',
-        council,
-        question,
-        proposal: readValueFlag(rest, '--proposal='),
-        team: readValueFlag(rest, '--then='),
-        sign: rest.includes('--sign'),
-        json,
-      };
-    }
+    case 'council':
+      return parseCouncilRun(rest);
+    case 'mode':
+      return parseMode(rest);
     default:
       throw new UsageError(`unknown command "${command}"`);
   }

@@ -39,6 +39,45 @@ class FakeWorktrees implements WorktreeProvisioner {
   }
 }
 
+class DeferredWorktrees implements WorktreeProvisioner {
+  public readonly requested: string[] = [];
+  private readonly pending: Map<string, (worktree: Worktree) => void> = new Map<
+    string,
+    (worktree: Worktree) => void
+  >();
+
+  public create(instanceId: string): Promise<Worktree> {
+    this.requested.push(instanceId);
+    return new Promise<Worktree>(
+      (resolve: (worktree: Worktree) => void): void => {
+        this.pending.set(instanceId, resolve);
+      },
+    );
+  }
+
+  public release(instanceId: string): void {
+    const resolve: ((worktree: Worktree) => void) | undefined =
+      this.pending.get(instanceId);
+    if (resolve !== undefined) {
+      resolve({ instanceId, path: `/wt/${instanceId}` });
+    }
+  }
+
+  public captureDiff(): Promise<string> {
+    return Promise.resolve('');
+  }
+
+  public remove(): Promise<void> {
+    return Promise.resolve();
+  }
+}
+
+function settleMicrotasks(): Promise<void> {
+  return new Promise<void>((resolve: () => void): void => {
+    setImmediate(resolve);
+  });
+}
+
 class Barrier {
   private arrived: number = 0;
   private readonly size: number;
@@ -68,6 +107,7 @@ const NOOP_RUNNER: CommandRunner = {
 };
 
 const SEAT: CouncilSeat = {
+  id: 'security',
   role: 'security',
   lens: 'threat-model',
   proposer: false,
@@ -186,7 +226,9 @@ describe('createSeatInvoker', () => {
 
     await invoke([
       invocation({ seat: { ...SEAT, model: 'seat-tier' } }),
-      invocation({ seat: { ...SEAT, role: 'sre', lens: 'operability' } }),
+      invocation({
+        seat: { ...SEAT, id: 'sre', role: 'sre', lens: 'operability' },
+      }),
     ]);
 
     expect(
@@ -328,7 +370,9 @@ describe('createSeatInvoker', () => {
 
     const positions: readonly SeatPosition[] = await invoke([
       invocation({}),
-      invocation({ seat: { ...SEAT, role: 'sre', lens: 'operability' } }),
+      invocation({
+        seat: { ...SEAT, id: 'sre', role: 'sre', lens: 'operability' },
+      }),
     ]);
 
     expect(positions.map((p: SeatPosition): string => p.seat)).toEqual([
@@ -336,6 +380,87 @@ describe('createSeatInvoker', () => {
       'sre',
     ]);
     expect(worktrees.created.sort()).toEqual(['seat-security', 'seat-sre']);
+  });
+
+  it('runs two seats holding the same role in distinct worktrees', async () => {
+    const worktrees = new FakeWorktrees();
+    const barrier = new Barrier(2);
+    const seen: RunRoleOptions[] = [];
+    const invoke: SeatInvoker = createSeatInvoker(
+      makeDeps(
+        async (options: RunRoleOptions): Promise<RunReport> => {
+          seen.push(options);
+          await barrier.arrive();
+          return report();
+        },
+        worktrees,
+        (): Promise<string> => Promise.resolve(POSITION_JSON),
+      ),
+      new WorktreePool(worktrees),
+    );
+
+    const positions: readonly SeatPosition[] = await invoke([
+      invocation({ seat: { ...SEAT, id: 'security-1' } }),
+      invocation({
+        seat: { ...SEAT, id: 'security-2', lens: 'compliance' },
+      }),
+    ]);
+
+    expect(worktrees.created.sort()).toEqual([
+      'seat-security-1',
+      'seat-security-2',
+    ]);
+    expect(positions.map((p: SeatPosition): string => p.seat)).toEqual([
+      'security-1',
+      'security-2',
+    ]);
+    expect(
+      seen.map((options: RunRoleOptions): string => options.roleName),
+    ).toEqual(['security', 'security']);
+  });
+
+  it('initiates every worktree acquisition before any completes and keeps the pairing', async () => {
+    const worktrees = new DeferredWorktrees();
+    const seen: RunRoleOptions[] = [];
+    const invoke: SeatInvoker = createSeatInvoker(
+      makeDeps(
+        (options: RunRoleOptions): Promise<RunReport> => {
+          seen.push(options);
+          return Promise.resolve(report());
+        },
+        worktrees,
+        (): Promise<string> => Promise.resolve(POSITION_JSON),
+      ),
+      new WorktreePool(worktrees),
+    );
+
+    const invoking: Promise<readonly SeatPosition[]> = invoke([
+      invocation({}),
+      invocation({
+        seat: { ...SEAT, id: 'sre', role: 'sre', lens: 'operability' },
+      }),
+    ]);
+    await settleMicrotasks();
+
+    expect(worktrees.requested).toEqual(['seat-security', 'seat-sre']);
+
+    worktrees.release('seat-sre');
+    await settleMicrotasks();
+    worktrees.release('seat-security');
+    const positions: readonly SeatPosition[] = await invoking;
+
+    expect(positions.map((p: SeatPosition): string => p.seat)).toEqual([
+      'security',
+      'sre',
+    ]);
+    const directories: Map<string, string> = new Map<string, string>(
+      seen.map((options: RunRoleOptions): [string, string] => [
+        options.roleName,
+        options.workingDirectory,
+      ]),
+    );
+    expect(directories.get('security')).toBe('/wt/seat-security');
+    expect(directories.get('sre')).toBe('/wt/seat-sre');
   });
 
   it('rejects a batch that would run two invocations in one worktree', async () => {

@@ -17,6 +17,11 @@ export class WorktreePool {
     }
     const created: Promise<Worktree> = this.provisioner.create(instanceId);
     this.pooled.set(instanceId, created);
+    void created.catch((): void => {
+      if (this.pooled.get(instanceId) === created) {
+        this.pooled.delete(instanceId);
+      }
+    });
     return created;
   }
 

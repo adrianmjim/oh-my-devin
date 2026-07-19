@@ -24,6 +24,45 @@ class GitRunner implements CommandRunner {
   }
 }
 
+interface PendingRun {
+  readonly invocation: CommandInvocation;
+  readonly resolve: (result: CommandResult) => void;
+  readonly reject: (reason: Error) => void;
+}
+
+class ManualGitRunner implements CommandRunner {
+  public readonly started: CommandInvocation[] = [];
+  private readonly pending: PendingRun[] = [];
+
+  public run(invocation: CommandInvocation): Promise<CommandResult> {
+    this.started.push(invocation);
+    return new Promise<CommandResult>(
+      (
+        resolve: (result: CommandResult) => void,
+        reject: (reason: Error) => void,
+      ): void => {
+        this.pending.push({ invocation, resolve, reject });
+      },
+    );
+  }
+
+  public succeedNext(): void {
+    const next: PendingRun | undefined = this.pending.shift();
+    next?.resolve({ stdout: '', stderr: '', exitCode: 0 });
+  }
+
+  public failNext(): void {
+    const next: PendingRun | undefined = this.pending.shift();
+    next?.reject(new Error('git crashed'));
+  }
+}
+
+function settleMicrotasks(): Promise<void> {
+  return new Promise<void>((resolve: () => void): void => {
+    setImmediate(resolve);
+  });
+}
+
 const BASE = '/repo';
 
 describe('WorktreeManager', () => {
@@ -56,6 +95,51 @@ describe('WorktreeManager', () => {
     const manager = new WorktreeManager(runner, BASE);
 
     await expect(manager.create('x-0')).rejects.toThrow(WorktreeError);
+  });
+
+  it('serializes concurrent create calls so their git work never overlaps', async () => {
+    const runner = new ManualGitRunner();
+    const manager = new WorktreeManager(runner, BASE);
+
+    const first: Promise<Worktree> = manager.create('a-0');
+    const second: Promise<Worktree> = manager.create('b-0');
+    await settleMicrotasks();
+
+    expect(runner.started).toHaveLength(1);
+    expect(runner.started[0]?.args).toContain('/repo/.omd/worktrees/a-0');
+
+    runner.succeedNext();
+    await settleMicrotasks();
+
+    expect(runner.started).toHaveLength(2);
+    expect(runner.started[1]?.args).toContain('/repo/.omd/worktrees/b-0');
+
+    runner.succeedNext();
+    const worktrees: readonly Worktree[] = await Promise.all([first, second]);
+    expect(worktrees.map((w: Worktree): string => w.instanceId)).toEqual([
+      'a-0',
+      'b-0',
+    ]);
+  });
+
+  it('keeps creating after a failed create and still rejects the failed caller', async () => {
+    const runner = new ManualGitRunner();
+    const manager = new WorktreeManager(runner, BASE);
+
+    const first: Promise<Worktree> = manager.create('a-0');
+    await settleMicrotasks();
+    runner.failNext();
+
+    await expect(first).rejects.toThrow('git crashed');
+
+    const second: Promise<Worktree> = manager.create('b-0');
+    await settleMicrotasks();
+
+    expect(runner.started).toHaveLength(2);
+    runner.succeedNext();
+
+    const worktree: Worktree = await second;
+    expect(worktree.instanceId).toBe('b-0');
   });
 
   it('captures the instance changes as a staged diff', async () => {
