@@ -18,6 +18,12 @@
       "description": "Major updates: one PR per dependency, reviewed and merged by hand, never automerged.",
       "matchUpdateTypes": ["major"],
       "automerge": false
+    },
+    {
+      "description": "typescript stays on 5.x: TypeScript 7 breaks the eslint toolchain, so major updates are disabled.",
+      "matchPackageNames": ["typescript"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
     }
   ]
 }
