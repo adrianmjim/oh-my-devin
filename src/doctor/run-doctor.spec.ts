@@ -45,7 +45,7 @@ describe('runDoctor', () => {
   it('runs a fixed inventory of five checks', async () => {
     const report: DoctorReport = await runDoctor({
       runner: new DoctorRunner(HEALTHY),
-      nodeVersion: '22.13.0',
+      nodeVersion: '22.14.0',
     });
     expect(report.checks).toHaveLength(5);
   });
@@ -53,7 +53,7 @@ describe('runDoctor', () => {
   it('passes every check and exits 0 in a healthy environment', async () => {
     const report: DoctorReport = await runDoctor({
       runner: new DoctorRunner(HEALTHY),
-      nodeVersion: '22.13.0',
+      nodeVersion: '22.14.0',
     });
     expect(
       report.checks.every((c: CheckResult): boolean => c.outcome === 'pass'),
@@ -119,7 +119,7 @@ describe('runDoctor', () => {
   it('fails the node check on a major that meets but a minor that misses the floor', async () => {
     const report: DoctorReport = await runDoctor({
       runner: new DoctorRunner(HEALTHY),
-      nodeVersion: '22.12.0',
+      nodeVersion: '22.13.0',
     });
     expect(outcomeOf(report, 'node-runtime')).toBe('fail');
     expect(report.exitCode).not.toBe(0);

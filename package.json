@@ -10,7 +10,7 @@
   "type": "module",
   "packageManager": "pnpm@11.15.1",
   "engines": {
-    "node": ">=22.13"
+    "node": ">=22.14"
   },
   "bin": {
     "omd": "dist/cli.js"

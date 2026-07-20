@@ -13,7 +13,7 @@ import type { DoctorReport } from './doctor-report';
 
 const PINNED_DEVIN_VERSION: string = '3000.1.27';
 const MIN_NODE_MAJOR: number = 22;
-const MIN_NODE_MINOR: number = 13;
+const MIN_NODE_MINOR: number = 14;
 const VERSION_PATTERN: RegExp = /(\d+\.\d+\.\d+)/;
 
 const PROBE_ROLE: RoleDefinition = {

@@ -12,7 +12,7 @@ Early implementation.
 
 ## Requirements
 
-- Node.js >= 22.13
+- Node.js >= 22.14
 - pnpm (development only — see below)
 
 ## Development
