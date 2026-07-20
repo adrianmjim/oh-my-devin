@@ -12,7 +12,8 @@ import type { DoctorDependencies } from './doctor-dependencies';
 import type { DoctorReport } from './doctor-report';
 
 const PINNED_DEVIN_VERSION: string = '3000.1.27';
-const MIN_NODE_MAJOR: number = 20;
+const MIN_NODE_MAJOR: number = 22;
+const MIN_NODE_MINOR: number = 13;
 const VERSION_PATTERN: RegExp = /(\d+\.\d+\.\d+)/;
 
 const PROBE_ROLE: RoleDefinition = {
@@ -180,12 +181,18 @@ async function headlessSurfaceCheck(
 }
 
 function nodeRuntimeCheck(nodeVersion: string): CheckResult {
-  const major: number = Number.parseInt(nodeVersion.split('.')[0] ?? '', 10);
-  if (Number.isNaN(major) || major < MIN_NODE_MAJOR) {
+  const parts: readonly string[] = nodeVersion.split('.');
+  const major: number = Number.parseInt(parts[0] ?? '', 10);
+  const parsedMinor: number = Number.parseInt(parts[1] ?? '', 10);
+  const minor: number = Number.isNaN(parsedMinor) ? 0 : parsedMinor;
+  const belowFloor: boolean =
+    major < MIN_NODE_MAJOR ||
+    (major === MIN_NODE_MAJOR && minor < MIN_NODE_MINOR);
+  if (Number.isNaN(major) || belowFloor) {
     return {
       name: 'node-runtime',
       outcome: 'fail',
-      message: `Node.js ${nodeVersion} is below the required ${MIN_NODE_MAJOR}`,
+      message: `Node.js ${nodeVersion} is below the required ${MIN_NODE_MAJOR}.${MIN_NODE_MINOR}`,
     };
   }
   return {
