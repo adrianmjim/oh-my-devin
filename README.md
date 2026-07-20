@@ -13,13 +13,18 @@ Early implementation.
 ## Requirements
 
 - Node.js >= 20
+- pnpm (development only — see below)
 
 ## Development
 
+Development, build, and test run on pnpm at the version pinned in
+`package.json`. No lockfile is committed, so every install resolves from the
+manifest's exact pins.
+
 ```bash
-npm install
-npm test        # unit suite (runs against a devin stub; never spends Devin quota)
-npm run build   # compile src/ to dist/
+pnpm install
+pnpm test        # unit suite (runs against a devin stub; never spends Devin quota)
+pnpm build       # compile src/ to dist/
 ```
 
 ## Contributing

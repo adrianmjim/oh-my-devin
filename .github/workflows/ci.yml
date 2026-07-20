@@ -18,21 +18,21 @@ jobs:
     steps:
       - uses: actions/checkout@v7.0.0
       - uses: ./.github/actions/setup
-      - run: npm run lint
+      - run: pnpm lint
 
   format:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7.0.0
       - uses: ./.github/actions/setup
-      - run: npm run format:check
+      - run: pnpm format:check
 
   typecheck:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7.0.0
       - uses: ./.github/actions/setup
-      - run: npm run typecheck
+      - run: pnpm typecheck
 
   test:
     runs-on: ubuntu-latest
@@ -45,14 +45,14 @@ jobs:
       - uses: ./.github/actions/setup
         with:
           node-version: ${{ matrix.node-version }}
-      - run: npm test
+      - run: pnpm test
 
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7.0.0
       - uses: ./.github/actions/setup
-      - run: npm run build
+      - run: pnpm build
 
   ci-success:
     name: CI success
