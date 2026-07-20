@@ -8,7 +8,7 @@
     "url": "git+https://github.com/adrianmjim/oh-my-devin.git"
   },
   "type": "module",
-  "packageManager": "pnpm@11.15.1",
+  "packageManager": "pnpm@10.34.5",
   "engines": {
     "node": ">=20"
   },
