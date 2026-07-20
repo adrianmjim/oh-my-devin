@@ -45,7 +45,7 @@ describe('runDoctor', () => {
   it('runs a fixed inventory of five checks', async () => {
     const report: DoctorReport = await runDoctor({
       runner: new DoctorRunner(HEALTHY),
-      nodeVersion: '20.11.0',
+      nodeVersion: '22.14.0',
     });
     expect(report.checks).toHaveLength(5);
   });
@@ -53,7 +53,7 @@ describe('runDoctor', () => {
   it('passes every check and exits 0 in a healthy environment', async () => {
     const report: DoctorReport = await runDoctor({
       runner: new DoctorRunner(HEALTHY),
-      nodeVersion: '22.0.0',
+      nodeVersion: '22.14.0',
     });
     expect(
       report.checks.every((c: CheckResult): boolean => c.outcome === 'pass'),
@@ -64,7 +64,7 @@ describe('runDoctor', () => {
   it('fails and exits non-zero when the devin executable is missing', async () => {
     const report: DoctorReport = await runDoctor({
       runner: new DoctorRunner((): 'throw' => 'throw'),
-      nodeVersion: '20.0.0',
+      nodeVersion: '24.0.0',
     });
     expect(outcomeOf(report, 'devin-cli')).toBe('fail');
     expect(report.exitCode).not.toBe(0);
@@ -78,7 +78,7 @@ describe('runDoctor', () => {
     };
     const report: DoctorReport = await runDoctor({
       runner: new DoctorRunner(drift),
-      nodeVersion: '20.0.0',
+      nodeVersion: '24.0.0',
     });
     expect(outcomeOf(report, 'devin-version')).toBe('warn');
     expect(report.exitCode).toBe(0);
@@ -92,7 +92,7 @@ describe('runDoctor', () => {
     };
     const report: DoctorReport = await runDoctor({
       runner: new DoctorRunner(badList),
-      nodeVersion: '20.0.0',
+      nodeVersion: '24.0.0',
     });
     expect(outcomeOf(report, 'headless-surface')).toBe('fail');
     expect(report.exitCode).not.toBe(0);
@@ -107,6 +107,32 @@ describe('runDoctor', () => {
     expect(report.exitCode).not.toBe(0);
   });
 
+  it('fails the node check on a runtime that is no longer supported', async () => {
+    const report: DoctorReport = await runDoctor({
+      runner: new DoctorRunner(HEALTHY),
+      nodeVersion: '20.19.0',
+    });
+    expect(outcomeOf(report, 'node-runtime')).toBe('fail');
+    expect(report.exitCode).not.toBe(0);
+  });
+
+  it('fails the node check on a major that meets but a minor that misses the floor', async () => {
+    const report: DoctorReport = await runDoctor({
+      runner: new DoctorRunner(HEALTHY),
+      nodeVersion: '22.13.0',
+    });
+    expect(outcomeOf(report, 'node-runtime')).toBe('fail');
+    expect(report.exitCode).not.toBe(0);
+  });
+
+  it('passes the node check on a major above the floor with a lower minor', async () => {
+    const report: DoctorReport = await runDoctor({
+      runner: new DoctorRunner(HEALTHY),
+      nodeVersion: '24.0.0',
+    });
+    expect(outcomeOf(report, 'node-runtime')).toBe('pass');
+  });
+
   it('fails the agent-config probe when the CLI rejects the bundle', async () => {
     const rejectBundle: Respond = (inv: CommandInvocation): CommandResult => {
       if (inv.args.includes('--agent-config')) {
@@ -117,7 +143,7 @@ describe('runDoctor', () => {
     };
     const report: DoctorReport = await runDoctor({
       runner: new DoctorRunner(rejectBundle),
-      nodeVersion: '20.0.0',
+      nodeVersion: '24.0.0',
     });
     expect(outcomeOf(report, 'agent-config')).toBe('fail');
     expect(report.exitCode).not.toBe(0);

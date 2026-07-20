@@ -8,9 +8,9 @@
     "url": "git+https://github.com/adrianmjim/oh-my-devin.git"
   },
   "type": "module",
-  "packageManager": "pnpm@10.34.5",
+  "packageManager": "pnpm@11.15.1",
   "engines": {
-    "node": ">=20"
+    "node": ">=22.14"
   },
   "bin": {
     "omd": "dist/cli.js"
