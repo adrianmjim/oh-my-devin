@@ -8,9 +8,9 @@
       "pinDigests": false
     },
     {
-      "description": "Non-major updates (patch + minor): grouped into a single PR and automerged once CI is green. typescript is excluded so its bumps get their own, manually reviewed PR (a minor TS release can surface new type errors).",
+      "description": "Non-major updates (patch + minor): grouped into a single PR and automerged once CI is green. typescript is excluded so its bumps get their own, manually reviewed PR (a minor TS release can surface new type errors). pnpm is excluded because the packageManager pin is the toolchain that resolves and installs everything else: a green run on the new pnpm would be the only evidence validating the bump to pnpm itself.",
       "matchUpdateTypes": ["patch", "minor"],
-      "matchPackageNames": ["!typescript"],
+      "matchPackageNames": ["!typescript", "!pnpm"],
       "groupName": "non-major dependencies",
       "automerge": true
     },

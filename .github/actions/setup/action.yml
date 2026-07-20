@@ -1,5 +1,5 @@
 name: Setup
-description: Install Node.js with the npm cache and run npm ci.
+description: Install pnpm and Node.js with the pnpm store cache, then install dependencies.
 
 inputs:
   node-version:
@@ -9,9 +9,11 @@ inputs:
 runs:
   using: composite
   steps:
+    - uses: pnpm/action-setup@v6.0.9
     - uses: actions/setup-node@v7.0.0
       with:
         node-version: ${{ inputs.node-version }}
-        cache: npm
-    - run: npm ci
+        cache: pnpm
+        cache-dependency-path: package.json
+    - run: pnpm install
       shell: bash
