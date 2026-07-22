@@ -53,11 +53,10 @@ function dedupeObjections(
       objection.severity,
       objection.concern,
     ]);
-    if (seen.has(key)) {
-      continue;
+    if (!seen.has(key)) {
+      seen.add(key);
+      unique.push(objection);
     }
-    seen.add(key);
-    unique.push(objection);
   }
   return unique;
 }

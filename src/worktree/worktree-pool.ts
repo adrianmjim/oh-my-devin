@@ -29,13 +29,15 @@ export class WorktreePool {
     const pending: readonly Promise<Worktree>[] = [...this.pooled.values()];
     this.pooled.clear();
     for (const creation of pending) {
-      let worktree: Worktree;
+      let worktree: Worktree | null;
       try {
         worktree = await creation;
       } catch {
-        continue;
+        worktree = null;
       }
-      await this.provisioner.remove(worktree);
+      if (worktree !== null) {
+        await this.provisioner.remove(worktree);
+      }
     }
   }
 }

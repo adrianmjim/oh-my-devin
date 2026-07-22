@@ -149,21 +149,21 @@ function parseTransition(
     }
     if (key === 'then') {
       then = target;
-      continue;
+    } else {
+      const match: RegExpExecArray | null = OUTCOME_KEY.exec(key);
+      if (match === null) {
+        throw new TeamDefinitionError(
+          `workflow stage "${from}" has an unrecognized transition key "${key}"`,
+        );
+      }
+      const outcome: string = match[1] ?? '';
+      if (!isWorkflowOutcome(outcome)) {
+        throw new TeamDefinitionError(
+          `workflow stage "${from}" declares an unknown outcome in key "${key}" (expected: on_passed, on_blocked, on_bankrupt)`,
+        );
+      }
+      outcomes.push({ outcome, to: target });
     }
-    const match: RegExpExecArray | null = OUTCOME_KEY.exec(key);
-    if (match === null) {
-      throw new TeamDefinitionError(
-        `workflow stage "${from}" has an unrecognized transition key "${key}"`,
-      );
-    }
-    const outcome: string = match[1] ?? '';
-    if (!isWorkflowOutcome(outcome)) {
-      throw new TeamDefinitionError(
-        `workflow stage "${from}" declares an unknown outcome in key "${key}" (expected: on_passed, on_blocked, on_bankrupt)`,
-      );
-    }
-    outcomes.push({ outcome, to: target });
   }
   return { from, then, outcomes };
 }

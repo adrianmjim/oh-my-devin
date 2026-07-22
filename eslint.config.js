@@ -31,6 +31,8 @@ export default tseslint.config(
           ],
         },
       ],
+      'no-continue': 'error',
+      'no-useless-return': 'error',
       '@typescript-eslint/no-inferrable-types': 'off',
       '@typescript-eslint/restrict-template-expressions': [
         'error',

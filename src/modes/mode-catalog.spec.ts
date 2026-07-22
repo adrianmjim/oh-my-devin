@@ -41,21 +41,19 @@ describe('MODE_CATALOG', () => {
 
   it('instructs every stateful mode to set its state through the CLI on activation', () => {
     for (const skill of MODE_CATALOG) {
-      if (skill.name === 'deep-dive') {
-        continue;
+      if (skill.name !== 'deep-dive') {
+        expect(skill.content).toContain('On activation, run:');
+        expect(skill.content).toContain(`omd mode set ${skill.name}`);
       }
-      expect(skill.content).toContain('On activation, run:');
-      expect(skill.content).toContain(`omd mode set ${skill.name}`);
     }
   });
 
   it('instructs every stateful mode to clear its state through the CLI once criteria are met', () => {
     for (const skill of MODE_CATALOG) {
-      if (skill.name === 'deep-dive') {
-        continue;
+      if (skill.name !== 'deep-dive') {
+        expect(skill.content).toContain('Once the criteria are met, run:');
+        expect(skill.content).toContain('omd mode clear');
       }
-      expect(skill.content).toContain('Once the criteria are met, run:');
-      expect(skill.content).toContain('omd mode clear');
     }
   });
 

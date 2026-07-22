@@ -74,33 +74,25 @@ function parseCouncilRun(rest: readonly string[]): CliCommand {
         team = value;
       }
       index += 1;
-      continue;
-    }
-    if (arg.startsWith(PROPOSAL_PREFIX)) {
+    } else if (arg.startsWith(PROPOSAL_PREFIX)) {
       const value: string = arg.slice(PROPOSAL_PREFIX.length);
       if (value.length === 0) {
         throw new UsageError(usage);
       }
       proposal = value;
-      continue;
-    }
-    if (arg.startsWith(THEN_PREFIX)) {
+    } else if (arg.startsWith(THEN_PREFIX)) {
       const value: string = arg.slice(THEN_PREFIX.length);
       if (value.length === 0) {
         throw new UsageError(usage);
       }
       team = value;
-      continue;
-    }
-    if (arg === '--sign') {
+    } else if (arg === '--sign') {
       sign = true;
-      continue;
-    }
-    if (arg === '--json') {
+    } else if (arg === '--json') {
       json = true;
-      continue;
+    } else {
+      throw new UsageError(usage);
     }
-    throw new UsageError(usage);
   }
   return { kind: 'council-run', council, question, proposal, team, sign, json };
 }
@@ -135,17 +127,15 @@ function parsePluginBuild(rest: readonly string[]): CliCommand {
       }
       out = value;
       index += 1;
-      continue;
-    }
-    if (arg.startsWith(OUT_PREFIX)) {
+    } else if (arg.startsWith(OUT_PREFIX)) {
       const value: string = arg.slice(OUT_PREFIX.length);
       if (value.length === 0) {
         throw new UsageError(usage);
       }
       out = value;
-      continue;
+    } else {
+      throw new UsageError(usage);
     }
-    throw new UsageError(usage);
   }
   return { kind: 'plugin-build', out };
 }

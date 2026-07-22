@@ -17,21 +17,20 @@ export async function detectEchoes(
     const members: readonly SeatArgument[] = group
       .filter((index: number): boolean => index >= 0 && index < args.length)
       .map((index: number): SeatArgument => requireArgument(args[index]));
-    if (members.length === 0) {
-      continue;
-    }
-    const seats: string[] = [];
-    for (const member of members) {
-      if (!seats.includes(member.seat)) {
-        seats.push(member.seat);
+    if (members.length > 0) {
+      const seats: string[] = [];
+      for (const member of members) {
+        if (!seats.includes(member.seat)) {
+          seats.push(member.seat);
+        }
       }
+      clusters.push({
+        id: `${idPrefix}-cluster-${clusters.length}`,
+        claim: requireArgument(members[0]).claim,
+        endorsements: seats.length,
+        seats,
+      });
     }
-    clusters.push({
-      id: `${idPrefix}-cluster-${clusters.length}`,
-      claim: requireArgument(members[0]).claim,
-      endorsements: seats.length,
-      seats,
-    });
   }
   return clusters;
 }

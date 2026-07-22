@@ -65,11 +65,11 @@ export async function setupLayer(
   const selected: ReadonlySet<LayerComponent> = new Set(
     scope ?? ALL_LAYER_COMPONENTS,
   );
+  const filesToWrite: readonly LayerFile[] = LAYER_FILES.filter(
+    (file: LayerFile): boolean => selected.has(file.component),
+  );
   const writtenPaths: string[] = [];
-  for (const file of LAYER_FILES) {
-    if (!selected.has(file.component)) {
-      continue;
-    }
+  for (const file of filesToWrite) {
     const absolutePath: string = join(targetDir, file.relativePath);
     await mkdir(dirname(absolutePath), { recursive: true });
     await writeFile(absolutePath, file.content, 'utf8');
