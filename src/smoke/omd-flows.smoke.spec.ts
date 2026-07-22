@@ -57,7 +57,7 @@ function runOmd(cwd: string, argv: readonly string[]): Promise<CommandResult> {
       });
       child.on('error', reject);
       child.on('close', (code: number | null): void => {
-        resolvePromise({ stdout, stderr, exitCode: code ?? 0 });
+        resolvePromise({ stdout, stderr, exitCode: code ?? 1 });
       });
       child.stdin.end();
     },

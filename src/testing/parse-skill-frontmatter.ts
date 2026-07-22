@@ -21,8 +21,10 @@ function optionalStringArray(value: unknown, field: string): readonly string[] {
     throw new SkillFrontmatterError(`"${field}" must be a list of strings`);
   }
   return value.map((item: unknown, index: number): string => {
-    if (typeof item !== 'string') {
-      throw new SkillFrontmatterError(`"${field}[${index}]" must be a string`);
+    if (typeof item !== 'string' || item.trim().length === 0) {
+      throw new SkillFrontmatterError(
+        `"${field}[${index}]" must be a non-empty string`,
+      );
     }
     return item;
   });
@@ -48,7 +50,14 @@ export function parseSkillFrontmatter(skill: string): SkillFrontmatter {
   }
 
   const frontmatterText: string = match[1] ?? '';
-  const parsed: unknown = parseYaml(frontmatterText);
+  let parsed: unknown;
+  try {
+    parsed = parseYaml(frontmatterText);
+  } catch (error) {
+    throw new SkillFrontmatterError(
+      `skill frontmatter is not valid YAML: ${String(error)}`,
+    );
+  }
   if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
     throw new SkillFrontmatterError('skill frontmatter must be a mapping');
   }

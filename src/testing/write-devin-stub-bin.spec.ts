@@ -60,7 +60,7 @@ describe('writeDevinStubBin', () => {
         });
         child.on('error', reject);
         child.on('close', (code: number | null): void => {
-          resolve({ stdout, stderr, exitCode: code ?? 0 });
+          resolve({ stdout, stderr, exitCode: code ?? 1 });
         });
       },
     );
@@ -156,5 +156,16 @@ describe('writeDevinStubBin', () => {
       command: 'devin',
       args: ['--resume', 'sX', '-p', 'second'],
     });
+  });
+
+  it('treats a turn whose prompt is exactly "list" as a turn, not a list call', async () => {
+    await writeScript({
+      turns: [turn('answered')],
+      listResponse: turn('SHOULD-NOT-BE-USED'),
+    });
+
+    const result: StubRun = await runStub(['-p', 'list']);
+
+    expect(result.stdout).toBe('answered');
   });
 });

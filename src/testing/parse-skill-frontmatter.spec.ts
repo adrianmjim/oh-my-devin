@@ -102,4 +102,36 @@ describe('parseSkillFrontmatter', () => {
       SkillFrontmatterError,
     );
   });
+
+  it('rejects an empty string inside a string list', () => {
+    const emptyTrigger: string = [
+      '---',
+      'name: broken',
+      'description: A skill with an empty trigger.',
+      'triggers:',
+      '  - ""',
+      '---',
+      '',
+      'body',
+    ].join('\n');
+
+    expect(() => parseSkillFrontmatter(emptyTrigger)).toThrow(
+      SkillFrontmatterError,
+    );
+  });
+
+  it('wraps malformed YAML in a SkillFrontmatterError', () => {
+    const malformed: string = [
+      '---',
+      'name: broken',
+      'triggers: [unclosed',
+      '---',
+      '',
+      'body',
+    ].join('\n');
+
+    expect(() => parseSkillFrontmatter(malformed)).toThrow(
+      SkillFrontmatterError,
+    );
+  });
 });
