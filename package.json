@@ -23,6 +23,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "test:e2e": "pnpm build && vitest run --config vitest.e2e.config.ts",
     "test:smoke": "pnpm build && vitest run --config vitest.smoke.config.ts",
     "lint": "eslint .",
@@ -33,6 +34,7 @@
   "devDependencies": {
     "@eslint/js": "10.0.1",
     "@types/node": "24.13.3",
+    "@vitest/coverage-v8": "4.1.10",
     "eslint": "10.7.0",
     "eslint-config-prettier": "10.1.8",
     "prettier": "3.9.5",
