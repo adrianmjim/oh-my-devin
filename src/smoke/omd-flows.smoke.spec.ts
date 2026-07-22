@@ -64,71 +64,73 @@ function runOmd(cwd: string, argv: readonly string[]): Promise<CommandResult> {
   );
 }
 
-describe.runIf(smokeEnabled)("omd's own flows smoke suite", () => {
-  let scratchDir: string;
-
-  beforeAll(async () => {
-    scratchDir = await mkdtemp(join(tmpdir(), 'omd-flows-smoke-'));
-  });
-
-  afterAll(async () => {
-    await rm(scratchDir, { recursive: true, force: true });
-  });
-
-  it('runs only when OMD_SMOKE=1 is set', () => {
+describe("omd's own flows smoke suite", () => {
+  it('requires OMD_SMOKE=1 to run the smoke tier', () => {
     expect(smokeEnabled).toBe(true);
   });
 
-  it(
-    'installs the in-session layer into a scratch project',
-    async () => {
-      const result: CommandResult = await runOmd(scratchDir, ['setup']);
-      expect(result.exitCode, result.stderr).toBe(0);
-      expect(await exists(join(scratchDir, 'AGENTS.md'))).toBe(true);
-      expect(
-        await exists(
-          join(scratchDir, '.devin', 'skills', 'omd-delegate', 'SKILL.md'),
-        ),
-      ).toBe(true);
-      expect(
-        await exists(
-          join(scratchDir, '.devin', 'agents', 'reviewer', 'AGENT.md'),
-        ),
-      ).toBe(true);
-    },
-    SETUP_TIMEOUT_MS,
-  );
+  describe.runIf(smokeEnabled)('against the installed Devin CLI', () => {
+    let scratchDir: string;
 
-  it(
-    'probes the delegation hinge headlessly against the real CLI',
-    async () => {
-      const result: CommandResult = await runOmd(scratchDir, [
-        'run',
-        'reviewer',
-        'Reply with the single word ok. Do not modify any files.',
-        '--json',
-      ]);
-      const report: JsonReport = JSON.parse(result.stdout) as JsonReport;
-      expect(report.role).toBe('reviewer');
-      expect(report.turnsUsed).toBeGreaterThanOrEqual(1);
-    },
-    RUN_TIMEOUT_MS,
-  );
+    beforeAll(async () => {
+      scratchDir = await mkdtemp(join(tmpdir(), 'omd-flows-smoke-'));
+    });
 
-  it(
-    'completes one real single-role run roundtrip',
-    async () => {
-      const result: CommandResult = await runOmd(scratchDir, [
-        'run',
-        'reviewer',
-        'Assess the empty diff and write {"verdict":"approve"} to review.json.',
-        '--json',
-      ]);
-      const report: JsonReport = JSON.parse(result.stdout) as JsonReport;
-      expect(report.role).toBe('reviewer');
-      expect(report.exitCode).toBe(result.exitCode);
-      expect(['success', 'failure']).toContain(report.outcome);
-    },
-    RUN_TIMEOUT_MS,
-  );
+    afterAll(async () => {
+      await rm(scratchDir, { recursive: true, force: true });
+    });
+
+    it(
+      'installs the in-session layer into a scratch project',
+      async () => {
+        const result: CommandResult = await runOmd(scratchDir, ['setup']);
+        expect(result.exitCode, result.stderr).toBe(0);
+        expect(await exists(join(scratchDir, 'AGENTS.md'))).toBe(true);
+        expect(
+          await exists(
+            join(scratchDir, '.devin', 'skills', 'omd-delegate', 'SKILL.md'),
+          ),
+        ).toBe(true);
+        expect(
+          await exists(
+            join(scratchDir, '.devin', 'agents', 'reviewer', 'AGENT.md'),
+          ),
+        ).toBe(true);
+      },
+      SETUP_TIMEOUT_MS,
+    );
+
+    it(
+      'probes the delegation hinge headlessly against the real CLI',
+      async () => {
+        const result: CommandResult = await runOmd(scratchDir, [
+          'run',
+          'reviewer',
+          'Reply with the single word ok. Do not modify any files.',
+          '--json',
+        ]);
+        const report: JsonReport = JSON.parse(result.stdout) as JsonReport;
+        expect(report.role).toBe('reviewer');
+        expect(report.turnsUsed).toBeGreaterThanOrEqual(1);
+      },
+      RUN_TIMEOUT_MS,
+    );
+
+    it(
+      'completes one real single-role run roundtrip',
+      async () => {
+        const result: CommandResult = await runOmd(scratchDir, [
+          'run',
+          'reviewer',
+          'Assess the empty diff and write {"verdict":"approve"} to review.json.',
+          '--json',
+        ]);
+        const report: JsonReport = JSON.parse(result.stdout) as JsonReport;
+        expect(report.role).toBe('reviewer');
+        expect(report.exitCode).toBe(result.exitCode);
+        expect(['success', 'failure']).toContain(report.outcome);
+      },
+      RUN_TIMEOUT_MS,
+    );
+  });
 });

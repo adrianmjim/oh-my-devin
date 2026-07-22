@@ -102,9 +102,6 @@ describe('emitted skill verification', () => {
 
   it('instructs only omd commands the shipped CLI accepts', () => {
     for (const skill of EMITTED_SKILLS) {
-      if (NON_NORMATIVE_MODES.has(skill.name)) {
-        continue;
-      }
       for (const argv of extractInstructedCommands(skill.content)) {
         expect(
           () => parseCliArgs(argv),
