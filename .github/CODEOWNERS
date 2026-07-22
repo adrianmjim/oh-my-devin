@@ -1,0 +1,18 @@
+# CODEOWNERS
+#
+# These owners are the default reviewers for everything in the repo. They are
+# automatically requested for review when someone opens a pull request.
+# Order matters: the last matching pattern takes precedence.
+#
+# Docs: https://docs.github.com/articles/about-code-owners
+
+# Default owner for everything in the repo.
+*                       @adrianmjim
+
+# CI, automation and repo configuration.
+/.github/               @adrianmjim
+
+# Legal: license, contributor agreement and contributing guide.
+/LICENSE                @adrianmjim
+/CLA.md                 @adrianmjim
+/CONTRIBUTING.md        @adrianmjim
