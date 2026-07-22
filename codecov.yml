@@ -8,6 +8,13 @@ coverage:
       default:
         target: 80%
 comment:
-  layout: 'header, diff, files'
+  layout: 'header, diff, flags, components, files'
   behavior: default
   require_changes: false
+flag_management:
+  default_rules:
+    carryforward: true
+  individual_flags:
+    - name: unit
+      paths:
+        - src/
