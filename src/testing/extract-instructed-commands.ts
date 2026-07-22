@@ -25,10 +25,10 @@ export function extractInstructedCommands(
   skill: string,
 ): readonly (readonly string[])[] {
   const commands: (readonly string[])[] = [];
-  for (const line of skill.split('\n')) {
-    if (!COMMAND_LINE_PATTERN.test(line)) {
-      continue;
-    }
+  const commandLines: readonly string[] = skill
+    .split('\n')
+    .filter((line: string): boolean => COMMAND_LINE_PATTERN.test(line));
+  for (const line of commandLines) {
     const tokens: readonly string[] = tokenize(line.trim());
     commands.push(tokens.slice(1).map(substitute));
   }

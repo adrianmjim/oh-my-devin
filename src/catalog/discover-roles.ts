@@ -20,24 +20,26 @@ export async function discoverRoles(baseDir: string): Promise<RoleDiscovery> {
   const roles: RoleDefinition[] = [];
   const errors: RoleDiscoveryError[] = [];
 
-  for (const entry of entries) {
-    if (!entry.isDirectory()) {
-      continue;
-    }
+  const directories: Dirent[] = entries.filter((entry: Dirent): boolean =>
+    entry.isDirectory(),
+  );
+  for (const entry of directories) {
     const name: string = entry.name;
-    let content: string;
+    let content: string | null;
     try {
       content = await readFile(roleDefinitionPath(baseDir, name), 'utf8');
     } catch {
-      continue;
+      content = null;
     }
-    try {
-      roles.push(parseRoleDefinition(content, name));
-    } catch (error: unknown) {
-      errors.push({
-        name,
-        message: error instanceof Error ? error.message : 'parse error',
-      });
+    if (content !== null) {
+      try {
+        roles.push(parseRoleDefinition(content, name));
+      } catch (error: unknown) {
+        errors.push({
+          name,
+          message: error instanceof Error ? error.message : 'parse error',
+        });
+      }
     }
   }
 

@@ -51,13 +51,14 @@ describe('emitted skill verification', () => {
 
   it('carries the Exec(omd) allowance on every contractual-lane skill', () => {
     for (const skill of EMITTED_SKILLS) {
-      if (skill.lane !== 'contractual') {
-        continue;
+      if (skill.lane === 'contractual') {
+        const frontmatter: SkillFrontmatter = parseSkillFrontmatter(
+          skill.content,
+        );
+        expect(frontmatter.permissions?.allow, skill.name).toContain(
+          'Exec(omd)',
+        );
       }
-      const frontmatter: SkillFrontmatter = parseSkillFrontmatter(
-        skill.content,
-      );
-      expect(frontmatter.permissions?.allow, skill.name).toContain('Exec(omd)');
     }
   });
 

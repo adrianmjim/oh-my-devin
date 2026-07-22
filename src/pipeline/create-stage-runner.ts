@@ -59,10 +59,9 @@ function composePrompt(request: StageRequest): string {
     sections.push(requirements);
   }
   for (const [name, content] of request.inputs) {
-    if (name === 'requirements') {
-      continue;
+    if (name !== 'requirements') {
+      sections.push(`## ${name}\n${content}`);
     }
-    sections.push(`## ${name}\n${content}`);
   }
   return sections.join('\n\n');
 }
