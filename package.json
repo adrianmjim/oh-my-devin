@@ -23,6 +23,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
+    "test:e2e": "pnpm build && vitest run --config vitest.e2e.config.ts",
     "test:smoke": "vitest run --config vitest.smoke.config.ts",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
