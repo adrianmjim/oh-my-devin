@@ -18,3 +18,51 @@ flag_management:
     - name: unit
       paths:
         - src/
+component_management:
+  individual_components:
+    - component_id: artifact
+      paths: [src/artifact/**]
+    - component_id: budget
+      paths: [src/budget/**]
+    - component_id: catalog
+      paths: [src/catalog/**]
+    - component_id: cli
+      paths: [src/cli/**]
+    - component_id: contract
+      paths: [src/contract/**]
+    - component_id: council
+      paths: [src/council/**]
+    - component_id: deliberation
+      paths: [src/deliberation/**]
+    - component_id: doctor
+      paths: [src/doctor/**]
+    - component_id: engine
+      paths: [src/engine/**]
+    - component_id: handoff
+      paths: [src/handoff/**]
+    - component_id: io
+      paths: [src/io/**]
+    - component_id: modes
+      paths: [src/modes/**]
+    - component_id: outcome
+      paths: [src/outcome/**]
+    - component_id: parallel
+      paths: [src/parallel/**]
+    - component_id: pipeline
+      paths: [src/pipeline/**]
+    - component_id: plugin
+      paths: [src/plugin/**]
+    - component_id: repair
+      paths: [src/repair/**]
+    - component_id: role
+      paths: [src/role/**]
+    - component_id: run
+      paths: [src/run/**]
+    - component_id: session
+      paths: [src/session/**]
+    - component_id: setup
+      paths: [src/setup/**]
+    - component_id: team
+      paths: [src/team/**]
+    - component_id: worktree
+      paths: [src/worktree/**]
