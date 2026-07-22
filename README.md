@@ -35,8 +35,8 @@ OMD_SMOKE=1 pnpm test:smoke   # gated smoke tier — real Devin CLI, spends Devi
 `omd` has three test tiers; the default `pnpm test` run spends no Devin quota
 and executes no e2e or smoke file:
 
-- **Unit** — colocated `*.spec.ts`, run in-process against an injectable devin
-  stub. `pnpm test` runs this tier and excludes the e2e and smoke files.
+- **Unit** — colocated `*.spec.ts` files, run in-process against an injectable
+  devin stub. `pnpm test` runs this tier and excludes the e2e and smoke files.
 - **End-to-end** — `*.e2e.spec.ts`, run by `pnpm test:e2e`, which rebuilds
   `dist/` first and then drives the shipped `omd` binary as a subprocess
   against an on-`PATH` executable devin stub. Black-box and quota-free.

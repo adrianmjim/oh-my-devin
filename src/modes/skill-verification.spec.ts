@@ -114,7 +114,7 @@ describe('emitted skill verification', () => {
     }
   });
 
-  it('instructs plan and verify only to set and clear their mode through the CLI', () => {
+  it('instructs plan and verify to set and clear their mode through the CLI', () => {
     for (const name of NON_NORMATIVE_MODES) {
       const commands: readonly (readonly string[])[] =
         extractInstructedCommands(emitted(name).content);

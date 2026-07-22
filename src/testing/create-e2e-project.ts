@@ -75,6 +75,12 @@ export async function createE2eProject(): Promise<E2eProject> {
         child.on('close', (code: number | null): void => {
           resolvePromise({ stdout, stderr, exitCode: code ?? 0 });
         });
+        child.stdin.on('error', (error: Error): void => {
+          const streamError: NodeJS.ErrnoException = error;
+          if (streamError.code !== 'EPIPE') {
+            reject(error);
+          }
+        });
         const lines: readonly string[] = options?.stdin ?? [];
         for (const line of lines) {
           child.stdin.write(`${line}\n`);
