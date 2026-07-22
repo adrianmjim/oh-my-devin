@@ -7,7 +7,11 @@ import {
 export default defineConfig({
   test: {
     include: ['src/**/*.spec.ts'],
-    exclude: [...configDefaults.exclude, 'src/**/*.smoke.spec.ts'],
+    exclude: [
+      ...configDefaults.exclude,
+      'src/**/*.smoke.spec.ts',
+      'src/**/*.e2e.spec.ts',
+    ],
     environment: 'node',
     reporters: ['default', 'junit'],
     outputFile: { junit: './test-results/junit.xml' },
