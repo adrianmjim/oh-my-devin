@@ -68,9 +68,10 @@ jobs:
           files: ./coverage/cobertura-coverage.xml
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
-        uses: codecov/test-results-action@v1.2.1
+        uses: codecov/codecov-action@v5.5.5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+          report-type: test_results
           files: ./test-results/junit.xml
 
   ci-success:
