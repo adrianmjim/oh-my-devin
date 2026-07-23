@@ -40,6 +40,16 @@ describe('parseCliArgs', () => {
     expect(parseCliArgs(['--version']).kind).toBe('version');
   });
 
+  it('treats --version as the version command only when it leads the arguments', () => {
+    expect(parseCliArgs(['run', 'reviewer', 'assess', '--version']).kind).toBe(
+      'run',
+    );
+  });
+
+  it('rejects --version accompanied by further arguments', () => {
+    expect(() => parseCliArgs(['--version', 'doctor'])).toThrow(UsageError);
+  });
+
   it('parses the doctor command', () => {
     expect(parseCliArgs(['doctor']).kind).toBe('doctor');
   });
