@@ -483,4 +483,20 @@ describe('runRole', () => {
 
     expect(recorder.closeCount).toBe(1);
   });
+
+  it('records a failing terminal outcome when the engine turn exits nonzero', async () => {
+    await scaffold(8);
+    const recorder = new RecordingObserver();
+
+    await expect(runWithRecorder([{ exitCode: 1 }], recorder)).rejects.toThrow(
+      EngineError,
+    );
+
+    expect(recorder.types()).toContain('terminalOutcome');
+    const terminal = recorder.events.at(-1);
+    expect(terminal?.type === 'terminalOutcome' && terminal.succeeded).toBe(
+      false,
+    );
+    expect(recorder.closeCount).toBe(1);
+  });
 });

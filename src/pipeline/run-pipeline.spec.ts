@@ -514,4 +514,28 @@ describe('runPipeline observability', () => {
       'invalid_artifact',
     );
   });
+
+  it('records a failing terminal outcome when a stage runner throws', async () => {
+    const gate = new RecordingGate([]);
+    const observer = new RecordingObserver();
+
+    await expect(
+      runPipeline({
+        team: team(),
+        task: 'build the widget',
+        runStage: (): Promise<StageResult> =>
+          Promise.reject(new Error('stage boom')),
+        gate: gate.decide,
+        observer,
+        clock: (): number => 1000,
+      }),
+    ).rejects.toThrow('stage boom');
+
+    expect(observer.types()).toContain('terminalOutcome');
+    const terminal = observer.events.at(-1);
+    expect(terminal?.type === 'terminalOutcome' && terminal.succeeded).toBe(
+      false,
+    );
+    expect(observer.closeCount).toBe(1);
+  });
 });

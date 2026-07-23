@@ -13,12 +13,18 @@ export async function readJournal(
   }
   const events: ProgressEvent[] = [];
   for (const line of raw.split('\n')) {
-    if (line.trim() !== '') {
-      const parsed: unknown = JSON.parse(line);
-      if (isProgressEvent(parsed)) {
-        events.push(parsed);
-      }
+    const parsed: unknown = tryParseJson(line);
+    if (isProgressEvent(parsed)) {
+      events.push(parsed);
     }
   }
   return events;
+}
+
+function tryParseJson(line: string): unknown {
+  try {
+    return JSON.parse(line);
+  } catch {
+    return undefined;
+  }
 }

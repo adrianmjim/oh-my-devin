@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { mkdir } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { createInterface } from 'node:readline';
 import type { Interface } from 'node:readline';
@@ -45,6 +46,7 @@ import { renderSnapshotJson } from './observability/render-snapshot-json';
 import type { RunId } from './observability/run-id';
 import { RUN_ID_ENV } from './observability/run-id-env';
 import type { RunObserver } from './observability/run-observer';
+import { RunRecordPaths } from './observability/run-record-paths';
 import type { RunSnapshot } from './observability/run-snapshot';
 import { createProcessStageRunner } from './pipeline/create-process-stage-runner';
 import { createStdinGate } from './pipeline/create-stdin-gate';
@@ -126,6 +128,7 @@ async function dispatch(
       const runId: RunId = process.env[RUN_ID_ENV] ?? generateRunId();
       const clock = (): number => Date.now();
       const recorder: RunObserver = createRunRecorder(cwd, runId, clock);
+      await mkdir(new RunRecordPaths(cwd, runId).dir, { recursive: true });
       reportLaunchIdentity('omd run', runId, command.json);
       const report: RunReport = await runRole({
         roleName: command.role,
@@ -219,10 +222,11 @@ async function dispatch(
     case 'team-run': {
       const team: TeamDefinition = await loadTeamDefinition(cwd, command.team);
       const requirements: string | null = await readRequirements(cwd);
-      const reader: Interface = createInterface({ input: process.stdin });
       const runId: RunId = generateRunId();
       const clock = (): number => Date.now();
       const observer: RunObserver = createRunRecorder(cwd, runId, clock);
+      await mkdir(new RunRecordPaths(cwd, runId).dir, { recursive: true });
+      const reader: Interface = createInterface({ input: process.stdin });
       reportLaunchIdentity('omd team run', runId, command.json);
       try {
         const options: RunPipelineOptions = {

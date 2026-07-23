@@ -65,4 +65,16 @@ describe('readJournal', () => {
 
     expect(await readJournal(paths.journal)).toEqual([LAUNCHED, TURN]);
   });
+
+  it('skips a malformed trailing line instead of throwing', async () => {
+    const paths = new RunRecordPaths(base, 'run-torn');
+    await mkdir(dirname(paths.journal), { recursive: true });
+    await writeFile(
+      paths.journal,
+      `${JSON.stringify(LAUNCHED)}\n${JSON.stringify(TURN)}\n{"type":"termi`,
+      'utf8',
+    );
+
+    expect(await readJournal(paths.journal)).toEqual([LAUNCHED, TURN]);
+  });
 });

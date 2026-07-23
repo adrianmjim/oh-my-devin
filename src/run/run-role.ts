@@ -161,6 +161,14 @@ export async function runRole(options: RunRoleOptions): Promise<RunReport> {
       denyRule,
       repairAttempted,
     };
+  } catch (error: unknown) {
+    await recorder?.append({
+      type: 'terminalOutcome',
+      timestamp: options.clock(),
+      succeeded: false,
+      failureTier: null,
+    });
+    throw error;
   } finally {
     await rm(bundleDir, { recursive: true, force: true });
     recorder?.close();

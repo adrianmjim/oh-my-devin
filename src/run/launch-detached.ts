@@ -1,6 +1,6 @@
 import { spawn } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
-import { openSync } from 'node:fs';
+import { closeSync, openSync } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
 import { generateRunId } from '../observability/generate-run-id';
 import { RUN_ID_ENV } from '../observability/run-id-env';
@@ -20,16 +20,31 @@ export async function launchDetached(
   await mkdir(paths.dir, { recursive: true });
   const stdoutFd: number = openSync(paths.stdout, 'a');
   const stderrFd: number = openSync(paths.stderr, 'a');
-  const child: ChildProcess = spawn(
-    process.execPath,
-    [cliPath, 'run', roleName, task],
-    {
-      cwd: baseDir,
-      detached: true,
-      stdio: ['ignore', stdoutFd, stderrFd],
-      env: { ...process.env, [RUN_ID_ENV]: runId },
-    },
-  );
-  child.unref();
+  try {
+    await new Promise<void>(
+      (resolvePromise: () => void, reject: (error: Error) => void): void => {
+        const child: ChildProcess = spawn(
+          process.execPath,
+          [cliPath, 'run', roleName, task],
+          {
+            cwd: baseDir,
+            detached: true,
+            stdio: ['ignore', stdoutFd, stderrFd],
+            env: { ...process.env, [RUN_ID_ENV]: runId },
+          },
+        );
+        child.once('spawn', (): void => {
+          child.unref();
+          resolvePromise();
+        });
+        child.once('error', (error: Error): void => {
+          reject(error);
+        });
+      },
+    );
+  } finally {
+    closeSync(stdoutFd);
+    closeSync(stderrFd);
+  }
   return runId;
 }

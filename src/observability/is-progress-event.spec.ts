@@ -34,6 +34,8 @@ describe('isProgressEvent', () => {
 
   it('rejects an event whose timestamp is missing or non-numeric', () => {
     expect(isProgressEvent({ type: 'runLaunched' })).toBe(false);
-    expect(isProgressEvent({ type: 'runLaunched', timestamp: '1' })).toBe(false);
+    expect(isProgressEvent({ type: 'runLaunched', timestamp: '1' })).toBe(
+      false,
+    );
   });
 });

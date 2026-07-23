@@ -117,6 +117,9 @@ export async function runPipeline(
       current = successor;
       stageIndex += 1;
     }
+  } catch (error: unknown) {
+    await recordTerminal(observer, now(options), false, null);
+    throw error;
   } finally {
     observer?.close();
   }
