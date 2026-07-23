@@ -11,6 +11,7 @@ import {
   EXAMPLE_ROLE_SCHEMA,
   HOOKS_MAP,
   HOOK_SCRIPT,
+  INSTALL_SKILL,
   RULES_FILE,
 } from './setup-templates';
 
@@ -43,6 +44,11 @@ const LAYER_FILES: readonly LayerFile[] = [
   {
     relativePath: join('.devin', 'skills', 'omd-delegate', 'SKILL.md'),
     content: DELEGATION_SKILL,
+    component: 'skills',
+  },
+  {
+    relativePath: join('.devin', 'skills', 'omd-install', 'SKILL.md'),
+    content: INSTALL_SKILL,
     component: 'skills',
   },
   ...MODE_SKILL_FILES,

@@ -145,6 +145,10 @@ export function parseCliArgs(argv: readonly string[]): CliCommand {
     return { kind: 'help' };
   }
 
+  if (argv.includes('--version')) {
+    return { kind: 'version' };
+  }
+
   const command: string = argv[0] ?? '';
   const rest: readonly string[] = argv.slice(1);
   const positionals: readonly string[] = rest.filter(

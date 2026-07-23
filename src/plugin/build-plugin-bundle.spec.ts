@@ -26,11 +26,14 @@ describe('buildPluginBundle', () => {
     await rm(dir, { recursive: true, force: true });
   });
 
-  it('bundles the rules file, the delegation skill, and the six mode skills', async () => {
+  it('bundles the rules file, the delegation and installation skills, and the six mode skills', async () => {
     const result: PluginBundleResult = await buildPluginBundle(dir);
 
     expect(await exists(join(dir, 'AGENTS.md'))).toBe(true);
     expect(await exists(join(dir, 'skills', 'omd-delegate', 'SKILL.md'))).toBe(
+      true,
+    );
+    expect(await exists(join(dir, 'skills', 'omd-install', 'SKILL.md'))).toBe(
       true,
     );
     for (const skill of MODE_CATALOG) {
@@ -38,7 +41,7 @@ describe('buildPluginBundle', () => {
         true,
       );
     }
-    expect(result.writtenPaths.length).toBe(3 + MODE_CATALOG.length);
+    expect(result.writtenPaths.length).toBe(4 + MODE_CATALOG.length);
   });
 
   it('writes the .devin-plugin manifest naming the plugin', async () => {
@@ -58,6 +61,7 @@ describe('buildPluginBundle', () => {
       join('.devin-plugin', 'plugin.json'),
       'AGENTS.md',
       join('skills', 'omd-delegate', 'SKILL.md'),
+      join('skills', 'omd-install', 'SKILL.md'),
       ...MODE_CATALOG.map((skill) => join('skills', skill.name, 'SKILL.md')),
     ];
     expect([...result.writtenPaths].sort()).toEqual([...expected].sort());

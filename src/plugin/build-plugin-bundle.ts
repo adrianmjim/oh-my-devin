@@ -2,7 +2,11 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { MODE_CATALOG } from '../modes/mode-catalog';
 import type { ModeSkill } from '../modes/mode-skill';
-import { DELEGATION_SKILL, RULES_FILE } from '../setup/setup-templates';
+import {
+  DELEGATION_SKILL,
+  INSTALL_SKILL,
+  RULES_FILE,
+} from '../setup/setup-templates';
 import type { PluginBundleResult } from './plugin-bundle-result';
 
 interface BundleFile {
@@ -28,6 +32,10 @@ const BUNDLE_FILES: readonly BundleFile[] = [
   {
     relativePath: join('skills', 'omd-delegate', 'SKILL.md'),
     content: DELEGATION_SKILL,
+  },
+  {
+    relativePath: join('skills', 'omd-install', 'SKILL.md'),
+    content: INSTALL_SKILL,
   },
   ...MODE_SKILL_FILES,
 ];

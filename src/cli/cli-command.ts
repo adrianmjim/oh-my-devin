@@ -31,6 +31,10 @@ export interface HelpCommand {
   readonly kind: 'help';
 }
 
+export interface VersionCommand {
+  readonly kind: 'version';
+}
+
 export interface PluginBuildCommand {
   readonly kind: 'plugin-build';
   readonly out: string | null;
@@ -69,6 +73,7 @@ export type CliCommand =
   | RolesShowCommand
   | SetupCommand
   | HelpCommand
+  | VersionCommand
   | PluginBuildCommand
   | TeamRunCommand
   | CouncilRunCommand

@@ -28,6 +28,7 @@ import type { CliErrorRendering } from './cli/cli-error-rendering';
 import { parseCliArgs } from './cli/parse-cli-args';
 import { readProposalFile } from './cli/read-proposal-file';
 import { renderCliError } from './cli/render-cli-error';
+import { reportVersion } from './cli/report-version';
 import { runDoctor } from './doctor/run-doctor';
 import type { DoctorReport } from './doctor/doctor-report';
 import { ProcessCommandRunner } from './engine/process-command-runner';
@@ -71,6 +72,7 @@ const USAGE: string = [
   '  omd team run <team> "<task>"       Run a team pipeline (architect → executor → reviewer)',
   '  omd council run <c> "<question>"   Run a deliberation council [--proposal <path>] [--then <team>] [--sign] [--json]',
   '  omd mode <set|clear> [<mode>]      Set or clear the persistent mode state read by the session hooks',
+  '  omd --version                      Print the installed omd version',
   '',
 ].join('\n');
 
@@ -86,6 +88,9 @@ async function dispatch(
   switch (command.kind) {
     case 'help':
       write(process.stdout, USAGE);
+      return 0;
+    case 'version':
+      write(process.stdout, await reportVersion());
       return 0;
     case 'run': {
       const report: RunReport = await runRole({

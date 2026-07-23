@@ -36,6 +36,10 @@ describe('parseCliArgs', () => {
     expect(() => parseCliArgs(['run'])).toThrow(UsageError);
   });
 
+  it('returns the version command for --version', () => {
+    expect(parseCliArgs(['--version']).kind).toBe('version');
+  });
+
   it('parses the doctor command', () => {
     expect(parseCliArgs(['doctor']).kind).toBe('doctor');
   });

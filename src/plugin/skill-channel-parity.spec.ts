@@ -9,6 +9,7 @@ import { buildPluginBundle } from './build-plugin-bundle';
 
 const SHARED_SKILL_NAMES: readonly string[] = [
   'omd-delegate',
+  'omd-install',
   ...MODE_CATALOG.map((skill: ModeSkill): string => skill.name),
 ];
 
