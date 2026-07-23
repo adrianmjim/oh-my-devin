@@ -4,6 +4,7 @@ import type { StageRecord } from './stage-record';
 export function renderPipelineReport(report: PipelineReport): string {
   const lines: string[] = [
     `omd team run — ${report.outcome}`,
+    `run:  ${report.runId}`,
     `team: ${report.team}`,
     `task: ${report.task}`,
   ];

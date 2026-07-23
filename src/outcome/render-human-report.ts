@@ -24,6 +24,7 @@ export function renderHumanReport(report: RunReport): string {
   const outcome: string = report.failureTier === null ? 'success' : 'failure';
   return [
     `omd run — ${outcome}`,
+    `run:      ${report.runId}`,
     `role:     ${report.role}`,
     `task:     ${report.task}`,
     `engine:   ${report.engine}`,

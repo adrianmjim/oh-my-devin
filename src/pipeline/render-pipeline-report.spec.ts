@@ -12,6 +12,7 @@ describe('renderPipelineReport', () => {
       ]),
     );
 
+    expect(text).toContain('run-pipeline');
     expect(text).toContain('feature-team');
     expect(text).toContain('succeeded');
     expect(text).toContain('architect');

@@ -7,6 +7,7 @@ import type {
   RolesShowCommand,
   RunCommand,
   SetupCommand,
+  StatusCommand,
   TeamRunCommand,
 } from './cli-command';
 import { parseCliArgs } from './parse-cli-args';
@@ -34,6 +35,33 @@ describe('parseCliArgs', () => {
   it('rejects `run` without a task as a usage error', () => {
     expect(() => parseCliArgs(['run', 'reviewer'])).toThrow(UsageError);
     expect(() => parseCliArgs(['run'])).toThrow(UsageError);
+  });
+
+  it('defaults run to the blocking form and reads the --detach flag', () => {
+    const blocking = parseCliArgs(['run', 'reviewer', 'assess']);
+    expect((blocking as RunCommand).detach).toBe(false);
+
+    const detached = parseCliArgs(['run', 'reviewer', 'assess', '--detach']);
+    expect((detached as RunCommand).detach).toBe(true);
+    expect((detached as RunCommand).role).toBe('reviewer');
+    expect((detached as RunCommand).task).toBe('assess');
+  });
+
+  it('parses `status <run-id>` with the default text output', () => {
+    const command = parseCliArgs(['status', 'run-123']);
+    expect(command.kind).toBe('status');
+    const status = command as StatusCommand;
+    expect(status.runId).toBe('run-123');
+    expect(status.json).toBe(false);
+  });
+
+  it('parses the --json flag on status', () => {
+    const command = parseCliArgs(['status', 'run-123', '--json']);
+    expect((command as StatusCommand).json).toBe(true);
+  });
+
+  it('rejects `status` without a run id as a usage error', () => {
+    expect(() => parseCliArgs(['status'])).toThrow(UsageError);
   });
 
   it('parses the doctor command', () => {
@@ -136,6 +164,12 @@ describe('parseCliArgs', () => {
     expect(() => parseCliArgs(['team', 'run', 'feature-team'])).toThrow(
       UsageError,
     );
+  });
+
+  it('rejects a detached launch for team run as a usage error', () => {
+    expect(() =>
+      parseCliArgs(['team', 'run', 'feature-team', 'build it', '--detach']),
+    ).toThrow(UsageError);
   });
 
   it('rejects an unknown team subcommand', () => {

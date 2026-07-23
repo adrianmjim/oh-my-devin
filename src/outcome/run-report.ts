@@ -1,6 +1,8 @@
+import type { RunId } from '../observability/run-id';
 import type { FailureTier } from './failure-tier';
 
 export interface RunReport {
+  readonly runId: RunId;
   readonly role: string;
   readonly task: string;
   readonly engine: string;

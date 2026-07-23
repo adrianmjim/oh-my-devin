@@ -47,6 +47,7 @@ const PROPOSER: CouncilSeat = {
 
 function report(overrides: Partial<RunReport> = {}): RunReport {
   return {
+    runId: 'run-proposer',
     role: 'architect',
     task: 't',
     engine: 'devin-headless',

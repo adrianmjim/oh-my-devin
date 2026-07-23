@@ -6,6 +6,8 @@ import type { CommandInvocation } from '../engine/command-invocation';
 import type { CommandResult } from '../engine/command-result';
 import type { CommandRunner } from '../engine/command-runner';
 import { EngineError } from '../engine/engine-error';
+import type { ProgressEvent } from '../observability/progress-event';
+import type { RunObserver } from '../observability/run-observer';
 import type { RunReport } from '../outcome/run-report';
 import { runRole } from './run-role';
 import { UsageError } from './usage-error';
@@ -78,6 +80,24 @@ class ClockAdvancingRunner implements CommandRunner {
       this.advance();
     }
     return result;
+  }
+}
+
+class RecordingObserver implements RunObserver {
+  public readonly events: ProgressEvent[] = [];
+  public closeCount = 0;
+
+  public async append(event: ProgressEvent): Promise<void> {
+    this.events.push(event);
+    await Promise.resolve();
+  }
+
+  public close(): void {
+    this.closeCount += 1;
+  }
+
+  public types(): readonly string[] {
+    return this.events.map((event: ProgressEvent): string => event.type);
   }
 }
 
@@ -350,5 +370,117 @@ describe('runRole', () => {
     await expect(
       run([{ write: JSON.stringify({ verdict: 'pass' }) }]),
     ).rejects.toThrow(UsageError);
+  });
+
+  function runWithRecorder(
+    scripts: readonly TurnScript[],
+    recorder: RunObserver,
+  ): Promise<RunReport> {
+    return runRole({
+      roleName: 'reviewer',
+      task: 'assess the diff',
+      workingDirectory: dir,
+      model: null,
+      runner: new FakeRunner(artifactPath, scripts, dir),
+      clock: (): number => 0,
+      runId: 'run-fixed',
+      recorder,
+    });
+  }
+
+  it('records launch, turn, validation and terminal events for a happy-path run', async () => {
+    await scaffold(8);
+    const recorder = new RecordingObserver();
+    await runWithRecorder(
+      [{ write: JSON.stringify({ verdict: 'pass' }) }],
+      recorder,
+    );
+
+    expect(recorder.types()).toEqual([
+      'runLaunched',
+      'turnCompleted',
+      'artifactValidated',
+      'terminalOutcome',
+    ]);
+    const launched = recorder.events[0];
+    expect(launched?.type === 'runLaunched' && launched.runId).toBe(
+      'run-fixed',
+    );
+    const turn = recorder.events[1];
+    expect(turn?.type === 'turnCompleted' && turn.boundary).toBe('launch');
+    const terminal = recorder.events[3];
+    expect(terminal?.type === 'terminalOutcome' && terminal.succeeded).toBe(
+      true,
+    );
+  });
+
+  it('records a repair attempt and a resume turn on a repaired run', async () => {
+    await scaffold(8);
+    const recorder = new RecordingObserver();
+    await runWithRecorder(
+      [
+        { write: JSON.stringify({ verdict: 7 }) },
+        { write: JSON.stringify({ verdict: 'pass' }) },
+      ],
+      recorder,
+    );
+
+    expect(recorder.types()).toEqual([
+      'runLaunched',
+      'turnCompleted',
+      'artifactValidated',
+      'repairAttempted',
+      'turnCompleted',
+      'artifactValidated',
+      'terminalOutcome',
+    ]);
+    const resumeTurn = recorder.events[4];
+    expect(resumeTurn?.type === 'turnCompleted' && resumeTurn.boundary).toBe(
+      'resume',
+    );
+  });
+
+  it('records a failing terminal outcome carrying the failure tier', async () => {
+    await scaffold(1);
+    const recorder = new RecordingObserver();
+    await runWithRecorder(
+      [{ write: JSON.stringify({ verdict: 7 }) }],
+      recorder,
+    );
+
+    const terminal = recorder.events.at(-1);
+    expect(terminal?.type === 'terminalOutcome' && terminal.failureTier).toBe(
+      'budget',
+    );
+  });
+
+  it('embeds no engine payload or conversation content in any event', async () => {
+    await scaffold(8);
+    const recorder = new RecordingObserver();
+    await runWithRecorder(
+      [
+        {
+          write: JSON.stringify({ verdict: 'pass' }),
+          stdout: 'SECRET_TRANSCRIPT_MARKER',
+          stderr: 'SECRET_STDERR_MARKER',
+        },
+      ],
+      recorder,
+    );
+
+    const serialized: string = JSON.stringify(recorder.events);
+    expect(serialized).not.toContain('SECRET_TRANSCRIPT_MARKER');
+    expect(serialized).not.toContain('SECRET_STDERR_MARKER');
+  });
+
+  it('closes the observer once the run finishes', async () => {
+    await scaffold(8);
+    const recorder = new RecordingObserver();
+    await runWithRecorder(
+      [{ write: JSON.stringify({ verdict: 'pass' }) }],
+      recorder,
+    );
+
+    expect(recorder.closeCount).toBe(1);
   });
 });

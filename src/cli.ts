@@ -36,6 +36,16 @@ import { exitCodeForOutcome } from './outcome/exit-code-for-outcome';
 import { renderHumanReport } from './outcome/render-human-report';
 import { renderJsonReport } from './outcome/render-json-report';
 import type { RunReport } from './outcome/run-report';
+import { createRunRecorder } from './observability/create-run-recorder';
+import { generateRunId } from './observability/generate-run-id';
+import { LIVENESS_STALL_THRESHOLD_MS } from './observability/liveness-timing';
+import { loadRunSnapshot } from './observability/load-run-snapshot';
+import { renderSnapshotHuman } from './observability/render-snapshot-human';
+import { renderSnapshotJson } from './observability/render-snapshot-json';
+import type { RunId } from './observability/run-id';
+import { RUN_ID_ENV } from './observability/run-id-env';
+import type { RunObserver } from './observability/run-observer';
+import type { RunSnapshot } from './observability/run-snapshot';
 import { createProcessStageRunner } from './pipeline/create-process-stage-runner';
 import { createStdinGate } from './pipeline/create-stdin-gate';
 import { exitCodeForPipelineOutcome } from './pipeline/exit-code-for-pipeline-outcome';
@@ -49,8 +59,10 @@ import { ModeStateStore } from './modes/mode-state-store';
 import { resolveModeState } from './modes/resolve-mode-state';
 import { loadRoleDefinition } from './role/load-role-definition';
 import type { RoleDefinition } from './role/role-definition';
+import { launchDetached } from './run/launch-detached';
 import { runRole } from './run/run-role';
 import { UsageError } from './run/usage-error';
+import { validateRunInvocation } from './run/validate-run-invocation';
 import type { ModeState } from './setup/mode-state';
 import { setupLayer } from './setup/setup-layer';
 import type { SetupResult } from './setup/setup-result';
@@ -63,6 +75,7 @@ const USAGE: string = [
   '',
   'Usage:',
   '  omd run <role> "<task>" [--json]   Run a role against a task end to end',
+  '  omd status <run-id> [--json]       Show a bounded snapshot of a run',
   '  omd doctor                         Check the local runtime contract',
   '  omd roles list [--json]            List the project’s roles',
   '  omd roles show <role> [--json]     Show a role’s expanded contract',
@@ -78,6 +91,17 @@ function write(stream: NodeJS.WriteStream, text: string): void {
   stream.write(text.endsWith('\n') ? text : `${text}\n`);
 }
 
+function reportLaunchIdentity(
+  command: string,
+  runId: RunId,
+  json: boolean,
+): void {
+  write(
+    json ? process.stderr : process.stdout,
+    `${command} — launched (run ${runId})`,
+  );
+}
+
 async function dispatch(
   command: CliCommand,
   cwd: string,
@@ -88,13 +112,30 @@ async function dispatch(
       write(process.stdout, USAGE);
       return 0;
     case 'run': {
+      if (command.detach) {
+        const launchedId: RunId = await launchDetached(
+          cwd,
+          process.argv[1] ?? '',
+          command.role,
+          command.task,
+        );
+        write(process.stdout, launchedId);
+        return 0;
+      }
+      await validateRunInvocation(cwd, command.role, command.task);
+      const runId: RunId = process.env[RUN_ID_ENV] ?? generateRunId();
+      const clock = (): number => Date.now();
+      const recorder: RunObserver = createRunRecorder(cwd, runId, clock);
+      reportLaunchIdentity('omd run', runId, command.json);
       const report: RunReport = await runRole({
         roleName: command.role,
         task: command.task,
         workingDirectory: cwd,
         model: null,
         runner,
-        clock: (): number => Date.now(),
+        clock,
+        runId,
+        recorder,
       });
       write(
         process.stdout,
@@ -103,6 +144,21 @@ async function dispatch(
           : renderHumanReport(report),
       );
       return exitCodeForOutcome(report.failureTier);
+    }
+    case 'status': {
+      const snapshot: RunSnapshot = await loadRunSnapshot(
+        cwd,
+        command.runId,
+        Date.now(),
+        LIVENESS_STALL_THRESHOLD_MS,
+      );
+      write(
+        process.stdout,
+        command.json
+          ? JSON.stringify(renderSnapshotJson(snapshot))
+          : renderSnapshotHuman(snapshot),
+      );
+      return 0;
     }
     case 'doctor': {
       const report: DoctorReport = await runDoctor({
@@ -164,6 +220,10 @@ async function dispatch(
       const team: TeamDefinition = await loadTeamDefinition(cwd, command.team);
       const requirements: string | null = await readRequirements(cwd);
       const reader: Interface = createInterface({ input: process.stdin });
+      const runId: RunId = generateRunId();
+      const clock = (): number => Date.now();
+      const observer: RunObserver = createRunRecorder(cwd, runId, clock);
+      reportLaunchIdentity('omd team run', runId, command.json);
       try {
         const options: RunPipelineOptions = {
           team,
@@ -172,6 +232,9 @@ async function dispatch(
           gate: createStdinGate(reader, (text: string): void => {
             write(process.stdout, text);
           }),
+          runId,
+          observer,
+          clock,
           ...(requirements === null ? {} : { requirements }),
         };
         const report: PipelineReport = await runPipeline(options);

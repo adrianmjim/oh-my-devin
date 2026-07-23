@@ -117,6 +117,7 @@ const SEAT: CouncilSeat = {
 
 function report(overrides: Partial<RunReport> = {}): RunReport {
   return {
+    runId: 'run-seat',
     role: 'security',
     task: 't',
     engine: 'devin-headless',
