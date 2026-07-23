@@ -102,10 +102,12 @@ provision_node() {
   [ "$expected" = "$actual" ] ||
     fail "integrity check failed for ${tarball}"
   node_dir="${OMD_HOME}/node"
-  rm -rf "$node_dir"
-  mkdir -p "$node_dir"
-  tar -xzf "${tmp}/${tarball}" -C "$node_dir" --strip-components=1 ||
+  mkdir -p "${tmp}/node"
+  tar -xzf "${tmp}/${tarball}" -C "${tmp}/node" --strip-components=1 ||
     fail "failed to unpack the Node runtime"
+  rm -rf "$node_dir"
+  mkdir -p "$OMD_HOME"
+  mv "${tmp}/node" "$node_dir"
   rm -rf "$tmp"
   trap - EXIT
   npm_cmd="${node_dir}/bin/npm"

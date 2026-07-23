@@ -236,6 +236,23 @@ async function buildFakeNodeMirror(mirrorDir: string): Promise<string> {
   return `file://${mirrorDir}`;
 }
 
+async function buildCorruptNodeMirror(mirrorDir: string): Promise<string> {
+  const tarball: string = `node-${NODE_VERSION}-${platformOs()}-${platformArch()}.tar.gz`;
+  const versionDir: string = join(mirrorDir, NODE_VERSION);
+  await mkdir(versionDir, { recursive: true });
+  const tarPath: string = join(versionDir, tarball);
+  await writeFile(tarPath, 'not a gzip archive', 'utf8');
+  const digest: string = createHash('sha256')
+    .update(await readFile(tarPath))
+    .digest('hex');
+  await writeFile(
+    join(versionDir, 'SHASUMS256.txt'),
+    `${digest}  ${tarball}\n`,
+    'utf8',
+  );
+  return `file://${mirrorDir}`;
+}
+
 async function exists(path: string): Promise<boolean> {
   try {
     await access(path);
@@ -381,6 +398,27 @@ describe('install.sh (e2e)', () => {
 
     expect(run.exitCode).not.toBe(0);
     expect(run.stderr.toLowerCase()).toContain('download');
+    expect(await exists(join(sandbox.omdHome, 'bin', 'omd'))).toBe(false);
+  });
+
+  it('leaves no partial runtime when the Node tarball fails to unpack', async () => {
+    sandbox = await makeSandbox();
+    await writeExec(
+      join(sandbox.stubBin, 'node'),
+      belowFloorNodeStub('v18.20.0'),
+    );
+    await writeExec(join(sandbox.stubBin, 'npm'), NPM_STUB);
+    const mirror: string = await buildCorruptNodeMirror(
+      join(sandbox.root, 'mirror'),
+    );
+
+    const run: InstallerRun = await runInstaller(
+      baseEnv(sandbox, { OMD_NODE_MIRROR: mirror }),
+    );
+
+    expect(run.exitCode).not.toBe(0);
+    expect(run.stderr.toLowerCase()).toContain('unpack');
+    expect(await exists(join(sandbox.omdHome, 'node'))).toBe(false);
     expect(await exists(join(sandbox.omdHome, 'bin', 'omd'))).toBe(false);
   });
 
