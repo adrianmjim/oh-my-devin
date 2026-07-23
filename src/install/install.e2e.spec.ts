@@ -107,7 +107,12 @@ const NPM_STUB: string = [
   '  mkdir -p "$prefix/bin" "$prefix/lib/node_modules/oh-my-devin/dist"',
   '  cp "$OMD_CLI_SRC" "$prefix/lib/node_modules/oh-my-devin/dist/cli.js"',
   '  chmod +x "$prefix/lib/node_modules/oh-my-devin/dist/cli.js"',
-  '  ln -sf ../lib/node_modules/oh-my-devin/dist/cli.js "$prefix/bin/omd"',
+  '  if [ "${NPM_BIN_STYLE:-symlink}" = "file" ]; then',
+  '    cp "$OMD_CLI_SRC" "$prefix/bin/omd"',
+  '    chmod +x "$prefix/bin/omd"',
+  '  else',
+  '    ln -sf ../lib/node_modules/oh-my-devin/dist/cli.js "$prefix/bin/omd"',
+  '  fi',
   'fi',
   'exit 0',
   '',
@@ -344,6 +349,31 @@ describe('install.sh (e2e)', () => {
 
     const install: InstallerRun = await runInstaller(
       baseEnv(sandbox, { OMD_NODE_MIRROR: mirror }),
+    );
+    const fresh: InstallerRun = await runCommand(
+      join(sandbox.omdHome, 'bin', 'omd'),
+      ['--version'],
+      baseEnv(sandbox, {}),
+    );
+
+    expect(install.exitCode).toBe(0);
+    expect(fresh.exitCode).toBe(0);
+    expect(fresh.stdout.trim()).toBe('0.0.0-installed');
+  });
+
+  it('binds the provisioned runtime even when npm writes a regular-file shim', async () => {
+    sandbox = await makeSandbox();
+    await writeExec(
+      join(sandbox.stubBin, 'node'),
+      belowFloorNodeStub('v18.20.0'),
+    );
+    await writeExec(join(sandbox.stubBin, 'npm'), NPM_STUB);
+    const mirror: string = await buildFakeNodeMirror(
+      join(sandbox.root, 'mirror'),
+    );
+
+    const install: InstallerRun = await runInstaller(
+      baseEnv(sandbox, { OMD_NODE_MIRROR: mirror, NPM_BIN_STYLE: 'file' }),
     );
     const fresh: InstallerRun = await runCommand(
       join(sandbox.omdHome, 'bin', 'omd'),

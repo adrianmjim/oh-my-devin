@@ -120,12 +120,9 @@ provision_node() {
 pin_provisioned_runtime() {
   # Rewrite the npm bin shim as a wrapper bound to the provisioned Node, so a
   # fresh shell runs omd without resolving `node` from its own PATH.
-  entry=$(readlink "$omd_bin") ||
-    fail "could not resolve the installed omd entry behind ${omd_bin}"
-  case "$entry" in
-    /*) : ;;
-    *) entry="${OMD_HOME}/bin/${entry}" ;;
-  esac
+  entry="${OMD_HOME}/lib/node_modules/${PACKAGE}/dist/cli.js"
+  [ -f "$entry" ] ||
+    fail "could not locate the installed omd entry at ${entry}"
   rm -f "$omd_bin"
   printf '#!/bin/sh\nexec "%s" "%s" "$@"\n' "${node_dir}/bin/node" "$entry" \
     >"$omd_bin"
