@@ -20,6 +20,7 @@ NODE_MIRROR="${OMD_NODE_MIRROR:-https://nodejs.org/dist}"
 NODE_VERSION="${OMD_NODE_VERSION:-v22.14.0}"
 
 npm_cmd=""
+provisioned=""
 
 info() {
   echo "omd install: $1"
@@ -110,7 +111,23 @@ provision_node() {
   npm_cmd="${node_dir}/bin/npm"
   PATH="${node_dir}/bin:${PATH}"
   export PATH
+  provisioned="yes"
   [ -x "$npm_cmd" ] || fail "the provisioned Node runtime is missing npm"
+}
+
+pin_provisioned_runtime() {
+  # Rewrite the npm bin shim as a wrapper bound to the provisioned Node, so a
+  # fresh shell runs omd without resolving `node` from its own PATH.
+  entry=$(readlink "$omd_bin") ||
+    fail "could not resolve the installed omd entry behind ${omd_bin}"
+  case "$entry" in
+    /*) : ;;
+    *) entry="${OMD_HOME}/bin/${entry}" ;;
+  esac
+  rm -f "$omd_bin"
+  printf '#!/bin/sh\nexec "%s" "%s" "$@"\n' "${node_dir}/bin/node" "$entry" \
+    >"$omd_bin"
+  chmod +x "$omd_bin"
 }
 
 resolve_runtime() {
@@ -135,12 +152,18 @@ main() {
   resolve_runtime
 
   info "installing ${PACKAGE}"
-  "$npm_cmd" install -g --prefix "$OMD_HOME" "$PACKAGE" >/dev/null 2>&1 ||
+  if ! npm_output=$("$npm_cmd" install -g --prefix "$OMD_HOME" "$PACKAGE" 2>&1); then
+    printf '%s\n' "$npm_output" >&2
     fail "npm failed to install ${PACKAGE}"
+  fi
 
   omd_bin="${OMD_HOME}/bin/omd"
   [ -x "$omd_bin" ] ||
     fail "install completed but omd was not found at ${omd_bin}"
+
+  if [ -n "$provisioned" ]; then
+    pin_provisioned_runtime
+  fi
 
   version=$("$omd_bin" --version 2>/dev/null) ||
     fail "the installed omd could not report its version"

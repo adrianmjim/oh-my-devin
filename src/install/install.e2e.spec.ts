@@ -37,7 +37,7 @@ interface Sandbox {
   readonly stubBin: string;
   readonly npmLog: string;
   readonly omdInvokeLog: string;
-  readonly omdStubSrc: string;
+  readonly omdCliSrc: string;
 }
 
 type RunEnv = Record<string, string>;
@@ -69,7 +69,20 @@ function nodeStub(version: string): string {
     `  echo "${version}"`,
     '  exit 0',
     'fi',
-    'exit 0',
+    'exec "$REAL_NODE" "$@"',
+    '',
+  ].join('\n');
+}
+
+function belowFloorNodeStub(version: string): string {
+  return [
+    '#!/bin/sh',
+    'if [ "$1" = "--version" ]; then',
+    `  echo "${version}"`,
+    '  exit 0',
+    'fi',
+    'echo "SyntaxError: Unexpected token {" >&2',
+    'exit 1',
     '',
   ].join('\n');
 }
@@ -77,6 +90,10 @@ function nodeStub(version: string): string {
 const NPM_STUB: string = [
   '#!/bin/sh',
   'printf \'%s\\n\' "$*" >> "$NPM_LOG"',
+  'if [ -n "${NPM_FAIL_MESSAGE:-}" ]; then',
+  '  echo "$NPM_FAIL_MESSAGE" >&2',
+  '  exit 1',
+  'fi',
   'prefix=""',
   'pkg=""',
   'while [ $# -gt 0 ]; do',
@@ -86,22 +103,26 @@ const NPM_STUB: string = [
   '    *) pkg="$1"; shift ;;',
   '  esac',
   'done',
-  'if [ -n "$prefix" ] && [ -n "$pkg" ] && [ -n "${OMD_STUB_SRC:-}" ]; then',
-  '  mkdir -p "$prefix/bin"',
-  '  cp "$OMD_STUB_SRC" "$prefix/bin/omd"',
-  '  chmod +x "$prefix/bin/omd"',
+  'if [ -n "$prefix" ] && [ -n "$pkg" ] && [ -n "${OMD_CLI_SRC:-}" ]; then',
+  '  mkdir -p "$prefix/bin" "$prefix/lib/node_modules/oh-my-devin/dist"',
+  '  cp "$OMD_CLI_SRC" "$prefix/lib/node_modules/oh-my-devin/dist/cli.js"',
+  '  chmod +x "$prefix/lib/node_modules/oh-my-devin/dist/cli.js"',
+  '  ln -sf ../lib/node_modules/oh-my-devin/dist/cli.js "$prefix/bin/omd"',
   'fi',
   'exit 0',
   '',
 ].join('\n');
 
-const OMD_STUB: string = [
-  '#!/bin/sh',
-  'printf \'%s\\n\' "$*" >> "$OMD_INVOKE_LOG"',
-  'if [ "$1" = "--version" ]; then',
-  '  echo "0.0.0-installed"',
-  'fi',
-  'exit 0',
+const OMD_CLI: string = [
+  '#!/usr/bin/env node',
+  "const fs = require('node:fs');",
+  'fs.appendFileSync(',
+  '  process.env.OMD_INVOKE_LOG,',
+  "  process.argv.slice(2).join(' ') + '\\n',",
+  ');',
+  "if (process.argv[2] === '--version') {",
+  "  console.log('0.0.0-installed');",
+  '}',
   '',
 ].join('\n');
 
@@ -129,8 +150,8 @@ async function makeSandbox(): Promise<Sandbox> {
   const stubBin: string = join(root, 'stub-bin');
   await mkdir(home, { recursive: true });
   await mkdir(stubBin, { recursive: true });
-  const omdStubSrc: string = join(root, 'omd-stub.sh');
-  await writeExec(omdStubSrc, OMD_STUB);
+  const omdCliSrc: string = join(root, 'omd-cli.js');
+  await writeExec(omdCliSrc, OMD_CLI);
   return {
     root,
     home,
@@ -138,7 +159,7 @@ async function makeSandbox(): Promise<Sandbox> {
     stubBin,
     npmLog: join(root, 'npm.log'),
     omdInvokeLog: join(root, 'omd.log'),
-    omdStubSrc,
+    omdCliSrc,
   };
 }
 
@@ -152,24 +173,27 @@ function baseEnv(sandbox: Sandbox, extra: RunEnv): RunEnv {
     OMD_NODE_VERSION: NODE_VERSION,
     NPM_LOG: sandbox.npmLog,
     OMD_INVOKE_LOG: sandbox.omdInvokeLog,
-    OMD_STUB_SRC: sandbox.omdStubSrc,
+    OMD_CLI_SRC: sandbox.omdCliSrc,
+    REAL_NODE: process.execPath,
     SUDO_USER: '',
     SUDO_UID: '',
     ...extra,
   };
 }
 
-function runInstaller(env: RunEnv): Promise<InstallerRun> {
+function runCommand(
+  command: string,
+  args: readonly string[],
+  env: RunEnv,
+): Promise<InstallerRun> {
   return new Promise<InstallerRun>(
     (
       resolvePromise: (run: InstallerRun) => void,
       reject: (error: Error) => void,
     ): void => {
-      const child: ChildProcessWithoutNullStreams = spawn(
-        'sh',
-        [INSTALL_SCRIPT],
-        { env },
-      );
+      const child: ChildProcessWithoutNullStreams = spawn(command, [...args], {
+        env,
+      });
       let stdout: string = '';
       let stderr: string = '';
       child.stdout.on('data', (chunk: Buffer): void => {
@@ -184,6 +208,10 @@ function runInstaller(env: RunEnv): Promise<InstallerRun> {
       });
     },
   );
+}
+
+function runInstaller(env: RunEnv): Promise<InstallerRun> {
+  return runCommand('sh', [INSTALL_SCRIPT], env);
 }
 
 async function buildFakeNodeMirror(mirrorDir: string): Promise<string> {
@@ -256,7 +284,10 @@ describe('install.sh (e2e)', () => {
 
   it('provisions a user-local Node when the present one is below the floor, leaving it untouched', async () => {
     sandbox = await makeSandbox();
-    await writeExec(join(sandbox.stubBin, 'node'), nodeStub('v18.20.0'));
+    await writeExec(
+      join(sandbox.stubBin, 'node'),
+      belowFloorNodeStub('v18.20.0'),
+    );
     await writeExec(join(sandbox.stubBin, 'npm'), NPM_STUB);
     const mirror: string = await buildFakeNodeMirror(
       join(sandbox.root, 'mirror'),
@@ -281,6 +312,31 @@ describe('install.sh (e2e)', () => {
       { encoding: 'utf8' },
     ).trim();
     expect(stubNodeVersion).toBe('v18.20.0');
+  });
+
+  it('leaves an omd that runs from a fresh shell where the on-PATH Node stays below the floor', async () => {
+    sandbox = await makeSandbox();
+    await writeExec(
+      join(sandbox.stubBin, 'node'),
+      belowFloorNodeStub('v18.20.0'),
+    );
+    await writeExec(join(sandbox.stubBin, 'npm'), NPM_STUB);
+    const mirror: string = await buildFakeNodeMirror(
+      join(sandbox.root, 'mirror'),
+    );
+
+    const install: InstallerRun = await runInstaller(
+      baseEnv(sandbox, { OMD_NODE_MIRROR: mirror }),
+    );
+    const fresh: InstallerRun = await runCommand(
+      join(sandbox.omdHome, 'bin', 'omd'),
+      ['--version'],
+      baseEnv(sandbox, {}),
+    );
+
+    expect(install.exitCode).toBe(0);
+    expect(fresh.exitCode).toBe(0);
+    expect(fresh.stdout.trim()).toBe('0.0.0-installed');
   });
 
   it('refuses to run under sudo and installs nothing', async () => {
@@ -311,7 +367,10 @@ describe('install.sh (e2e)', () => {
 
   it('exits non-zero on a failed download, leaving no partially installed omd', async () => {
     sandbox = await makeSandbox();
-    await writeExec(join(sandbox.stubBin, 'node'), nodeStub('v18.20.0'));
+    await writeExec(
+      join(sandbox.stubBin, 'node'),
+      belowFloorNodeStub('v18.20.0'),
+    );
     await writeExec(join(sandbox.stubBin, 'npm'), NPM_STUB);
 
     const run: InstallerRun = await runInstaller(
@@ -322,6 +381,21 @@ describe('install.sh (e2e)', () => {
 
     expect(run.exitCode).not.toBe(0);
     expect(run.stderr.toLowerCase()).toContain('download');
+    expect(await exists(join(sandbox.omdHome, 'bin', 'omd'))).toBe(false);
+  });
+
+  it('surfaces the npm output when the registry install fails, leaving no omd', async () => {
+    sandbox = await makeSandbox();
+    await writeExec(join(sandbox.stubBin, 'node'), nodeStub(NODE_VERSION));
+    await writeExec(join(sandbox.stubBin, 'npm'), NPM_STUB);
+
+    const run: InstallerRun = await runInstaller(
+      baseEnv(sandbox, { NPM_FAIL_MESSAGE: 'npm ERR! code E403' }),
+    );
+
+    expect(run.exitCode).not.toBe(0);
+    expect(run.stderr).toContain('npm ERR! code E403');
+    expect(run.stderr).toContain('failed to install');
     expect(await exists(join(sandbox.omdHome, 'bin', 'omd'))).toBe(false);
   });
 });
