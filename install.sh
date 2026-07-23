@@ -89,7 +89,8 @@ provision_node() {
   tarball="node-${NODE_VERSION}-${plat_os}-${plat_arch}.tar.gz"
   url="${NODE_MIRROR}/${NODE_VERSION}/${tarball}"
   sums_url="${NODE_MIRROR}/${NODE_VERSION}/SHASUMS256.txt"
-  tmp=$(mktemp -d)
+  tmp=$(mktemp -d "${TMPDIR:-/tmp}/omd-install.XXXXXX") ||
+    fail "could not create a temporary directory for the Node download"
   trap 'rm -rf "$tmp"' EXIT
   download "$url" "${tmp}/${tarball}" ||
     fail "failed to download Node runtime from ${url}"

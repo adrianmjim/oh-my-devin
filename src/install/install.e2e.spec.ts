@@ -131,6 +131,13 @@ const OMD_CLI: string = [
   '',
 ].join('\n');
 
+const MKTEMP_FAIL_STUB: string = [
+  '#!/bin/sh',
+  'echo "mktemp: cannot create directory" >&2',
+  'exit 1',
+  '',
+].join('\n');
+
 const UNAME_UNSUPPORTED_STUB: string = [
   '#!/bin/sh',
   'case "$1" in',
@@ -428,6 +435,23 @@ describe('install.sh (e2e)', () => {
 
     expect(run.exitCode).not.toBe(0);
     expect(run.stderr.toLowerCase()).toContain('download');
+    expect(await exists(join(sandbox.omdHome, 'bin', 'omd'))).toBe(false);
+  });
+
+  it('fails clearly when no temporary directory can be created, leaving no omd', async () => {
+    sandbox = await makeSandbox();
+    await writeExec(
+      join(sandbox.stubBin, 'node'),
+      belowFloorNodeStub('v18.20.0'),
+    );
+    await writeExec(join(sandbox.stubBin, 'npm'), NPM_STUB);
+    await writeExec(join(sandbox.stubBin, 'mktemp'), MKTEMP_FAIL_STUB);
+
+    const run: InstallerRun = await runInstaller(baseEnv(sandbox, {}));
+
+    expect(run.exitCode).not.toBe(0);
+    expect(run.stderr).toContain('temporary directory');
+    expect(await exists(join(sandbox.omdHome, 'node'))).toBe(false);
     expect(await exists(join(sandbox.omdHome, 'bin', 'omd'))).toBe(false);
   });
 
