@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, utimes } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -46,12 +46,29 @@ describe('loadRunSnapshot', () => {
     const snapshot: RunSnapshot = await loadRunSnapshot(
       base,
       'run-booting',
-      10000,
+      Date.now(),
       THRESHOLD,
     );
 
     expect(snapshot.runId).toBe('run-booting');
     expect(snapshot.state).toBe('running');
+  });
+
+  it('ages a pre-journal record into stalled once the record dir goes cold', async () => {
+    const paths = new RunRecordPaths(base, 'run-dead-boot');
+    await mkdir(paths.dir, { recursive: true });
+    const cold: Date = new Date(Date.now() - THRESHOLD - 60000);
+    await utimes(paths.dir, cold, cold);
+
+    const snapshot: RunSnapshot = await loadRunSnapshot(
+      base,
+      'run-dead-boot',
+      Date.now(),
+      THRESHOLD,
+    );
+
+    expect(snapshot.state).toBe('stalled');
+    expect(snapshot.lastEventAt).toBeLessThan(Date.now() - THRESHOLD);
   });
 
   it('derives a running snapshot from a live run record', async () => {

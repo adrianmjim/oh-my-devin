@@ -101,6 +101,21 @@ class RecordingObserver implements RunObserver {
   }
 }
 
+class TerminalThrowingObserver implements RunObserver {
+  public closeCount = 0;
+
+  public async append(event: ProgressEvent): Promise<void> {
+    if (event.type === 'terminalOutcome') {
+      throw new Error('journal write failed');
+    }
+    await Promise.resolve();
+  }
+
+  public close(): void {
+    this.closeCount += 1;
+  }
+}
+
 describe('runRole', () => {
   let dir: string;
   let artifactPath: string;
@@ -497,6 +512,38 @@ describe('runRole', () => {
     expect(terminal?.type === 'terminalOutcome' && terminal.succeeded).toBe(
       false,
     );
+    expect(recorder.closeCount).toBe(1);
+  });
+
+  it('preserves the engine error when recording the terminal outcome fails', async () => {
+    await scaffold(8);
+    const recorder = new TerminalThrowingObserver();
+
+    await expect(runWithRecorder([{ exitCode: 1 }], recorder)).rejects.toThrow(
+      EngineError,
+    );
+
+    expect(recorder.closeCount).toBe(1);
+  });
+
+  it('closes the recorder without recording when the invocation is rejected', async () => {
+    await scaffold(8);
+    const recorder = new RecordingObserver();
+
+    await expect(
+      runRole({
+        roleName: 'reviewer',
+        task: '   ',
+        workingDirectory: dir,
+        model: null,
+        runner: new FakeRunner(artifactPath, [], dir),
+        clock: (): number => 0,
+        runId: 'run-fixed',
+        recorder,
+      }),
+    ).rejects.toThrow(UsageError);
+
+    expect(recorder.events).toHaveLength(0);
     expect(recorder.closeCount).toBe(1);
   });
 });

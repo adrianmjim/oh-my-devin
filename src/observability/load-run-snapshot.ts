@@ -1,6 +1,9 @@
+import type { Stats } from 'node:fs';
 import { stat } from 'node:fs/promises';
 import { UsageError } from '../run/usage-error';
 import { deriveSnapshot } from './derive-snapshot';
+import type { Liveness } from './liveness';
+import { deriveLiveness } from './liveness-verdict';
 import type { LivenessStamp } from './liveness-stamp';
 import type { ProgressEvent } from './progress-event';
 import { readJournal } from './read-journal';
@@ -20,8 +23,9 @@ export async function loadRunSnapshot(
     paths.journal,
   );
   if (events === null || events.length === 0) {
-    if (await directoryExists(paths.dir)) {
-      return launchingSnapshot(runId, now);
+    const recordedAt: number | null = await recordDirMtime(paths.dir);
+    if (recordedAt !== null) {
+      return launchingSnapshot(runId, recordedAt, now, thresholdMs);
     }
     throw new UsageError(`unknown run "${runId}"`);
   }
@@ -29,19 +33,26 @@ export async function loadRunSnapshot(
   return deriveSnapshot(events, stamp?.stampedAt ?? null, now, thresholdMs);
 }
 
-async function directoryExists(dir: string): Promise<boolean> {
+async function recordDirMtime(dir: string): Promise<number | null> {
   try {
-    return (await stat(dir)).isDirectory();
+    const stats: Stats = await stat(dir);
+    return stats.isDirectory() ? stats.mtimeMs : null;
   } catch {
-    return false;
+    return null;
   }
 }
 
-function launchingSnapshot(runId: RunId, now: number): RunSnapshot {
+function launchingSnapshot(
+  runId: RunId,
+  recordedAt: number,
+  now: number,
+  thresholdMs: number,
+): RunSnapshot {
+  const liveness: Liveness = deriveLiveness(recordedAt, now, thresholdMs);
   return {
     runId,
     runKind: 'single-role',
-    state: 'running',
+    state: liveness === 'stalled' ? 'stalled' : 'running',
     subject: '',
     currentStage: null,
     turnsUsed: 0,
@@ -50,6 +61,6 @@ function launchingSnapshot(runId: RunId, now: number): RunSnapshot {
     artifactValid: null,
     pendingGate: null,
     failureTier: null,
-    lastEventAt: now,
+    lastEventAt: recordedAt,
   };
 }

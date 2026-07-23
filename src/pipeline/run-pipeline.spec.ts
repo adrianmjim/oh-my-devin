@@ -11,6 +11,7 @@ import type { TeamDefinition } from '../team/team-definition';
 import { exitCodeForPipelineOutcome } from './exit-code-for-pipeline-outcome';
 import type { GateDecision } from './gate-decision';
 import type { GatePresentation } from './gate-presentation';
+import { PipelineError } from './pipeline-error';
 import type { PipelineReport } from './pipeline-report';
 import type { StageRequest } from './stage-request';
 import type { StageResult } from './stage-result';
@@ -151,6 +152,21 @@ class RecordingObserver implements RunObserver {
       (event: ProgressEvent): boolean => event.type === type,
     );
     return this.events.slice(0, index + 1);
+  }
+}
+
+class TerminalThrowingObserver implements RunObserver {
+  public closeCount = 0;
+
+  public async append(event: ProgressEvent): Promise<void> {
+    if (event.type === 'terminalOutcome') {
+      throw new Error('journal write failed');
+    }
+    await Promise.resolve();
+  }
+
+  public close(): void {
+    this.closeCount += 1;
   }
 }
 
@@ -532,6 +548,74 @@ describe('runPipeline observability', () => {
     ).rejects.toThrow('stage boom');
 
     expect(observer.types()).toContain('terminalOutcome');
+    const terminal = observer.events.at(-1);
+    expect(terminal?.type === 'terminalOutcome' && terminal.succeeded).toBe(
+      false,
+    );
+    expect(observer.closeCount).toBe(1);
+  });
+
+  it('preserves the stage error when recording the terminal outcome fails', async () => {
+    const gate = new RecordingGate([]);
+    const observer = new TerminalThrowingObserver();
+
+    await expect(
+      runPipeline({
+        team: team(),
+        task: 'build the widget',
+        runStage: (): Promise<StageResult> =>
+          Promise.reject(new Error('stage boom')),
+        gate: gate.decide,
+        observer,
+        clock: (): number => 1000,
+      }),
+    ).rejects.toThrow('stage boom');
+
+    expect(observer.closeCount).toBe(1);
+  });
+
+  it('records launch and a failing terminal outcome for a non-pipeline entry stage', async () => {
+    const analystYaml: string = [
+      'name: research-team',
+      'members:',
+      '  - role: analyst',
+      '    count: 1',
+      '  - role: executor',
+      '    count: 1',
+      'workflow:',
+      '  analyst:',
+      '    then: executor',
+      '  executor:',
+      '    on_passed: done',
+    ].join('\n');
+    const analystTeam: TeamDefinition = parseTeamDefinition(analystYaml, [
+      'analyst',
+      'executor',
+    ]);
+    const stages = new RecordingStages({});
+    const gate = new RecordingGate([]);
+    const observer = new RecordingObserver();
+
+    await expect(
+      runPipeline({
+        team: analystTeam,
+        task: 'analyze the widget',
+        runStage: stages.run,
+        gate: gate.decide,
+        runId: 'run-analyst',
+        observer,
+        clock: (): number => 1000,
+      }),
+    ).rejects.toThrow(PipelineError);
+
+    expect(observer.types()).toEqual(['runLaunched', 'terminalOutcome']);
+    const launched = observer.events[0];
+    expect(launched?.type === 'runLaunched' && launched.runKind).toBe(
+      'pipeline',
+    );
+    expect(launched?.type === 'runLaunched' && launched.subject).toBe(
+      'research-team',
+    );
     const terminal = observer.events.at(-1);
     expect(terminal?.type === 'terminalOutcome' && terminal.succeeded).toBe(
       false,

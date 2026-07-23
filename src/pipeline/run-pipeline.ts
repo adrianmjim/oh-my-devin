@@ -32,19 +32,19 @@ export async function runPipeline(
 
   const records: StageRecord[] = [];
   let stageIndex: number = 0;
-  let current: PipelineStage = entryStage(options.team);
-
-  await observer?.append({
-    type: 'runLaunched',
-    timestamp: now(options),
-    runId,
-    runKind: 'pipeline',
-    subject: options.team.name,
-    maxTurns: 0,
-    artifactPath: null,
-  });
 
   try {
+    await observer?.append({
+      type: 'runLaunched',
+      timestamp: now(options),
+      runId,
+      runKind: 'pipeline',
+      subject: options.team.name,
+      maxTurns: 0,
+      artifactPath: null,
+    });
+
+    let current: PipelineStage = entryStage(options.team);
     for (;;) {
       await observer?.append({
         type: 'stageStarted',
@@ -118,7 +118,9 @@ export async function runPipeline(
       stageIndex += 1;
     }
   } catch (error: unknown) {
-    await recordTerminal(observer, now(options), false, null);
+    await recordTerminal(observer, now(options), false, null).catch(
+      (): void => undefined,
+    );
     throw error;
   } finally {
     observer?.close();

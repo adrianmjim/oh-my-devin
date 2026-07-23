@@ -30,11 +30,17 @@ export async function runRole(options: RunRoleOptions): Promise<RunReport> {
   const runId: RunId = options.runId ?? generateRunId();
   const recorder: RunObserver | undefined = options.recorder;
 
-  const resolved: ResolvedRunInvocation = await resolveRunInvocation(
-    options.workingDirectory,
-    options.roleName,
-    options.task,
-  );
+  let resolved: ResolvedRunInvocation;
+  try {
+    resolved = await resolveRunInvocation(
+      options.workingDirectory,
+      options.roleName,
+      options.task,
+    );
+  } catch (error: unknown) {
+    recorder?.close();
+    throw error;
+  }
   const role: RoleDefinition = resolved.role;
   const schemaText: string = resolved.schemaText;
   const bundle: AgentConfigBundle = resolved.bundle;
@@ -162,12 +168,14 @@ export async function runRole(options: RunRoleOptions): Promise<RunReport> {
       repairAttempted,
     };
   } catch (error: unknown) {
-    await recorder?.append({
-      type: 'terminalOutcome',
-      timestamp: options.clock(),
-      succeeded: false,
-      failureTier: null,
-    });
+    await recorder
+      ?.append({
+        type: 'terminalOutcome',
+        timestamp: options.clock(),
+        succeeded: false,
+        failureTier: null,
+      })
+      .catch((): void => undefined);
     throw error;
   } finally {
     await rm(bundleDir, { recursive: true, force: true });
