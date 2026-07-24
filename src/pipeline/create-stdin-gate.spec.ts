@@ -10,6 +10,7 @@ import type { PipelineGate } from './pipeline-gate';
 
 function presentation(stage: PipelineStage): GatePresentation {
   const report: RunReport = {
+    runId: `run-${stage}`,
     role: stage,
     task: 't',
     engine: 'devin-headless',

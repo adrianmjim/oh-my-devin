@@ -5,6 +5,13 @@ export interface RunCommand {
   readonly role: string;
   readonly task: string;
   readonly json: boolean;
+  readonly detach: boolean;
+}
+
+export interface StatusCommand {
+  readonly kind: 'status';
+  readonly runId: string;
+  readonly json: boolean;
 }
 
 export interface DoctorCommand {
@@ -68,6 +75,7 @@ export interface ModeClearCommand {
 
 export type CliCommand =
   | RunCommand
+  | StatusCommand
   | DoctorCommand
   | RolesListCommand
   | RolesShowCommand

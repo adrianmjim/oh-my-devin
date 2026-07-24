@@ -1,7 +1,9 @@
+import type { RunId } from '../observability/run-id';
 import type { FailureTier } from './failure-tier';
 import type { RunOutcome } from './run-outcome';
 
 export interface JsonRunReport {
+  readonly runId: RunId;
   readonly role: string;
   readonly task: string;
   readonly engine: string;

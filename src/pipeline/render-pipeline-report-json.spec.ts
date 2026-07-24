@@ -13,6 +13,7 @@ describe('renderPipelineReportJson', () => {
       ]),
     );
 
+    expect(json.runId).toBe('run-pipeline');
     expect(json.team).toBe('feature-team');
     expect(json.outcome).toBe('succeeded');
     expect(json.exitCode).toBe(0);

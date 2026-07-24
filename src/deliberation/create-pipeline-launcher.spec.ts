@@ -54,6 +54,7 @@ describe('createPipelineLauncher', () => {
         requests.push(request);
         return Promise.resolve({
           report: {
+            runId: `run-${request.stage}`,
             role: request.stage,
             task: 't',
             engine: 'devin-headless',

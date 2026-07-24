@@ -4,6 +4,7 @@ import { renderHumanReport } from './render-human-report';
 
 function report(overrides: Partial<RunReport>): RunReport {
   return {
+    runId: 'run-human',
     role: 'reviewer',
     task: 'assess the diff',
     engine: 'devin',
@@ -24,6 +25,7 @@ function report(overrides: Partial<RunReport>): RunReport {
 describe('renderHumanReport', () => {
   it('names the role, task, engine, artifact path, session id, and turns used', () => {
     const text: string = renderHumanReport(report({}));
+    expect(text).toContain('run-human');
     expect(text).toContain('reviewer');
     expect(text).toContain('assess the diff');
     expect(text).toContain('devin');

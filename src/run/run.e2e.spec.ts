@@ -7,11 +7,16 @@ import { createE2eProject } from '../testing/create-e2e-project';
 import type { E2eProject } from '../testing/e2e-project';
 
 interface JsonReport {
+  readonly runId: string;
   readonly role: string;
   readonly outcome: string;
   readonly exitCode: number;
   readonly artifactValid: boolean;
   readonly failureTier: string | null;
+}
+
+function launchedRunId(text: string): string | null {
+  return /launched \(run ([^)]+)\)/.exec(text)?.[1] ?? null;
 }
 
 function turn(stdout: string): CommandResult {
@@ -99,5 +104,59 @@ describe('omd run (e2e)', () => {
     expect(report.exitCode).toBe(0);
     expect(report.artifactValid).toBe(true);
     expect(report.failureTier).toBeNull();
+  });
+
+  it('reports the run identity at launch and again in the human report', async () => {
+    project = await createE2eProject();
+    await project.run(['setup']);
+    await project.writeScript(ONE_TURN);
+    await writeValidArtifact(project.dir);
+
+    const result: CommandResult = await project.run([
+      'run',
+      'reviewer',
+      'review the diff',
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    const runId: string | null = launchedRunId(result.stdout);
+    expect(runId).not.toBeNull();
+    expect((runId ?? '').length).toBeGreaterThan(0);
+    expect(result.stdout).toContain(`run:      ${runId ?? ''}`);
+  });
+
+  it('carries the run identity in the --json report matching the launch notice', async () => {
+    project = await createE2eProject();
+    await project.run(['setup']);
+    await project.writeScript(ONE_TURN);
+    await writeValidArtifact(project.dir);
+
+    const result: CommandResult = await project.run([
+      'run',
+      'reviewer',
+      'review the diff',
+      '--json',
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    const report: JsonReport = JSON.parse(result.stdout) as JsonReport;
+    expect(report.runId.length).toBeGreaterThan(0);
+    expect(launchedRunId(result.stderr)).toBe(report.runId);
+  });
+
+  it('rejects an unresolvable role in the blocking form before printing an identity, exit 64', async () => {
+    project = await createE2eProject();
+    await project.run(['setup']);
+    await project.writeScript(ONE_TURN);
+
+    const result: CommandResult = await project.run([
+      'run',
+      'ghost',
+      'review the diff',
+    ]);
+
+    expect(result.exitCode).toBe(64);
+    expect(result.stderr).toContain('usage error');
+    expect(result.stdout).not.toContain('launched');
   });
 });

@@ -64,5 +64,6 @@ describe('omd usage and error rendering (e2e)', () => {
       'omd — an organizational layer over the Devin CLI',
     );
     expect(result.stdout).toContain('Usage:');
+    expect(result.stdout).toContain('[--detach]');
   });
 });

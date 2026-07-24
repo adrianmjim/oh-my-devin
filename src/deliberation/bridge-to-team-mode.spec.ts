@@ -41,6 +41,7 @@ interface Harness {
 function harness(): Harness {
   const requests: LaunchRequest[] = [];
   const pipeline: PipelineReport = {
+    runId: 'run-bridge',
     team: 'feature-team',
     task: 'modular-monolith',
     outcome: 'succeeded',

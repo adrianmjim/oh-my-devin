@@ -10,6 +10,7 @@ function stageReport(
   overrides: Partial<RunReport>,
 ): RunReport {
   return {
+    runId: `run-${stage}`,
     role: stage,
     task: 'build the widget',
     engine: 'devin-headless',
@@ -41,6 +42,7 @@ export function pipelineReport(
   haltedAt: PipelineStage | null = null,
 ): PipelineReport {
   return {
+    runId: 'run-pipeline',
     team: 'feature-team',
     task: 'build the widget',
     outcome,
