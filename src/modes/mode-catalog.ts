@@ -23,6 +23,8 @@ const SYNTHESIS_FALLBACK: readonly string[] = [
   '',
   '- Compose only from the roles `omd roles list --json` reports; never invent a',
   '  role.',
+  '- The pipeline executes only the fixed architect → executor → reviewer',
+  '  stages, so a synthesized team composes exactly those stages.',
   '- Never name the declaration `default`, and never overwrite an existing',
   '  declaration — choose a fresh name on any collision.',
   '- If the composition needs a role the catalog lacks, stop and report the',

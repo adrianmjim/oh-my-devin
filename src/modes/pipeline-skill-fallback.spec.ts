@@ -57,6 +57,14 @@ describe('pipeline skill fallback and synthesis directives', () => {
     }
   });
 
+  it('constrains synthesis to the fixed pipeline stages', () => {
+    for (const name of PIPELINE_SKILLS) {
+      const lower: string = skill(name).content.toLowerCase();
+      expect(lower, name).toContain('executes only the fixed');
+      expect(lower, name).toContain('composes exactly those stages');
+    }
+  });
+
   it('offers keep-or-delete at the terminal outcome and exempts the default', () => {
     for (const name of PIPELINE_SKILLS) {
       const lower: string = skill(name).content.toLowerCase();
