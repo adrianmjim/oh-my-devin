@@ -42,6 +42,13 @@ describe('pipeline skill fallback and synthesis directives', () => {
     }
   });
 
+  it('derives the synthesized declaration name from the task text', () => {
+    for (const name of PIPELINE_SKILLS) {
+      const lower: string = skill(name).content.toLowerCase();
+      expect(lower, name).toContain('derived from the task');
+    }
+  });
+
   it('reports a missing role with a creation suggestion and never authors roles', () => {
     for (const name of PIPELINE_SKILLS) {
       const lower: string = skill(name).content.toLowerCase();
@@ -67,6 +74,9 @@ describe('pipeline skill fallback and synthesis directives', () => {
       expect(frontmatter.allowedTools, name).toContain('exec');
       expect(frontmatter.allowedTools, name).toContain('create');
       expect(frontmatter.allowedTools, name).toContain('edit');
+      expect(frontmatter.permissions?.allow, name).toContain(
+        'Write(.devin/teams/*.yaml)',
+      );
     }
   });
 });

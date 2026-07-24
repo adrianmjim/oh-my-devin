@@ -23,7 +23,7 @@ export const RULES_FILE: string = [
   '',
 ].join('\n');
 
-export const EXAMPLE_ROLE_AGENT_MD: string = [
+export const REVIEWER_ROLE_AGENT_MD: string = [
   '---',
   'name: reviewer',
   'description: Reviews a diff and writes a structured verdict.',
@@ -46,7 +46,7 @@ export const EXAMPLE_ROLE_AGENT_MD: string = [
   '',
 ].join('\n');
 
-export const EXAMPLE_ROLE_SCHEMA: string = `${JSON.stringify(
+export const REVIEWER_ROLE_SCHEMA: string = `${JSON.stringify(
   {
     $schema: 'http://json-schema.org/draft-07/schema#',
     type: 'object',

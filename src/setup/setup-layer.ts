@@ -10,13 +10,13 @@ import {
   ARCHITECT_ROLE_SCHEMA,
   DEFAULT_TEAM_YAML,
   DELEGATION_SKILL,
-  EXAMPLE_ROLE_AGENT_MD,
-  EXAMPLE_ROLE_SCHEMA,
   EXECUTOR_ROLE_AGENT_MD,
   EXECUTOR_ROLE_SCHEMA,
   HOOKS_MAP,
   HOOK_SCRIPT,
   INSTALL_SKILL,
+  REVIEWER_ROLE_AGENT_MD,
+  REVIEWER_ROLE_SCHEMA,
   RULES_FILE,
 } from './setup-templates';
 
@@ -58,12 +58,12 @@ const LAYER_FILES: readonly LayerFile[] = [
   },
   {
     relativePath: join('.devin', 'agents', 'reviewer', 'AGENT.md'),
-    content: EXAMPLE_ROLE_AGENT_MD,
+    content: REVIEWER_ROLE_AGENT_MD,
     component: 'roles',
   },
   {
     relativePath: join('.devin', 'schemas', 'review.schema.json'),
-    content: EXAMPLE_ROLE_SCHEMA,
+    content: REVIEWER_ROLE_SCHEMA,
     component: 'roles',
   },
   {
