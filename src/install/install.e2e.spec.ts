@@ -7,6 +7,7 @@ import {
   mkdir,
   mkdtemp,
   readFile,
+  readdir,
   rm,
   writeFile,
 } from 'node:fs/promises';
@@ -137,6 +138,22 @@ const MKTEMP_FAIL_STUB: string = [
   'exit 1',
   '',
 ].join('\n');
+
+const MV_CROSS_DEVICE_STUB: string = [
+  '#!/bin/sh',
+  'case "$1" in',
+  '  "$MV_FAIL_PREFIX"*)',
+  '    echo "mv: cannot move $1 across filesystems" >&2',
+  '    exit 1',
+  '    ;;',
+  'esac',
+  'exec "$REAL_MV" "$@"',
+  '',
+].join('\n');
+
+const REAL_MV: string = execFileSync('sh', ['-c', 'command -v mv'], {
+  encoding: 'utf8',
+}).trim();
 
 const UNAME_UNSUPPORTED_STUB: string = [
   '#!/bin/sh',
@@ -393,6 +410,43 @@ describe('install.sh (e2e)', () => {
     expect(fresh.stdout.trim()).toBe('0.0.0-installed');
   });
 
+  it('replaces an existing provisioned runtime even when the download area sits on another filesystem', async () => {
+    sandbox = await makeSandbox();
+    await writeExec(
+      join(sandbox.stubBin, 'node'),
+      belowFloorNodeStub('v18.20.0'),
+    );
+    await writeExec(join(sandbox.stubBin, 'npm'), NPM_STUB);
+    const mirror: string = await buildFakeNodeMirror(
+      join(sandbox.root, 'mirror'),
+    );
+    const downloadTmp: string = join(sandbox.root, 'download-tmp');
+    await mkdir(downloadTmp, { recursive: true });
+
+    const first: InstallerRun = await runInstaller(
+      baseEnv(sandbox, { OMD_NODE_MIRROR: mirror, TMPDIR: downloadTmp }),
+    );
+    await writeExec(join(sandbox.stubBin, 'mv'), MV_CROSS_DEVICE_STUB);
+    const second: InstallerRun = await runInstaller(
+      baseEnv(sandbox, {
+        OMD_NODE_MIRROR: mirror,
+        TMPDIR: downloadTmp,
+        MV_FAIL_PREFIX: downloadTmp,
+        REAL_MV,
+      }),
+    );
+    const fresh: InstallerRun = await runCommand(
+      join(sandbox.omdHome, 'bin', 'omd'),
+      ['--version'],
+      baseEnv(sandbox, {}),
+    );
+
+    expect(first.exitCode).toBe(0);
+    expect(second.exitCode).toBe(0);
+    expect(fresh.exitCode).toBe(0);
+    expect(fresh.stdout.trim()).toBe('0.0.0-installed');
+  });
+
   it('refuses to run under sudo and installs nothing', async () => {
     sandbox = await makeSandbox();
     await writeExec(join(sandbox.stubBin, 'node'), nodeStub(NODE_VERSION));
@@ -474,6 +528,12 @@ describe('install.sh (e2e)', () => {
     expect(run.stderr.toLowerCase()).toContain('unpack');
     expect(await exists(join(sandbox.omdHome, 'node'))).toBe(false);
     expect(await exists(join(sandbox.omdHome, 'bin', 'omd'))).toBe(false);
+    const leftovers: readonly string[] = (await exists(sandbox.omdHome))
+      ? await readdir(sandbox.omdHome)
+      : [];
+    expect(
+      leftovers.filter((entry: string): boolean => entry.startsWith('node')),
+    ).toEqual([]);
   });
 
   it('surfaces the npm output when the registry install fails, leaving no omd', async () => {
@@ -488,6 +548,30 @@ describe('install.sh (e2e)', () => {
     expect(run.exitCode).not.toBe(0);
     expect(run.stderr).toContain('npm ERR! code E403');
     expect(run.stderr).toContain('failed to install');
+    expect(await exists(join(sandbox.omdHome, 'bin', 'omd'))).toBe(false);
+  });
+
+  it('discards the provisioned runtime when the registry install fails', async () => {
+    sandbox = await makeSandbox();
+    await writeExec(
+      join(sandbox.stubBin, 'node'),
+      belowFloorNodeStub('v18.20.0'),
+    );
+    await writeExec(join(sandbox.stubBin, 'npm'), NPM_STUB);
+    const mirror: string = await buildFakeNodeMirror(
+      join(sandbox.root, 'mirror'),
+    );
+
+    const run: InstallerRun = await runInstaller(
+      baseEnv(sandbox, {
+        OMD_NODE_MIRROR: mirror,
+        NPM_FAIL_MESSAGE: 'npm ERR! code E403',
+      }),
+    );
+
+    expect(run.exitCode).not.toBe(0);
+    expect(run.stderr).toContain('npm ERR! code E403');
+    expect(await exists(join(sandbox.omdHome, 'node'))).toBe(false);
     expect(await exists(join(sandbox.omdHome, 'bin', 'omd'))).toBe(false);
   });
 });

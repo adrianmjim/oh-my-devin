@@ -89,9 +89,11 @@ provision_node() {
   tarball="node-${NODE_VERSION}-${plat_os}-${plat_arch}.tar.gz"
   url="${NODE_MIRROR}/${NODE_VERSION}/${tarball}"
   sums_url="${NODE_MIRROR}/${NODE_VERSION}/SHASUMS256.txt"
+  node_dir="${OMD_HOME}/node"
+  staging="${OMD_HOME}/node.staging.$$"
   tmp=$(mktemp -d "${TMPDIR:-/tmp}/omd-install.XXXXXX") ||
     fail "could not create a temporary directory for the Node download"
-  trap 'rm -rf "$tmp"' EXIT
+  trap 'rm -rf "$tmp" "$staging"' EXIT
   download "$url" "${tmp}/${tarball}" ||
     fail "failed to download Node runtime from ${url}"
   download "$sums_url" "${tmp}/SHASUMS256.txt" ||
@@ -102,13 +104,12 @@ provision_node() {
     fail "no SHA-256 tool available (need sha256sum or shasum)"
   [ "$expected" = "$actual" ] ||
     fail "integrity check failed for ${tarball}"
-  node_dir="${OMD_HOME}/node"
-  mkdir -p "${tmp}/node"
-  tar -xzf "${tmp}/${tarball}" -C "${tmp}/node" --strip-components=1 ||
+  # Stage next to the final location so the swap is a same-filesystem rename.
+  mkdir -p "$staging"
+  tar -xzf "${tmp}/${tarball}" -C "$staging" --strip-components=1 ||
     fail "failed to unpack the Node runtime"
   rm -rf "$node_dir"
-  mkdir -p "$OMD_HOME"
-  mv "${tmp}/node" "$node_dir"
+  mv "$staging" "$node_dir"
   rm -rf "$tmp"
   trap - EXIT
   npm_cmd="${node_dir}/bin/npm"
@@ -154,6 +155,9 @@ main() {
   info "installing ${PACKAGE}"
   if ! npm_output=$("$npm_cmd" install -g --prefix "$OMD_HOME" "$PACKAGE" 2>&1); then
     printf '%s\n' "$npm_output" >&2
+    if [ -n "$provisioned" ]; then
+      rm -rf "$node_dir"
+    fi
     fail "npm failed to install ${PACKAGE}"
   fi
 
