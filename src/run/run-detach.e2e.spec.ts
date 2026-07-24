@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { CommandResult } from '../engine/command-result';
 import type { JsonRunSnapshot } from '../observability/json-run-snapshot';
+import type { JsonDetachedLaunch } from './json-detached-launch';
 import { RunRecordPaths } from '../observability/run-record-paths';
 import { createE2eProject } from '../testing/create-e2e-project';
 import type { DevinStubScript } from '../testing/devin-stub-script';
@@ -93,6 +94,37 @@ describe('omd run --detach (e2e)', () => {
     expect(snapshot.runId).toBe(runId);
     expect(snapshot.state).toBe('succeeded');
     expect(await exists(paths.journal)).toBe(true);
+  });
+
+  it('prints a bounded json identity for --detach --json', async () => {
+    project = await createE2eProject();
+    await project.run(['setup']);
+    await project.writeScript(ONE_TURN);
+    await writeFile(
+      join(project.dir, 'review.json'),
+      JSON.stringify({ verdict: 'approve' }),
+      'utf8',
+    );
+
+    const result: CommandResult = await project.run([
+      'run',
+      'reviewer',
+      'review the diff',
+      '--detach',
+      '--json',
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    const launch: JsonDetachedLaunch = JSON.parse(
+      result.stdout,
+    ) as JsonDetachedLaunch;
+    expect(launch.runId.length).toBeGreaterThan(0);
+
+    const snapshot: JsonRunSnapshot = await pollToTerminal(
+      project,
+      launch.runId,
+    );
+    expect(snapshot.state).toBe('succeeded');
   });
 
   it('rejects an unresolvable role before assigning an identity, exit 64', async () => {

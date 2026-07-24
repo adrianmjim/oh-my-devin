@@ -168,8 +168,12 @@ describe('LivenessRefresher', () => {
 
     refresher.start();
     captured.callback?.();
-    await refresher.refreshNow();
 
-    expect((await readLivenessStamp(paths.liveness))?.stampedAt).toBe(1000);
+    await expect
+      .poll(
+        async (): Promise<number | undefined> =>
+          (await readLivenessStamp(paths.liveness))?.stampedAt,
+      )
+      .toBe(1000);
   });
 });

@@ -63,6 +63,7 @@ import { resolveModeState } from './modes/resolve-mode-state';
 import { loadRoleDefinition } from './role/load-role-definition';
 import type { RoleDefinition } from './role/role-definition';
 import { launchDetached } from './run/launch-detached';
+import { renderDetachedLaunchJson } from './run/render-detached-launch-json';
 import { resolveRunInvocation } from './run/resolve-run-invocation';
 import type { ResolvedRunInvocation } from './run/resolved-run-invocation';
 import { runRole } from './run/run-role';
@@ -123,7 +124,12 @@ async function dispatch(
           command.role,
           command.task,
         );
-        write(process.stdout, launchedId);
+        write(
+          process.stdout,
+          command.json
+            ? JSON.stringify(renderDetachedLaunchJson(launchedId))
+            : launchedId,
+        );
         return 0;
       }
       const resolved: ResolvedRunInvocation = await resolveRunInvocation(
