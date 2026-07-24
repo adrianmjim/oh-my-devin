@@ -13,11 +13,12 @@ export class JournalRunRecorder implements RunObserver {
   }
 
   public async append(event: ProgressEvent): Promise<void> {
-    await this.journal.append(event);
     if (event.type === 'runLaunched') {
       await this.liveness.refreshNow().catch((): void => undefined);
       this.liveness.start();
-    } else if (event.type === 'terminalOutcome') {
+    }
+    await this.journal.append(event);
+    if (event.type === 'terminalOutcome') {
       this.liveness.stop();
     }
   }

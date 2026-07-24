@@ -1,3 +1,4 @@
+import { isValidRunId } from './is-valid-run-id';
 import type { ProgressEvent } from './progress-event';
 
 type EventFieldCheck = (record: Record<string, unknown>) => boolean;
@@ -30,6 +31,7 @@ function isStringOrNull(value: unknown): boolean {
 const EVENT_FIELD_CHECKS: Readonly<Record<string, EventFieldCheck>> = {
   runLaunched: (record: Record<string, unknown>): boolean =>
     typeof record['runId'] === 'string' &&
+    isValidRunId(record['runId']) &&
     isRunKind(record['runKind']) &&
     typeof record['subject'] === 'string' &&
     typeof record['maxTurns'] === 'number' &&

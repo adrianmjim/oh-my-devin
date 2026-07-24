@@ -26,6 +26,25 @@ function probeScheduler(probe: SchedulerProbe): IntervalScheduler {
   };
 }
 
+class StampCheckingWriter extends JournalWriter {
+  public stampSeenOnLaunchAppend: boolean | null = null;
+
+  public constructor(
+    journalPath: string,
+    private readonly stampPath: string,
+  ) {
+    super(journalPath);
+  }
+
+  public override async append(event: ProgressEvent): Promise<void> {
+    if (event.type === 'runLaunched') {
+      this.stampSeenOnLaunchAppend =
+        (await readLivenessStamp(this.stampPath)) !== null;
+    }
+    await super.append(event);
+  }
+}
+
 const LAUNCHED: ProgressEvent = {
   type: 'runLaunched',
   timestamp: 1000,
@@ -87,6 +106,21 @@ describe('JournalRunRecorder', () => {
     await recorder.append(LAUNCHED);
 
     expect((await readLivenessStamp(paths.liveness))?.stampedAt).toBe(1000);
+  });
+
+  it('writes the liveness stamp before the launch event becomes visible', async () => {
+    const writer = new StampCheckingWriter(paths.journal, paths.liveness);
+    const refresher = new LivenessRefresher(
+      paths.liveness,
+      clock,
+      15000,
+      probeScheduler(probe),
+    );
+    const ordered = new JournalRunRecorder(writer, refresher);
+
+    await ordered.append(LAUNCHED);
+
+    expect(writer.stampSeenOnLaunchAppend).toBe(true);
   });
 
   it('stops the liveness heartbeat when the run terminates', async () => {

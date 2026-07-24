@@ -92,6 +92,20 @@ describe('isProgressEvent', () => {
     );
   });
 
+  it('rejects a runLaunched event whose run id is not a safe path segment', () => {
+    expect(
+      isProgressEvent({
+        type: 'runLaunched',
+        timestamp: 1,
+        runId: '../escape',
+        runKind: 'single-role',
+        subject: 'reviewer',
+        maxTurns: 8,
+        artifactPath: null,
+      }),
+    ).toBe(false);
+  });
+
   it('rejects an event whose fields carry the wrong types', () => {
     expect(
       isProgressEvent({
