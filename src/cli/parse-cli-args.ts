@@ -145,6 +145,13 @@ export function parseCliArgs(argv: readonly string[]): CliCommand {
     return { kind: 'help' };
   }
 
+  if (argv[0] === '--version') {
+    if (argv.length > 1) {
+      throw new UsageError('usage: omd --version');
+    }
+    return { kind: 'version' };
+  }
+
   const command: string = argv[0] ?? '';
   const rest: readonly string[] = argv.slice(1);
   const positionals: readonly string[] = rest.filter(

@@ -48,6 +48,11 @@ describe('omd setup (e2e)', () => {
       ),
     ).toBe(true);
     expect(
+      await exists(
+        join(project.dir, '.devin', 'skills', 'omd-install', 'SKILL.md'),
+      ),
+    ).toBe(true);
+    expect(
       await exists(join(project.dir, '.devin', 'skills', 'team', 'SKILL.md')),
     ).toBe(true);
     expect(await exists(join(project.dir, '.devin', 'hooks.v1.json'))).toBe(

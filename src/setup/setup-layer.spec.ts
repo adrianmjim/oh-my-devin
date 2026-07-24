@@ -65,6 +65,9 @@ describe('setupLayer', () => {
     expect(
       await exists(join(dir, '.devin', 'skills', 'omd-delegate', 'SKILL.md')),
     ).toBe(true);
+    expect(
+      await exists(join(dir, '.devin', 'skills', 'omd-install', 'SKILL.md')),
+    ).toBe(true);
     expect(await exists(join(dir, '.devin', 'hooks.v1.json'))).toBe(true);
     expect(result.writtenPaths.length).toBeGreaterThanOrEqual(4);
   });
@@ -147,6 +150,9 @@ describe('setupLayer', () => {
 
     expect(
       await exists(join(dir, '.devin', 'skills', 'omd-delegate', 'SKILL.md')),
+    ).toBe(true);
+    expect(
+      await exists(join(dir, '.devin', 'skills', 'omd-install', 'SKILL.md')),
     ).toBe(true);
     for (const skill of MODE_CATALOG) {
       expect(

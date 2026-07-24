@@ -43,6 +43,9 @@ describe('omd plugin build (e2e)', () => {
     expect(
       await exists(join(bundle, 'skills', 'omd-delegate', 'SKILL.md')),
     ).toBe(true);
+    expect(
+      await exists(join(bundle, 'skills', 'omd-install', 'SKILL.md')),
+    ).toBe(true);
     expect(await exists(join(bundle, 'skills', 'team', 'SKILL.md'))).toBe(true);
   });
 });

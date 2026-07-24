@@ -37,6 +37,20 @@ describe('parseCliArgs', () => {
     expect(() => parseCliArgs(['run'])).toThrow(UsageError);
   });
 
+  it('returns the version command for --version', () => {
+    expect(parseCliArgs(['--version']).kind).toBe('version');
+  });
+
+  it('treats --version as the version command only when it leads the arguments', () => {
+    expect(parseCliArgs(['run', 'reviewer', 'assess', '--version']).kind).toBe(
+      'run',
+    );
+  });
+
+  it('rejects --version accompanied by further arguments', () => {
+    expect(() => parseCliArgs(['--version', 'doctor'])).toThrow(UsageError);
+  });
+
   it('defaults run to the blocking form and reads the --detach flag', () => {
     const blocking = parseCliArgs(['run', 'reviewer', 'assess']);
     expect((blocking as RunCommand).detach).toBe(false);

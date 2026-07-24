@@ -100,6 +100,48 @@ export const DELEGATION_SKILL: string = [
   '',
 ].join('\n');
 
+export const INSTALL_SKILL: string = [
+  '---',
+  'name: omd-install',
+  'description: Validate an omd installation from a Devin session, or perform one when omd is absent.',
+  'triggers:',
+  '  - model',
+  'allowed-tools:',
+  '  - exec',
+  'permissions:',
+  '  allow:',
+  '    - "Exec(omd)"',
+  '    - "Exec(curl)"',
+  '    - "Exec(sh)"',
+  '---',
+  '',
+  'When the user asks to confirm or set up their omd installation, key on the',
+  '`omd` binary rather than on how it was installed. omd may have arrived under',
+  'either package name — `oh-my-devin` or `ohmydevin` — with any mainstream',
+  'package manager, or through the inline installer; treat them the same.',
+  '',
+  'When omd is available, report its installed version:',
+  '',
+  '    omd --version',
+  '',
+  'and report the environment checks, which omd doctor owns:',
+  '',
+  '    omd doctor',
+  '',
+  'When omd is not available, perform the installation with the inline installer',
+  '(it provisions a Node runtime if none is present), then re-validate:',
+  '',
+  '    curl -fsSL https://raw.githubusercontent.com/adrianmjim/oh-my-devin/main/install.sh | sh',
+  '',
+  'After it finishes, run the version check again to confirm the install and',
+  'report the resulting version.',
+  '',
+  'In both cases, present `omd setup` to the user as their next step — it installs',
+  'the in-session layer into a project — but do not run it: where the layer goes',
+  "is the user's call, made per project.",
+  '',
+].join('\n');
+
 export const HOOKS_MAP: string = `${JSON.stringify(
   {
     SessionStart: [
