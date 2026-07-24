@@ -98,6 +98,7 @@ function harness(positions: Record<string, TypedPosition>): Harness {
   const summarized: AnonymizedArgument[][] = [];
   const positionBatches: SeatInvocation[][] = [];
   const pipeline: PipelineReport = {
+    runId: 'run-deliberation',
     team: 'feature-team',
     task: 'p',
     outcome: 'succeeded',

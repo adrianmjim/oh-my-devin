@@ -157,9 +157,19 @@ export function parseCliArgs(argv: readonly string[]): CliCommand {
       const role: string | undefined = positionals[0];
       const task: string | undefined = positionals[1];
       if (role === undefined || task === undefined) {
-        throw new UsageError('usage: omd run <role> "<task>" [--json]');
+        throw new UsageError(
+          'usage: omd run <role> "<task>" [--detach] [--json]',
+        );
       }
-      return { kind: 'run', role, task, json };
+      const detach: boolean = rest.includes('--detach');
+      return { kind: 'run', role, task, json, detach };
+    }
+    case 'status': {
+      const runId: string | undefined = positionals[0];
+      if (runId === undefined) {
+        throw new UsageError('usage: omd status <run-id> [--json]');
+      }
+      return { kind: 'status', runId, json };
     }
     case 'doctor':
       return { kind: 'doctor' };
@@ -189,6 +199,11 @@ export function parseCliArgs(argv: readonly string[]): CliCommand {
       const task: string | undefined = positionals[2];
       if (team === undefined || task === undefined) {
         throw new UsageError('usage: omd team run <team> "<task>" [--json]');
+      }
+      if (rest.includes('--detach')) {
+        throw new UsageError(
+          'omd team run has no detached form; pipelines run in the blocking form',
+        );
       }
       return { kind: 'team-run', team, task, json };
     }

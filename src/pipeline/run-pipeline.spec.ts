@@ -1,12 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import type { HandoffArtifactName } from '../handoff/handoff-artifact-name';
 import type { PipelineStage } from '../handoff/pipeline-stage';
+import { deriveSnapshot } from '../observability/derive-snapshot';
+import type { ProgressEvent } from '../observability/progress-event';
+import type { RunObserver } from '../observability/run-observer';
+import type { RunSnapshot } from '../observability/run-snapshot';
 import type { RunReport } from '../outcome/run-report';
 import { parseTeamDefinition } from '../team/parse-team-definition';
 import type { TeamDefinition } from '../team/team-definition';
 import { exitCodeForPipelineOutcome } from './exit-code-for-pipeline-outcome';
 import type { GateDecision } from './gate-decision';
 import type { GatePresentation } from './gate-presentation';
+import { PipelineError } from './pipeline-error';
 import type { PipelineReport } from './pipeline-report';
 import type { StageRequest } from './stage-request';
 import type { StageResult } from './stage-result';
@@ -42,6 +47,7 @@ function report(
   overrides: Partial<RunReport>,
 ): RunReport {
   return {
+    runId: `run-${stage}`,
     role: stage,
     task: 'build the widget',
     engine: 'devin-headless',
@@ -122,6 +128,46 @@ class RecordingGate {
     this.presentations.push(presentation);
     return Promise.resolve(this.decisions.shift() ?? 'none');
   };
+}
+
+class RecordingObserver implements RunObserver {
+  public readonly events: ProgressEvent[] = [];
+  public closeCount = 0;
+
+  public async append(event: ProgressEvent): Promise<void> {
+    this.events.push(event);
+    await Promise.resolve();
+  }
+
+  public close(): void {
+    this.closeCount += 1;
+  }
+
+  public types(): readonly string[] {
+    return this.events.map((event: ProgressEvent): string => event.type);
+  }
+
+  public prefixThrough(type: string): readonly ProgressEvent[] {
+    const index: number = this.events.findIndex(
+      (event: ProgressEvent): boolean => event.type === type,
+    );
+    return this.events.slice(0, index + 1);
+  }
+}
+
+class TerminalThrowingObserver implements RunObserver {
+  public closeCount = 0;
+
+  public async append(event: ProgressEvent): Promise<void> {
+    if (event.type === 'terminalOutcome') {
+      throw new Error('journal write failed');
+    }
+    await Promise.resolve();
+  }
+
+  public close(): void {
+    this.closeCount += 1;
+  }
 }
 
 describe('runPipeline', () => {
@@ -338,5 +384,242 @@ describe('runPipeline', () => {
     });
 
     expect(stages.count('executor')).toBe(1);
+  });
+});
+
+describe('runPipeline observability', () => {
+  const THRESHOLD: number = 120000;
+
+  it('reports the pipeline identity at launch with the pipeline kind', async () => {
+    const stages = new RecordingStages({});
+    const gate = new RecordingGate(['approve', 'approve', 'approve']);
+    const observer = new RecordingObserver();
+
+    const result: PipelineReport = await runPipeline({
+      team: team(),
+      task: 'build the widget',
+      runStage: stages.run,
+      gate: gate.decide,
+      runId: 'run-pipe',
+      observer,
+      clock: (): number => 1000,
+    });
+
+    expect(result.runId).toBe('run-pipe');
+    const launched = observer.events[0];
+    expect(launched?.type).toBe('runLaunched');
+    expect(launched?.type === 'runLaunched' && launched.runKind).toBe(
+      'pipeline',
+    );
+    expect(launched?.type === 'runLaunched' && launched.subject).toBe(
+      'feature-team',
+    );
+  });
+
+  it('appends stage, gate and terminal events across a full run', async () => {
+    const stages = new RecordingStages({});
+    const gate = new RecordingGate(['approve', 'approve', 'approve']);
+    const observer = new RecordingObserver();
+
+    await runPipeline({
+      team: team(),
+      task: 'build the widget',
+      runStage: stages.run,
+      gate: gate.decide,
+      observer,
+      clock: (): number => 1000,
+    });
+
+    expect(observer.types()).toEqual([
+      'runLaunched',
+      'stageStarted',
+      'stageCompleted',
+      'gateWaitEntered',
+      'gateWaitResolved',
+      'stageStarted',
+      'stageCompleted',
+      'gateWaitEntered',
+      'gateWaitResolved',
+      'stageStarted',
+      'stageCompleted',
+      'gateWaitEntered',
+      'gateWaitResolved',
+      'terminalOutcome',
+    ]);
+    expect(observer.closeCount).toBe(1);
+  });
+
+  it('derives a mid-stage snapshot reporting the pipeline kind and current stage', async () => {
+    const stages = new RecordingStages({});
+    const gate = new RecordingGate(['approve', 'approve', 'approve']);
+    const observer = new RecordingObserver();
+
+    await runPipeline({
+      team: team(),
+      task: 'build the widget',
+      runStage: stages.run,
+      gate: gate.decide,
+      observer,
+      clock: (): number => 1000,
+    });
+
+    const snapshot: RunSnapshot = deriveSnapshot(
+      observer.prefixThrough('stageStarted'),
+      1000,
+      1000,
+      THRESHOLD,
+    );
+    expect(snapshot.runKind).toBe('pipeline');
+    expect(snapshot.currentStage).toBe('architect');
+    expect(snapshot.state).toBe('running');
+  });
+
+  it('derives an awaiting-gate snapshot that names the gate boundary', async () => {
+    const stages = new RecordingStages({});
+    const gate = new RecordingGate(['approve', 'approve', 'approve']);
+    const observer = new RecordingObserver();
+
+    await runPipeline({
+      team: team(),
+      task: 'build the widget',
+      runStage: stages.run,
+      gate: gate.decide,
+      observer,
+      clock: (): number => 1000,
+    });
+
+    const snapshot: RunSnapshot = deriveSnapshot(
+      observer.prefixThrough('gateWaitEntered'),
+      1000,
+      1000,
+      THRESHOLD,
+    );
+    expect(snapshot.state).toBe('awaiting-gate');
+    expect(snapshot.pendingGate).toBe('architect');
+  });
+
+  it('records a failing terminal outcome carrying the halting stage tier', async () => {
+    const stages = new RecordingStages({
+      architect: [
+        { report: { failureTier: 'invalid_artifact', artifactValid: false } },
+      ],
+    });
+    const gate = new RecordingGate([]);
+    const observer = new RecordingObserver();
+
+    await runPipeline({
+      team: team(),
+      task: 'build the widget',
+      runStage: stages.run,
+      gate: gate.decide,
+      observer,
+      clock: (): number => 1000,
+    });
+
+    expect(observer.types()).toEqual([
+      'runLaunched',
+      'stageStarted',
+      'stageCompleted',
+      'terminalOutcome',
+    ]);
+    const terminal = observer.events.at(-1);
+    expect(terminal?.type === 'terminalOutcome' && terminal.succeeded).toBe(
+      false,
+    );
+    expect(terminal?.type === 'terminalOutcome' && terminal.failureTier).toBe(
+      'invalid_artifact',
+    );
+  });
+
+  it('records a failing terminal outcome when a stage runner throws', async () => {
+    const gate = new RecordingGate([]);
+    const observer = new RecordingObserver();
+
+    await expect(
+      runPipeline({
+        team: team(),
+        task: 'build the widget',
+        runStage: (): Promise<StageResult> =>
+          Promise.reject(new Error('stage boom')),
+        gate: gate.decide,
+        observer,
+        clock: (): number => 1000,
+      }),
+    ).rejects.toThrow('stage boom');
+
+    expect(observer.types()).toContain('terminalOutcome');
+    const terminal = observer.events.at(-1);
+    expect(terminal?.type === 'terminalOutcome' && terminal.succeeded).toBe(
+      false,
+    );
+    expect(observer.closeCount).toBe(1);
+  });
+
+  it('preserves the stage error when recording the terminal outcome fails', async () => {
+    const gate = new RecordingGate([]);
+    const observer = new TerminalThrowingObserver();
+
+    await expect(
+      runPipeline({
+        team: team(),
+        task: 'build the widget',
+        runStage: (): Promise<StageResult> =>
+          Promise.reject(new Error('stage boom')),
+        gate: gate.decide,
+        observer,
+        clock: (): number => 1000,
+      }),
+    ).rejects.toThrow('stage boom');
+
+    expect(observer.closeCount).toBe(1);
+  });
+
+  it('records launch and a failing terminal outcome for a non-pipeline entry stage', async () => {
+    const analystYaml: string = [
+      'name: research-team',
+      'members:',
+      '  - role: analyst',
+      '    count: 1',
+      '  - role: executor',
+      '    count: 1',
+      'workflow:',
+      '  analyst:',
+      '    then: executor',
+      '  executor:',
+      '    on_passed: done',
+    ].join('\n');
+    const analystTeam: TeamDefinition = parseTeamDefinition(analystYaml, [
+      'analyst',
+      'executor',
+    ]);
+    const stages = new RecordingStages({});
+    const gate = new RecordingGate([]);
+    const observer = new RecordingObserver();
+
+    await expect(
+      runPipeline({
+        team: analystTeam,
+        task: 'analyze the widget',
+        runStage: stages.run,
+        gate: gate.decide,
+        runId: 'run-analyst',
+        observer,
+        clock: (): number => 1000,
+      }),
+    ).rejects.toThrow(PipelineError);
+
+    expect(observer.types()).toEqual(['runLaunched', 'terminalOutcome']);
+    const launched = observer.events[0];
+    expect(launched?.type === 'runLaunched' && launched.runKind).toBe(
+      'pipeline',
+    );
+    expect(launched?.type === 'runLaunched' && launched.subject).toBe(
+      'research-team',
+    );
+    const terminal = observer.events.at(-1);
+    expect(terminal?.type === 'terminalOutcome' && terminal.succeeded).toBe(
+      false,
+    );
+    expect(observer.closeCount).toBe(1);
   });
 });

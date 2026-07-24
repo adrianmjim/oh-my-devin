@@ -42,6 +42,7 @@ function reportFor(
   overrides: Partial<RunReport> = {},
 ): RunReport {
   return {
+    runId: `run-${stage}`,
     role: stage,
     task: 't',
     engine: 'devin-headless',

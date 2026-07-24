@@ -7,6 +7,7 @@ export function renderJsonReport(report: RunReport): JsonRunReport {
   const outcome: RunOutcome =
     report.failureTier === null ? 'success' : 'failure';
   return {
+    runId: report.runId,
     role: report.role,
     task: report.task,
     engine: report.engine,

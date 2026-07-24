@@ -5,6 +5,7 @@ import { renderJsonReport } from './render-json-report';
 
 function report(overrides: Partial<RunReport>): RunReport {
   return {
+    runId: 'run-json',
     role: 'reviewer',
     task: 'assess the diff',
     engine: 'devin',
@@ -33,6 +34,7 @@ const FIXED_FIELDS: readonly string[] = [
   'outcome',
   'repairAttempted',
   'role',
+  'runId',
   'sessionId',
   'task',
   'turnsUsed',
@@ -44,6 +46,11 @@ describe('renderJsonReport', () => {
   it('emits exactly the fixed field set', () => {
     const json: JsonRunReport = renderJsonReport(report({}));
     expect(Object.keys(json).sort()).toEqual([...FIXED_FIELDS].sort());
+  });
+
+  it('carries the run identity through the machine-readable report', () => {
+    const json: JsonRunReport = renderJsonReport(report({}));
+    expect(json.runId).toBe('run-json');
   });
 
   it('reports success with exit code 0', () => {

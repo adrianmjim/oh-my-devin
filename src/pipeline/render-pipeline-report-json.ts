@@ -8,6 +8,7 @@ export function renderPipelineReportJson(
   report: PipelineReport,
 ): JsonPipelineReport {
   return {
+    runId: report.runId,
     team: report.team,
     task: report.task,
     outcome: report.outcome,

@@ -100,6 +100,22 @@ describe('setupLayer', () => {
     expect(skill).toContain('"Exec(omd)"');
   });
 
+  it('instructs the correspondent pattern: detach, poll status, narrate, present the gate', async () => {
+    await setupLayer(dir);
+
+    const skill: string = await readFile(
+      join(dir, '.devin', 'skills', 'omd-delegate', 'SKILL.md'),
+      'utf8',
+    );
+    expect(skill).toContain('omd run <role> "<task>" --detach');
+    expect(skill).toContain('omd status <run-id> --json');
+    expect(skill.toLowerCase()).toContain('snapshot');
+    expect(skill.toLowerCase()).toContain('restrained cadence');
+    expect(skill.toLowerCase()).toContain('pending gate');
+    expect(skill.toLowerCase()).toContain('outside this session');
+    expect(skill.toLowerCase()).toContain('never actuate');
+  });
+
   it('installs all six mode skills from the catalog', async () => {
     await setupLayer(dir);
 
