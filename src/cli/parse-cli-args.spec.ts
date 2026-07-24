@@ -174,10 +174,16 @@ describe('parseCliArgs', () => {
     expect((command as TeamRunCommand).json).toBe(true);
   });
 
-  it('rejects `team run` without a task as a usage error', () => {
-    expect(() => parseCliArgs(['team', 'run', 'feature-team'])).toThrow(
-      UsageError,
-    );
+  it('parses the nameless `team run <task>` to the default team', () => {
+    const command = parseCliArgs(['team', 'run', 'build it']);
+    expect(command.kind).toBe('team-run');
+    const teamRun = command as TeamRunCommand;
+    expect(teamRun.team).toBe('default');
+    expect(teamRun.task).toBe('build it');
+  });
+
+  it('rejects `team run` without any positional as a usage error', () => {
+    expect(() => parseCliArgs(['team', 'run'])).toThrow(UsageError);
   });
 
   it('rejects a detached launch for team run as a usage error', () => {

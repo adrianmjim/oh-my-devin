@@ -6,12 +6,17 @@ import type { LayerComponent } from './layer-component';
 import { ALL_LAYER_COMPONENTS } from './layer-component';
 import type { SetupResult } from './setup-result';
 import {
+  ARCHITECT_ROLE_AGENT_MD,
+  ARCHITECT_ROLE_SCHEMA,
+  DEFAULT_TEAM_YAML,
   DELEGATION_SKILL,
-  EXAMPLE_ROLE_AGENT_MD,
-  EXAMPLE_ROLE_SCHEMA,
+  EXECUTOR_ROLE_AGENT_MD,
+  EXECUTOR_ROLE_SCHEMA,
   HOOKS_MAP,
   HOOK_SCRIPT,
   INSTALL_SKILL,
+  REVIEWER_ROLE_AGENT_MD,
+  REVIEWER_ROLE_SCHEMA,
   RULES_FILE,
 } from './setup-templates';
 
@@ -32,13 +37,33 @@ const MODE_SKILL_FILES: readonly LayerFile[] = MODE_CATALOG.map(
 const LAYER_FILES: readonly LayerFile[] = [
   { relativePath: 'AGENTS.md', content: RULES_FILE, component: 'rules' },
   {
+    relativePath: join('.devin', 'agents', 'architect', 'AGENT.md'),
+    content: ARCHITECT_ROLE_AGENT_MD,
+    component: 'roles',
+  },
+  {
+    relativePath: join('.devin', 'schemas', 'architecture.schema.json'),
+    content: ARCHITECT_ROLE_SCHEMA,
+    component: 'roles',
+  },
+  {
+    relativePath: join('.devin', 'agents', 'executor', 'AGENT.md'),
+    content: EXECUTOR_ROLE_AGENT_MD,
+    component: 'roles',
+  },
+  {
+    relativePath: join('.devin', 'schemas', 'evidence.schema.json'),
+    content: EXECUTOR_ROLE_SCHEMA,
+    component: 'roles',
+  },
+  {
     relativePath: join('.devin', 'agents', 'reviewer', 'AGENT.md'),
-    content: EXAMPLE_ROLE_AGENT_MD,
+    content: REVIEWER_ROLE_AGENT_MD,
     component: 'roles',
   },
   {
     relativePath: join('.devin', 'schemas', 'review.schema.json'),
-    content: EXAMPLE_ROLE_SCHEMA,
+    content: REVIEWER_ROLE_SCHEMA,
     component: 'roles',
   },
   {
@@ -61,6 +86,11 @@ const LAYER_FILES: readonly LayerFile[] = [
     relativePath: join('.devin', 'hooks', 'omd-mode.mjs'),
     content: HOOK_SCRIPT,
     component: 'hooks',
+  },
+  {
+    relativePath: join('.devin', 'teams', 'default.yaml'),
+    content: DEFAULT_TEAM_YAML,
+    component: 'teams',
   },
 ];
 

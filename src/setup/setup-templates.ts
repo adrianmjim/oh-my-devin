@@ -11,6 +11,9 @@ export const RULES_FILE: string = [
   '',
   '## Installed roles',
   '',
+  '- `architect` — turns the requirements into an approach and writes a',
+  '  structured `architecture.json`.',
+  '- `executor` — implements the approach and writes a structured `evidence.json`.',
   '- `reviewer` — assesses a diff and writes a structured `review.json`.',
   '',
   '## Delegation',
@@ -20,7 +23,7 @@ export const RULES_FILE: string = [
   '',
 ].join('\n');
 
-export const EXAMPLE_ROLE_AGENT_MD: string = [
+export const REVIEWER_ROLE_AGENT_MD: string = [
   '---',
   'name: reviewer',
   'description: Reviews a diff and writes a structured verdict.',
@@ -43,7 +46,7 @@ export const EXAMPLE_ROLE_AGENT_MD: string = [
   '',
 ].join('\n');
 
-export const EXAMPLE_ROLE_SCHEMA: string = `${JSON.stringify(
+export const REVIEWER_ROLE_SCHEMA: string = `${JSON.stringify(
   {
     $schema: 'http://json-schema.org/draft-07/schema#',
     type: 'object',
@@ -57,6 +60,102 @@ export const EXAMPLE_ROLE_SCHEMA: string = `${JSON.stringify(
   null,
   2,
 )}\n`;
+
+export const ARCHITECT_ROLE_AGENT_MD: string = [
+  '---',
+  'name: architect',
+  'description: Turns the requirements into an implementation approach.',
+  'allowed-tools:',
+  '  - read',
+  '  - grep',
+  '  - create',
+  '  - edit',
+  'permissions:',
+  '  allow:',
+  '    - "Write(architecture.json)"',
+  'omd-output: architecture.json',
+  'omd-schema: .devin/schemas/architecture.schema.json',
+  'omd-max-turns: 6',
+  'omd-context: isolated',
+  '---',
+  '',
+  'You are the architect. Turn the requirements into an implementation approach',
+  'and write it to architecture.json for the executor to build against.',
+  '',
+].join('\n');
+
+export const ARCHITECT_ROLE_SCHEMA: string = `${JSON.stringify(
+  {
+    $schema: 'http://json-schema.org/draft-07/schema#',
+    type: 'object',
+    required: ['approach'],
+    properties: {
+      approach: { type: 'string' },
+      steps: { type: 'array', items: { type: 'string' } },
+    },
+    additionalProperties: false,
+  },
+  null,
+  2,
+)}\n`;
+
+export const EXECUTOR_ROLE_AGENT_MD: string = [
+  '---',
+  'name: executor',
+  'description: Implements the approach and writes structured test evidence.',
+  'allowed-tools:',
+  '  - read',
+  '  - grep',
+  '  - create',
+  '  - edit',
+  'permissions:',
+  '  allow:',
+  '    - "Write(evidence.json)"',
+  'omd-output: evidence.json',
+  'omd-schema: .devin/schemas/evidence.schema.json',
+  'omd-max-turns: 6',
+  'omd-context: isolated',
+  '---',
+  '',
+  'You are the executor. Implement the architecture against the requirements and',
+  'write your test evidence to evidence.json.',
+  '',
+].join('\n');
+
+export const EXECUTOR_ROLE_SCHEMA: string = `${JSON.stringify(
+  {
+    $schema: 'http://json-schema.org/draft-07/schema#',
+    type: 'object',
+    required: ['tests'],
+    properties: {
+      tests: { type: 'string', enum: ['passed', 'failed'] },
+      notes: { type: 'string' },
+    },
+    additionalProperties: false,
+  },
+  null,
+  2,
+)}\n`;
+
+export const DEFAULT_TEAM_YAML: string = [
+  'name: default',
+  'members:',
+  '  - role: architect',
+  '    count: 1',
+  '  - role: executor',
+  '    count: 1',
+  '  - role: reviewer',
+  '    count: 1',
+  'workflow:',
+  '  architect:',
+  '    then: executor',
+  '  executor:',
+  '    then: reviewer',
+  '  reviewer:',
+  '    on_passed: done',
+  '    on_blocked: executor',
+  '',
+].join('\n');
 
 export const DELEGATION_SKILL: string = [
   '---',
