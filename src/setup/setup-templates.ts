@@ -241,36 +241,37 @@ export const INSTALL_SKILL: string = [
   '',
 ].join('\n');
 
+export interface HookCommandEntry {
+  readonly type: 'command';
+  readonly command: string;
+}
+
+export interface HookMatcherEntry {
+  readonly hooks: readonly HookCommandEntry[];
+}
+
+export interface HooksEventMap {
+  readonly SessionStart: readonly HookMatcherEntry[];
+  readonly UserPromptSubmit: readonly HookMatcherEntry[];
+  readonly Stop: readonly HookMatcherEntry[];
+}
+
+export const PROJECT_HOOK_COMMAND: string = 'node .devin/hooks/omd-mode.mjs';
+
+function commandEntry(baseCommand: string, phase: string): HookMatcherEntry {
+  return { hooks: [{ type: 'command', command: `${baseCommand} ${phase}` }] };
+}
+
+export function buildHooksEventMap(baseCommand: string): HooksEventMap {
+  return {
+    SessionStart: [commandEntry(baseCommand, 'session-start')],
+    UserPromptSubmit: [commandEntry(baseCommand, 'user-prompt')],
+    Stop: [commandEntry(baseCommand, 'stop')],
+  };
+}
+
 export const HOOKS_MAP: string = `${JSON.stringify(
-  {
-    SessionStart: [
-      {
-        hooks: [
-          {
-            type: 'command',
-            command: 'node .devin/hooks/omd-mode.mjs session-start',
-          },
-        ],
-      },
-    ],
-    UserPromptSubmit: [
-      {
-        hooks: [
-          {
-            type: 'command',
-            command: 'node .devin/hooks/omd-mode.mjs user-prompt',
-          },
-        ],
-      },
-    ],
-    Stop: [
-      {
-        hooks: [
-          { type: 'command', command: 'node .devin/hooks/omd-mode.mjs stop' },
-        ],
-      },
-    ],
-  },
+  buildHooksEventMap(PROJECT_HOOK_COMMAND),
   null,
   2,
 )}\n`;

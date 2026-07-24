@@ -1,4 +1,4 @@
-import { access } from 'node:fs/promises';
+import { access, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { CommandResult } from '../engine/command-result';
@@ -136,5 +136,70 @@ describe('omd setup (e2e)', () => {
     expect(await exists(join(project.dir, '.devin', 'hooks.v1.json'))).toBe(
       false,
     );
+  });
+
+  it('never prompts or waits for input in a headless run', async () => {
+    project = await createE2eProject();
+
+    const result: CommandResult = await project.run(['setup']);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).not.toContain('Install level?');
+    expect(result.stdout).not.toContain('Component scope?');
+  });
+
+  it('installs a user-level file-drop into the config dir per the flags', async () => {
+    project = await createE2eProject();
+    const xdg: string = join(project.dir, 'xdg');
+
+    const result: CommandResult = await project.run(
+      ['setup', '--level=user', '--scope=roles,skills'],
+      { env: { XDG_CONFIG_HOME: xdg } },
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).not.toContain('Install level?');
+    expect(
+      await exists(join(xdg, 'devin', 'agents', 'reviewer', 'AGENT.md')),
+    ).toBe(true);
+    expect(
+      await exists(join(xdg, 'devin', 'skills', 'omd-delegate', 'SKILL.md')),
+    ).toBe(true);
+    expect(await exists(join(project.dir, 'AGENTS.md'))).toBe(false);
+    expect(await exists(join(project.dir, '.devin'))).toBe(false);
+  });
+
+  it('installs user-level hooks as a config.json merge, not a standalone file', async () => {
+    project = await createE2eProject();
+    const xdg: string = join(project.dir, 'xdg');
+
+    const result: CommandResult = await project.run(
+      ['setup', '--level=user', '--scope=hooks'],
+      { env: { XDG_CONFIG_HOME: xdg } },
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(await exists(join(xdg, 'devin', 'hooks', 'omd-mode.mjs'))).toBe(
+      true,
+    );
+    expect(await exists(join(xdg, 'devin', 'hooks.v1.json'))).toBe(false);
+    const config: Record<string, unknown> = JSON.parse(
+      await readFile(join(xdg, 'devin', 'config.json'), 'utf8'),
+    ) as Record<string, unknown>;
+    expect(config['hooks']).toBeDefined();
+  });
+
+  it('refuses user-level teams, which have no verified user-level location', async () => {
+    project = await createE2eProject();
+    const xdg: string = join(project.dir, 'xdg');
+
+    const result: CommandResult = await project.run(
+      ['setup', '--level=user', '--scope=teams'],
+      { env: { XDG_CONFIG_HOME: xdg } },
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain('refused teams');
+    expect(await exists(join(xdg, 'devin', 'teams'))).toBe(false);
   });
 });

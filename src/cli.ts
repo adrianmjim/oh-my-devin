@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { mkdir } from 'node:fs/promises';
+import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { createInterface } from 'node:readline';
 import type { Interface } from 'node:readline';
@@ -69,7 +70,11 @@ import { resolveRunInvocation } from './run/resolve-run-invocation';
 import type { ResolvedRunInvocation } from './run/resolved-run-invocation';
 import { runRole } from './run/run-role';
 import { UsageError } from './run/usage-error';
+import { elicitSetupOptions } from './setup/elicit-setup-options';
+import type { ElicitedSetupOptions } from './setup/elicit-setup-options';
 import type { ModeState } from './setup/mode-state';
+import { renderSetupResult } from './setup/render-setup-result';
+import { resolveUserConfigDir } from './setup/resolve-user-config-dir';
 import { setupLayer } from './setup/setup-layer';
 import type { SetupResult } from './setup/setup-result';
 import { loadTeamDefinition } from './team/load-team-definition';
@@ -85,7 +90,7 @@ const USAGE: string = [
   '  omd doctor                                    Check the local runtime contract',
   '  omd roles list [--json]                       List the project’s roles',
   '  omd roles show <role> [--json]                Show a role’s expanded contract',
-  '  omd setup [--scope=<parts>]                   Install the in-session layer (parts: rules,roles,skills,hooks,teams)',
+  '  omd setup [--level=<project|user>] [--scope=<parts>]  Install the in-session layer (level: project|user; parts: rules,roles,skills,hooks,teams)',
   '  omd plugin build [--out <dir>]                Build the installable devin plugin bundle',
   '  omd team run [<team>] "<task>"                Run a team pipeline (architect → executor → reviewer); omits <team> to launch the default',
   '  omd council run <c> "<question>"              Run a deliberation council [--proposal <path>] [--then <team>] [--sign] [--json]',
@@ -218,14 +223,24 @@ async function dispatch(
       return 0;
     }
     case 'setup': {
-      const result: SetupResult = await setupLayer(
-        cwd,
-        command.scope ?? undefined,
+      const interactive: boolean = process.stdin.isTTY && process.stdout.isTTY;
+      const elicited: ElicitedSetupOptions = await elicitSetupOptions({
+        input: process.stdin,
+        output: process.stdout,
+        interactive,
+        level: command.level,
+        scope: command.scope,
+      });
+      const userConfigDir: string = resolveUserConfigDir(
+        process.env['XDG_CONFIG_HOME'],
+        homedir(),
       );
-      write(process.stdout, `Installed ${result.writtenPaths.length} files:`);
-      for (const path of result.writtenPaths) {
-        write(process.stdout, `  ${path}`);
-      }
+      const result: SetupResult = await setupLayer(cwd, {
+        level: elicited.level,
+        userConfigDir,
+        ...(elicited.scope !== null ? { scope: elicited.scope } : {}),
+      });
+      write(process.stdout, renderSetupResult(result));
       return 0;
     }
     case 'plugin-build': {

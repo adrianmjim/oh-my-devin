@@ -1,3 +1,4 @@
+import type { InstallLevel } from '../setup/install-level';
 import type { LayerComponent } from '../setup/layer-component';
 
 export interface RunCommand {
@@ -32,6 +33,7 @@ export interface RolesShowCommand {
 export interface SetupCommand {
   readonly kind: 'setup';
   readonly scope: readonly LayerComponent[] | null;
+  readonly level: InstallLevel | null;
 }
 
 export interface HelpCommand {
