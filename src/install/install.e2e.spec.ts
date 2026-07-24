@@ -2,6 +2,7 @@ import { execFileSync, spawn } from 'node:child_process';
 import type { ChildProcessWithoutNullStreams } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import {
+  access,
   chmod,
   mkdir,
   mkdtemp,
@@ -9,7 +10,6 @@ import {
   rm,
   writeFile,
 } from 'node:fs/promises';
-import { access } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { delimiter, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
