@@ -2,6 +2,7 @@ import type { Stats } from 'node:fs';
 import { stat } from 'node:fs/promises';
 import { UsageError } from '../run/usage-error';
 import { deriveSnapshot } from './derive-snapshot';
+import { isValidRunId } from './is-valid-run-id';
 import type { Liveness } from './liveness';
 import { deriveLiveness } from './liveness-verdict';
 import type { LivenessStamp } from './liveness-stamp';
@@ -18,6 +19,9 @@ export async function loadRunSnapshot(
   now: number,
   thresholdMs: number,
 ): Promise<RunSnapshot> {
+  if (!isValidRunId(runId)) {
+    throw new UsageError(`unknown run "${runId}"`);
+  }
   const paths: RunRecordPaths = new RunRecordPaths(baseDir, runId);
   const events: readonly ProgressEvent[] | null = await readJournal(
     paths.journal,

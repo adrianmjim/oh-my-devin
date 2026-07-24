@@ -39,6 +39,17 @@ describe('loadRunSnapshot', () => {
     ).rejects.toThrow(UsageError);
   });
 
+  it('rejects a traversing identity instead of reading outside the run record root', async () => {
+    const project: string = join(base, 'project');
+    await mkdir(project, { recursive: true });
+    const writer = new JournalWriter(join(base, 'escape', 'events.jsonl'));
+    await writer.append(LAUNCHED);
+
+    await expect(
+      loadRunSnapshot(project, '../../../escape', 10000, THRESHOLD),
+    ).rejects.toThrow(UsageError);
+  });
+
   it('returns a running launching snapshot when the record dir exists but no journal is written yet', async () => {
     const paths = new RunRecordPaths(base, 'run-booting');
     await mkdir(paths.dir, { recursive: true });

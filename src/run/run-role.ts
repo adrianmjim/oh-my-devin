@@ -51,11 +51,22 @@ export async function runRole(options: RunRoleOptions): Promise<RunReport> {
     role.outputArtifact,
   );
 
-  const bundleDir: string = await mkdtemp(join(tmpdir(), 'omd-bundle-'));
-  const bundlePath: string = join(bundleDir, 'agent-config.json');
-  await writeFile(bundlePath, JSON.stringify(bundle), 'utf8');
-
+  let bundleDir: string | null = null;
   try {
+    await recorder?.append({
+      type: 'runLaunched',
+      timestamp: options.clock(),
+      runId,
+      runKind: 'single-role',
+      subject: role.name,
+      maxTurns: role.maxTurns,
+      artifactPath: role.outputArtifact,
+    });
+
+    bundleDir = await mkdtemp(join(tmpdir(), 'omd-bundle-'));
+    const bundlePath: string = join(bundleDir, 'agent-config.json');
+    await writeFile(bundlePath, JSON.stringify(bundle), 'utf8');
+
     const engine: Engine = selectEngine(role.engine);
     const adapter: HeadlessSessionAdapter = new HeadlessSessionAdapter(
       options.runner,
@@ -71,16 +82,6 @@ export async function runRole(options: RunRoleOptions): Promise<RunReport> {
       role.wallTimeMs,
       options.clock,
     );
-
-    await recorder?.append({
-      type: 'runLaunched',
-      timestamp: options.clock(),
-      runId,
-      runKind: 'single-role',
-      subject: role.name,
-      maxTurns: role.maxTurns,
-      artifactPath: role.outputArtifact,
-    });
 
     const initial: SessionTurnResult = await adapter.sendTurn(options.task);
     budget.recordTurn();
@@ -178,7 +179,9 @@ export async function runRole(options: RunRoleOptions): Promise<RunReport> {
       .catch((): void => undefined);
     throw error;
   } finally {
-    await rm(bundleDir, { recursive: true, force: true });
+    if (bundleDir !== null) {
+      await rm(bundleDir, { recursive: true, force: true });
+    }
     recorder?.close();
   }
 }

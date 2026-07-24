@@ -43,6 +43,7 @@ import { LIVENESS_STALL_THRESHOLD_MS } from './observability/liveness-timing';
 import { loadRunSnapshot } from './observability/load-run-snapshot';
 import { renderSnapshotHuman } from './observability/render-snapshot-human';
 import { renderSnapshotJson } from './observability/render-snapshot-json';
+import { resolveRunId } from './observability/resolve-run-id';
 import type { RunId } from './observability/run-id';
 import { RUN_ID_ENV } from './observability/run-id-env';
 import type { RunObserver } from './observability/run-observer';
@@ -76,16 +77,16 @@ const USAGE: string = [
   'omd — an organizational layer over the Devin CLI',
   '',
   'Usage:',
-  '  omd run <role> "<task>" [--json]   Run a role against a task end to end',
-  '  omd status <run-id> [--json]       Show a bounded snapshot of a run',
-  '  omd doctor                         Check the local runtime contract',
-  '  omd roles list [--json]            List the project’s roles',
-  '  omd roles show <role> [--json]     Show a role’s expanded contract',
-  '  omd setup [--scope=<parts>]        Install the in-session layer (parts: rules,roles,skills,hooks)',
-  '  omd plugin build [--out <dir>]     Build the installable devin plugin bundle',
-  '  omd team run <team> "<task>"       Run a team pipeline (architect → executor → reviewer)',
-  '  omd council run <c> "<question>"   Run a deliberation council [--proposal <path>] [--then <team>] [--sign] [--json]',
-  '  omd mode <set|clear> [<mode>]      Set or clear the persistent mode state read by the session hooks',
+  '  omd run <role> "<task>" [--json] [--detach]   Run a role against a task end to end',
+  '  omd status <run-id> [--json]                  Show a bounded snapshot of a run',
+  '  omd doctor                                    Check the local runtime contract',
+  '  omd roles list [--json]                       List the project’s roles',
+  '  omd roles show <role> [--json]                Show a role’s expanded contract',
+  '  omd setup [--scope=<parts>]                   Install the in-session layer (parts: rules,roles,skills,hooks)',
+  '  omd plugin build [--out <dir>]                Build the installable devin plugin bundle',
+  '  omd team run <team> "<task>"                  Run a team pipeline (architect → executor → reviewer)',
+  '  omd council run <c> "<question>"              Run a deliberation council [--proposal <path>] [--then <team>] [--sign] [--json]',
+  '  omd mode <set|clear> [<mode>]                 Set or clear the persistent mode state read by the session hooks',
   '',
 ].join('\n');
 
@@ -125,7 +126,7 @@ async function dispatch(
         return 0;
       }
       await validateRunInvocation(cwd, command.role, command.task);
-      const runId: RunId = process.env[RUN_ID_ENV] ?? generateRunId();
+      const runId: RunId = resolveRunId(process.env[RUN_ID_ENV]);
       const clock = (): number => Date.now();
       const recorder: RunObserver = createRunRecorder(cwd, runId, clock);
       await mkdir(new RunRecordPaths(cwd, runId).dir, { recursive: true });

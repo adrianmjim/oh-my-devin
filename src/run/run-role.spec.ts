@@ -515,6 +515,34 @@ describe('runRole', () => {
     expect(recorder.closeCount).toBe(1);
   });
 
+  it('records launch and a failing terminal outcome when bundle setup fails', async () => {
+    await scaffold(8);
+    const recorder = new RecordingObserver();
+    const previousTmpDir: string | undefined = process.env['TMPDIR'];
+    process.env['TMPDIR'] = join(dir, 'missing-tmp');
+    try {
+      await expect(
+        runWithRecorder(
+          [{ write: JSON.stringify({ verdict: 'pass' }) }],
+          recorder,
+        ),
+      ).rejects.toThrow(/ENOENT/);
+    } finally {
+      if (previousTmpDir === undefined) {
+        delete process.env['TMPDIR'];
+      } else {
+        process.env['TMPDIR'] = previousTmpDir;
+      }
+    }
+
+    expect(recorder.types()).toEqual(['runLaunched', 'terminalOutcome']);
+    const terminal = recorder.events.at(-1);
+    expect(terminal?.type === 'terminalOutcome' && terminal.succeeded).toBe(
+      false,
+    );
+    expect(recorder.closeCount).toBe(1);
+  });
+
   it('preserves the engine error when recording the terminal outcome fails', async () => {
     await scaffold(8);
     const recorder = new TerminalThrowingObserver();
