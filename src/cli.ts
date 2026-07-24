@@ -63,9 +63,10 @@ import { resolveModeState } from './modes/resolve-mode-state';
 import { loadRoleDefinition } from './role/load-role-definition';
 import type { RoleDefinition } from './role/role-definition';
 import { launchDetached } from './run/launch-detached';
+import { resolveRunInvocation } from './run/resolve-run-invocation';
+import type { ResolvedRunInvocation } from './run/resolved-run-invocation';
 import { runRole } from './run/run-role';
 import { UsageError } from './run/usage-error';
-import { validateRunInvocation } from './run/validate-run-invocation';
 import type { ModeState } from './setup/mode-state';
 import { setupLayer } from './setup/setup-layer';
 import type { SetupResult } from './setup/setup-result';
@@ -125,7 +126,11 @@ async function dispatch(
         write(process.stdout, launchedId);
         return 0;
       }
-      await validateRunInvocation(cwd, command.role, command.task);
+      const resolved: ResolvedRunInvocation = await resolveRunInvocation(
+        cwd,
+        command.role,
+        command.task,
+      );
       const runId: RunId = resolveRunId(process.env[RUN_ID_ENV]);
       const clock = (): number => Date.now();
       const recorder: RunObserver = createRunRecorder(cwd, runId, clock);
@@ -140,6 +145,7 @@ async function dispatch(
         clock,
         runId,
         recorder,
+        resolved,
       });
       write(
         process.stdout,

@@ -9,6 +9,8 @@ import { EngineError } from '../engine/engine-error';
 import type { ProgressEvent } from '../observability/progress-event';
 import type { RunObserver } from '../observability/run-observer';
 import type { RunReport } from '../outcome/run-report';
+import { resolveRunInvocation } from './resolve-run-invocation';
+import type { ResolvedRunInvocation } from './resolved-run-invocation';
 import { runRole } from './run-role';
 import { UsageError } from './usage-error';
 
@@ -552,6 +554,36 @@ describe('runRole', () => {
     );
 
     expect(recorder.closeCount).toBe(1);
+  });
+
+  it('honors a caller-resolved invocation without re-resolving from disk', async () => {
+    await scaffold(8);
+    const resolved: ResolvedRunInvocation = await resolveRunInvocation(
+      dir,
+      'reviewer',
+      'assess the diff',
+    );
+    await rm(join(dir, '.devin', 'agents', 'reviewer'), {
+      recursive: true,
+      force: true,
+    });
+
+    const report: RunReport = await runRole({
+      roleName: 'reviewer',
+      task: 'assess the diff',
+      workingDirectory: dir,
+      model: null,
+      runner: new FakeRunner(
+        artifactPath,
+        [{ write: JSON.stringify({ verdict: 'pass' }) }],
+        dir,
+      ),
+      clock: (): number => 0,
+      resolved,
+    });
+
+    expect(report.failureTier).toBeNull();
+    expect(report.artifactValid).toBe(true);
   });
 
   it('closes the recorder without recording when the invocation is rejected', async () => {
