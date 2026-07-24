@@ -2,6 +2,8 @@ import type { LayerComponent } from '../setup/layer-component';
 import { isLayerComponent } from '../setup/layer-component';
 import { UsageError } from '../run/usage-error';
 import type { CliCommand } from './cli-command';
+import { resolveTeamRunInvocation } from './resolve-team-run-invocation';
+import type { TeamRunInvocation } from './team-run-invocation';
 
 const SCOPE_PREFIX: string = '--scope=';
 const OUT_PREFIX: string = '--out=';
@@ -27,13 +29,15 @@ function parseSetupScope(
     .map((part: string): string => part.trim())
     .filter((part: string): boolean => part.length > 0);
   if (parts.length === 0) {
-    throw new UsageError('usage: omd setup [--scope=rules,roles,skills,hooks]');
+    throw new UsageError(
+      'usage: omd setup [--scope=rules,roles,skills,hooks,teams]',
+    );
   }
   const components: LayerComponent[] = [];
   for (const part of parts) {
     if (!isLayerComponent(part)) {
       throw new UsageError(
-        `unknown setup scope component "${part}" (expected: rules, roles, skills, hooks)`,
+        `unknown setup scope component "${part}" (expected: rules, roles, skills, hooks, teams)`,
       );
     }
     components.push(part);
@@ -200,19 +204,22 @@ export function parseCliArgs(argv: readonly string[]): CliCommand {
       return parsePluginBuild(rest);
     case 'team': {
       if (positionals[0] !== 'run') {
-        throw new UsageError('usage: omd team run <team> "<task>" [--json]');
-      }
-      const team: string | undefined = positionals[1];
-      const task: string | undefined = positionals[2];
-      if (team === undefined || task === undefined) {
-        throw new UsageError('usage: omd team run <team> "<task>" [--json]');
+        throw new UsageError('usage: omd team run [<team>] "<task>" [--json]');
       }
       if (rest.includes('--detach')) {
         throw new UsageError(
           'omd team run has no detached form; pipelines run in the blocking form',
         );
       }
-      return { kind: 'team-run', team, task, json };
+      const invocation: TeamRunInvocation = resolveTeamRunInvocation(
+        positionals.slice(1),
+      );
+      return {
+        kind: 'team-run',
+        team: invocation.team,
+        task: invocation.task,
+        json,
+      };
     }
     case 'council':
       return parseCouncilRun(rest);

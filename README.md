@@ -10,6 +10,31 @@ role contracts, context isolation, and verifiable gates.
 
 Early implementation.
 
+## Usage
+
+Install the in-session layer into a project:
+
+```bash
+omd setup
+```
+
+A full `omd setup` writes the complete layer into the project: the rules file
+(`AGENTS.md`), the canonical trio of roles — `architect`, `executor`, and
+`reviewer`, each with its declared output schema — the skills, the hooks, and a
+default team declaration at `.devin/teams/default.yaml`. Restrict the install to
+a subset with `--scope`, whose components are `rules`, `roles`, `skills`,
+`hooks`, and `teams` (for example `omd setup --scope=teams`).
+
+Run the fixed architect → executor → reviewer pipeline on a task:
+
+```bash
+omd team run <team> "<task>"   # launch a named team declaration
+omd team run "<task>"          # launch the installed default team
+```
+
+The nameless form resolves to the `default` team that `omd setup` installs; in a
+project without it, the command fails and points you at `omd setup`.
+
 ## Requirements
 
 - Node.js >= 22.14

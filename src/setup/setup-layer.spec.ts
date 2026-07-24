@@ -13,6 +13,10 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { discoverRoles } from '../catalog/discover-roles';
 import type { RoleDiscovery } from '../catalog/role-discovery';
 import { MODE_CATALOG } from '../modes/mode-catalog';
+import type { RoleDefinition } from '../role/role-definition';
+import { loadTeamDefinition } from '../team/load-team-definition';
+import type { TeamDefinition } from '../team/team-definition';
+import type { TeamTransition } from '../team/team-transition';
 import type { ModeState } from './mode-state';
 import type { SetupResult } from './setup-result';
 import { setupLayer } from './setup-layer';
@@ -78,6 +82,125 @@ describe('setupLayer', () => {
     const discovery: RoleDiscovery = await discoverRoles(dir);
     expect(discovery.errors).toEqual([]);
     expect(discovery.roles.map((r) => r.name)).toContain('reviewer');
+  });
+
+  it('installs the architect role with its handoff contract and schema', async () => {
+    await setupLayer(dir);
+
+    expect(
+      await exists(join(dir, '.devin', 'agents', 'architect', 'AGENT.md')),
+    ).toBe(true);
+    expect(
+      await exists(join(dir, '.devin', 'schemas', 'architecture.schema.json')),
+    ).toBe(true);
+
+    const discovery: RoleDiscovery = await discoverRoles(dir);
+    const architect: RoleDefinition | undefined = discovery.roles.find(
+      (r) => r.name === 'architect',
+    );
+    expect(architect?.outputArtifact).toBe('architecture.json');
+    expect(architect?.outputSchema).toBe(
+      '.devin/schemas/architecture.schema.json',
+    );
+  });
+
+  it('installs the executor role with its handoff contract and schema', async () => {
+    await setupLayer(dir);
+
+    expect(
+      await exists(join(dir, '.devin', 'agents', 'executor', 'AGENT.md')),
+    ).toBe(true);
+    expect(
+      await exists(join(dir, '.devin', 'schemas', 'evidence.schema.json')),
+    ).toBe(true);
+
+    const discovery: RoleDiscovery = await discoverRoles(dir);
+    const executor: RoleDefinition | undefined = discovery.roles.find(
+      (r) => r.name === 'executor',
+    );
+    expect(executor?.outputArtifact).toBe('evidence.json');
+    expect(executor?.outputSchema).toBe('.devin/schemas/evidence.schema.json');
+  });
+
+  it('installs the full canonical trio discoverable without errors', async () => {
+    await setupLayer(dir);
+
+    const discovery: RoleDiscovery = await discoverRoles(dir);
+    expect(discovery.errors).toEqual([]);
+    expect([...discovery.roles.map((r) => r.name)].sort()).toEqual([
+      'architect',
+      'executor',
+      'reviewer',
+    ]);
+  });
+
+  it('names the canonical trio as the installed roles in the rules file', async () => {
+    await setupLayer(dir);
+
+    const rules: string = await readFile(join(dir, 'AGENTS.md'), 'utf8');
+    expect(rules).toContain('architect');
+    expect(rules).toContain('executor');
+    expect(rules).toContain('reviewer');
+  });
+
+  it('installs only the default team declaration when scoped to teams', async () => {
+    await setupLayer(dir, ['teams']);
+
+    expect(await exists(join(dir, '.devin', 'teams', 'default.yaml'))).toBe(
+      true,
+    );
+    expect(await exists(join(dir, 'AGENTS.md'))).toBe(false);
+    expect(
+      await exists(join(dir, '.devin', 'agents', 'reviewer', 'AGENT.md')),
+    ).toBe(false);
+    expect(
+      await exists(join(dir, '.devin', 'skills', 'omd-delegate', 'SKILL.md')),
+    ).toBe(false);
+    expect(await exists(join(dir, '.devin', 'hooks.v1.json'))).toBe(false);
+  });
+
+  it('excludes the default team declaration from a scope that omits teams', async () => {
+    await setupLayer(dir, ['roles']);
+
+    expect(await exists(join(dir, '.devin', 'teams', 'default.yaml'))).toBe(
+      false,
+    );
+  });
+
+  it('installs a launchable default team composing the trio pipeline', async () => {
+    await setupLayer(dir);
+
+    expect(await exists(join(dir, '.devin', 'teams', 'default.yaml'))).toBe(
+      true,
+    );
+
+    const team: TeamDefinition = await loadTeamDefinition(dir, 'default');
+    expect(team.name).toBe('default');
+    expect(team.members).toEqual([
+      { role: 'architect', count: 1, strategy: null },
+      { role: 'executor', count: 1, strategy: null },
+      { role: 'reviewer', count: 1, strategy: null },
+    ]);
+
+    const architect: TeamTransition | undefined = team.workflow.find(
+      (t) => t.from === 'architect',
+    );
+    expect(architect?.then).toBe('executor');
+    const executor: TeamTransition | undefined = team.workflow.find(
+      (t) => t.from === 'executor',
+    );
+    expect(executor?.then).toBe('reviewer');
+    const reviewer: TeamTransition | undefined = team.workflow.find(
+      (t) => t.from === 'reviewer',
+    );
+    expect(reviewer?.outcomes).toContainEqual({
+      outcome: 'blocked',
+      to: 'executor',
+    });
+    expect(reviewer?.outcomes).toContainEqual({
+      outcome: 'passed',
+      to: 'done',
+    });
   });
 
   it('installs a model-triggered delegation skill that invokes omd run', async () => {

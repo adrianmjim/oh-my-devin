@@ -167,4 +167,37 @@ describe('omd team run (e2e)', () => {
     expect(result.stdout).toContain('gate=reject');
     expect(result.stdout).toContain('halted at: architect');
   });
+
+  it('launches the installed default team from a nameless invocation', async () => {
+    const active: E2eProject = await createE2eProject();
+    project = active;
+    await scaffoldPipeline(active);
+    await active.writeScript(THREE_TURNS);
+
+    const result: CommandResult = await active.run(
+      ['team', 'run', 'ship the feature'],
+      { stdin: ['approve', 'approve', 'approve'] },
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain('omd team run — succeeded');
+    expect(result.stdout).toContain('team: default');
+    expect(result.stdout).toContain('architect: ok, gate=approve');
+    expect(result.stdout).toContain('reviewer: ok, gate=approve');
+  });
+
+  it('fails a nameless launch with an omd setup hint when no default team exists', async () => {
+    const active: E2eProject = await createE2eProject();
+    project = active;
+    await active.writeScript(THREE_TURNS);
+
+    const result: CommandResult = await active.run([
+      'team',
+      'run',
+      'ship the feature',
+    ]);
+
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stderr).toContain('omd setup');
+  });
 });

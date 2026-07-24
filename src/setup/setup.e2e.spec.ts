@@ -93,4 +93,48 @@ describe('omd setup (e2e)', () => {
       false,
     );
   });
+
+  it('installs the canonical trio, their schemas, and the default team on a full install', async () => {
+    project = await createE2eProject();
+
+    const result: CommandResult = await project.run(['setup']);
+
+    expect(result.exitCode).toBe(0);
+    for (const role of ['architect', 'executor', 'reviewer']) {
+      expect(
+        await exists(join(project.dir, '.devin', 'agents', role, 'AGENT.md')),
+        role,
+      ).toBe(true);
+    }
+    for (const schema of [
+      'architecture.schema.json',
+      'evidence.schema.json',
+      'review.schema.json',
+    ]) {
+      expect(
+        await exists(join(project.dir, '.devin', 'schemas', schema)),
+        schema,
+      ).toBe(true);
+    }
+    expect(
+      await exists(join(project.dir, '.devin', 'teams', 'default.yaml')),
+    ).toBe(true);
+  });
+
+  it('writes only the default team declaration when scoped to teams', async () => {
+    project = await createE2eProject();
+
+    const result: CommandResult = await project.run(['setup', '--scope=teams']);
+
+    expect(result.exitCode).toBe(0);
+    expect(
+      await exists(join(project.dir, '.devin', 'teams', 'default.yaml')),
+    ).toBe(true);
+    expect(await exists(join(project.dir, 'AGENTS.md'))).toBe(false);
+    expect(await exists(join(project.dir, '.devin', 'agents'))).toBe(false);
+    expect(await exists(join(project.dir, '.devin', 'skills'))).toBe(false);
+    expect(await exists(join(project.dir, '.devin', 'hooks.v1.json'))).toBe(
+      false,
+    );
+  });
 });

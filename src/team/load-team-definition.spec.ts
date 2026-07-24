@@ -71,8 +71,21 @@ describe('loadTeamDefinition', () => {
     ]);
   });
 
-  it('raises a usage error when the team file is missing', async () => {
+  it('raises a usage error naming a missing non-default team without the setup remedy', async () => {
     await expect(loadTeamDefinition(dir, 'ghost')).rejects.toThrow(UsageError);
+    await expect(loadTeamDefinition(dir, 'ghost')).rejects.toThrow(/ghost/);
+    await expect(loadTeamDefinition(dir, 'ghost')).rejects.not.toThrow(
+      /omd setup/,
+    );
+  });
+
+  it('points a missing default team at omd setup as the remedy', async () => {
+    await expect(loadTeamDefinition(dir, 'default')).rejects.toThrow(
+      UsageError,
+    );
+    await expect(loadTeamDefinition(dir, 'default')).rejects.toThrow(
+      /omd setup/,
+    );
   });
 
   it('raises a usage error when the declaration is malformed', async () => {

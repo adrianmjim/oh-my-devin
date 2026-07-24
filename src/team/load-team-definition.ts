@@ -4,6 +4,7 @@ import { discoverRoles } from '../catalog/discover-roles';
 import type { RoleDiscovery } from '../catalog/role-discovery';
 import type { RoleDefinition } from '../role/role-definition';
 import { UsageError } from '../run/usage-error';
+import { DEFAULT_TEAM_NAME } from './default-team-name';
 import { parseTeamDefinition } from './parse-team-definition';
 import type { TeamDefinition } from './team-definition';
 
@@ -16,7 +17,11 @@ export async function loadTeamDefinition(
   try {
     text = await readFile(path, 'utf8');
   } catch {
-    throw new UsageError(`team "${name}" not found at ${path}`);
+    const remedy: string =
+      name === DEFAULT_TEAM_NAME
+        ? `no default team found at ${path}; run "omd setup" to install it`
+        : `team "${name}" not found at ${path}`;
+    throw new UsageError(remedy);
   }
 
   const discovery: RoleDiscovery = await discoverRoles(baseDir);
