@@ -1,3 +1,6 @@
+import { formatLayerComponents } from '../setup/format-layer-components';
+import type { InstallLevel } from '../setup/install-level';
+import { isInstallLevel } from '../setup/install-level';
 import type { LayerComponent } from '../setup/layer-component';
 import { isLayerComponent } from '../setup/layer-component';
 import { UsageError } from '../run/usage-error';
@@ -6,6 +9,7 @@ import { resolveTeamRunInvocation } from './resolve-team-run-invocation';
 import type { TeamRunInvocation } from './team-run-invocation';
 
 const SCOPE_PREFIX: string = '--scope=';
+const LEVEL_PREFIX: string = '--level=';
 const OUT_PREFIX: string = '--out=';
 const PROPOSAL_PREFIX: string = '--proposal=';
 const THEN_PREFIX: string = '--then=';
@@ -30,19 +34,45 @@ function parseSetupScope(
     .filter((part: string): boolean => part.length > 0);
   if (parts.length === 0) {
     throw new UsageError(
-      'usage: omd setup [--scope=rules,roles,skills,hooks,teams]',
+      `usage: omd setup [--scope=${formatLayerComponents(',')}]`,
     );
   }
   const components: LayerComponent[] = [];
   for (const part of parts) {
     if (!isLayerComponent(part)) {
       throw new UsageError(
-        `unknown setup scope component "${part}" (expected: rules, roles, skills, hooks, teams)`,
+        `unknown setup scope component "${part}" (expected: ${formatLayerComponents(', ')})`,
       );
     }
     components.push(part);
   }
   return components;
+}
+
+function assertKnownSetupArgs(rest: readonly string[]): void {
+  for (const arg of rest) {
+    if (!arg.startsWith(SCOPE_PREFIX) && !arg.startsWith(LEVEL_PREFIX)) {
+      throw new UsageError(
+        `usage: omd setup [--level=<project|user>] [--scope=${formatLayerComponents(',')}]`,
+      );
+    }
+  }
+}
+
+function parseSetupLevel(rest: readonly string[]): InstallLevel | null {
+  const flag: string | undefined = rest.find((arg: string): boolean =>
+    arg.startsWith(LEVEL_PREFIX),
+  );
+  if (flag === undefined) {
+    return null;
+  }
+  const value: string = flag.slice(LEVEL_PREFIX.length);
+  if (!isInstallLevel(value)) {
+    throw new UsageError(
+      `unknown install level "${value}" (expected: project, user)`,
+    );
+  }
+  return value;
 }
 
 function parseCouncilRun(rest: readonly string[]): CliCommand {
@@ -198,8 +228,14 @@ export function parseCliArgs(argv: readonly string[]): CliCommand {
       }
       throw new UsageError('usage: omd roles <list|show> [<role>] [--json]');
     }
-    case 'setup':
-      return { kind: 'setup', scope: parseSetupScope(rest) };
+    case 'setup': {
+      assertKnownSetupArgs(rest);
+      return {
+        kind: 'setup',
+        scope: parseSetupScope(rest),
+        level: parseSetupLevel(rest),
+      };
+    }
     case 'plugin':
       return parsePluginBuild(rest);
     case 'team': {

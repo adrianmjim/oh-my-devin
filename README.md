@@ -25,6 +25,31 @@ default team declaration at `.devin/teams/default.yaml`. Restrict the install to
 a subset with `--scope`, whose components are `rules`, `roles`, `skills`,
 `hooks`, and `teams` (for example `omd setup --scope=teams`).
 
+`omd setup` also chooses **where** the layer is written. Run in an interactive
+terminal, it asks for the two options it needs:
+
+- **Install level** — `project` (the current directory, the default) or `user`
+  (the user-level locations under `~/.config/devin/`, so one install serves
+  every project the Devin CLI touches).
+- **Component scope** — full (the default) or the subset above.
+
+Flags pre-answer the prompts, and an option fixed on the command line is not
+asked:
+
+```bash
+omd setup                                # interactive; Enter through for a project-level full install
+omd setup --level=user                   # asks only the scope
+omd setup --level=user --scope=skills    # fully non-interactive
+```
+
+A headless or piped run (no TTY) never prompts and never waits: unanswered
+options take their defaults — project level, full scope — so scripted
+invocations behave exactly as before. At user level each component is written
+where the Devin CLI discovers it under `~/.config/devin/` (hooks are merged into
+`~/.config/devin/config.json`, preserving its other keys, rather than written as
+a standalone file); a component with no verified user-level location — the
+default team — is reported as refused and left uninstalled at that level.
+
 Run the fixed architect → executor → reviewer pipeline on a task:
 
 ```bash

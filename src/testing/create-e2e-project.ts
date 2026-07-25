@@ -60,6 +60,7 @@ export async function createE2eProject(): Promise<E2eProject> {
               PATH: pathValue,
               [STUB_SCRIPT_ENV]: scriptPath,
               [STUB_LOG_ENV]: logPath,
+              ...(options?.env ?? {}),
             },
           },
         );

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { ALL_LAYER_COMPONENTS } from '../setup/layer-component';
 import { UsageError } from '../run/usage-error';
 import type {
   CouncilRunCommand,
@@ -103,10 +104,11 @@ describe('parseCliArgs', () => {
     expect(() => parseCliArgs(['roles', 'delete'])).toThrow(UsageError);
   });
 
-  it('parses the setup command with a null scope by default', () => {
+  it('parses the setup command with a null scope and null level by default', () => {
     const command = parseCliArgs(['setup']);
     expect(command.kind).toBe('setup');
     expect((command as SetupCommand).scope).toBeNull();
+    expect((command as SetupCommand).level).toBeNull();
   });
 
   it('parses a comma-separated setup scope', () => {
@@ -116,6 +118,63 @@ describe('parseCliArgs', () => {
 
   it('rejects an unknown setup scope component', () => {
     expect(() => parseCliArgs(['setup', '--scope=bogus'])).toThrow(UsageError);
+  });
+
+  it('parses --level=project and --level=user', () => {
+    expect(
+      (parseCliArgs(['setup', '--level=project']) as SetupCommand).level,
+    ).toBe('project');
+    expect(
+      (parseCliArgs(['setup', '--level=user']) as SetupCommand).level,
+    ).toBe('user');
+  });
+
+  it('parses the level and scope flags together', () => {
+    const command = parseCliArgs([
+      'setup',
+      '--level=user',
+      '--scope=skills,hooks',
+    ]);
+    expect((command as SetupCommand).level).toBe('user');
+    expect((command as SetupCommand).scope).toEqual(['skills', 'hooks']);
+  });
+
+  it('rejects an unknown install level', () => {
+    expect(() => parseCliArgs(['setup', '--level=global'])).toThrow(UsageError);
+  });
+
+  it('rejects an empty install level', () => {
+    expect(() => parseCliArgs(['setup', '--level='])).toThrow(UsageError);
+  });
+
+  it('rejects an empty setup scope', () => {
+    expect(() => parseCliArgs(['setup', '--scope='])).toThrow(UsageError);
+  });
+
+  it('rejects the space-separated level form rather than silently ignoring it', () => {
+    expect(() => parseCliArgs(['setup', '--level', 'user'])).toThrow(
+      UsageError,
+    );
+  });
+
+  it('rejects a misspelled or unknown setup flag', () => {
+    expect(() => parseCliArgs(['setup', '--levl=user'])).toThrow(UsageError);
+    expect(() => parseCliArgs(['setup', '--bogus'])).toThrow(UsageError);
+    expect(() => parseCliArgs(['setup', 'user'])).toThrow(UsageError);
+  });
+
+  it('names every scope component in each setup usage message', () => {
+    const rejected: readonly (readonly string[])[] = [
+      ['setup', 'bogus'],
+      ['setup', '--scope='],
+      ['setup', '--scope=nope'],
+    ];
+
+    for (const invocation of rejected) {
+      for (const component of ALL_LAYER_COMPONENTS) {
+        expect(() => parseCliArgs(invocation)).toThrow(component);
+      }
+    }
   });
 
   it('rejects an unknown top-level command', () => {

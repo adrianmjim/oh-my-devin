@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import type { CommandResult } from '../engine/command-result';
+import { ALL_LAYER_COMPONENTS } from '../setup/layer-component';
 import { createE2eProject } from '../testing/create-e2e-project';
 import type { E2eProject } from '../testing/e2e-project';
 
@@ -65,5 +66,16 @@ describe('omd usage and error rendering (e2e)', () => {
     );
     expect(result.stdout).toContain('Usage:');
     expect(result.stdout).toContain('[--detach]');
+  });
+
+  it('names every scope component in the setup usage line', async () => {
+    project = await createE2eProject();
+
+    const result: CommandResult = await project.run(['--help']);
+
+    expect(result.exitCode).toBe(0);
+    for (const component of ALL_LAYER_COMPONENTS) {
+      expect(result.stdout).toContain(component);
+    }
   });
 });

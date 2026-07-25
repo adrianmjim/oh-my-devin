@@ -144,7 +144,7 @@ describe('setupLayer', () => {
   });
 
   it('installs only the default team declaration when scoped to teams', async () => {
-    await setupLayer(dir, ['teams']);
+    await setupLayer(dir, { scope: ['teams'] });
 
     expect(await exists(join(dir, '.devin', 'teams', 'default.yaml'))).toBe(
       true,
@@ -160,7 +160,7 @@ describe('setupLayer', () => {
   });
 
   it('excludes the default team declaration from a scope that omits teams', async () => {
-    await setupLayer(dir, ['roles']);
+    await setupLayer(dir, { scope: ['roles'] });
 
     expect(await exists(join(dir, '.devin', 'teams', 'default.yaml'))).toBe(
       false,
@@ -253,7 +253,7 @@ describe('setupLayer', () => {
   });
 
   it('installs only the hooks when scoped to hooks', async () => {
-    await setupLayer(dir, ['hooks']);
+    await setupLayer(dir, { scope: ['hooks'] });
 
     expect(await exists(join(dir, '.devin', 'hooks.v1.json'))).toBe(true);
     expect(await exists(join(dir, '.devin', 'hooks', 'omd-mode.mjs'))).toBe(
@@ -269,7 +269,7 @@ describe('setupLayer', () => {
   });
 
   it('installs only the skills when scoped to skills', async () => {
-    await setupLayer(dir, ['skills']);
+    await setupLayer(dir, { scope: ['skills'] });
 
     expect(
       await exists(join(dir, '.devin', 'skills', 'omd-delegate', 'SKILL.md')),
