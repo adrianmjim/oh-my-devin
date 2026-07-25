@@ -5,7 +5,8 @@ const ATTRIBUTE_PATTERN: RegExp = /([a-z]+)=([^\s]+)/g;
 export function parseMarkerAttributes(text: string): RegionMarker | null {
   const attributes: Map<string, string> = new Map<string, string>();
   for (const match of text.matchAll(ATTRIBUTE_PATTERN)) {
-    const [, key, value] = match;
+    const key: string | undefined = match[1];
+    const value: string | undefined = match[2];
     if (key !== undefined && value !== undefined && !attributes.has(key)) {
       attributes.set(key, value);
     }

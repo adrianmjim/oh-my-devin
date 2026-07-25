@@ -1,3 +1,4 @@
+import type { Dirent } from 'node:fs';
 import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { join, relative } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -54,8 +55,10 @@ async function snapshot(dir: string): Promise<Map<string, string>> {
   const entries: readonly string[] = (
     await readdir(dir, { recursive: true, withFileTypes: true })
   )
-    .filter((entry): boolean => entry.isFile())
-    .map((entry): string => relative(dir, join(entry.parentPath, entry.name)));
+    .filter((entry: Dirent): boolean => entry.isFile())
+    .map((entry: Dirent): string =>
+      relative(dir, join(entry.parentPath, entry.name)),
+    );
   for (const entry of entries) {
     files.set(entry, await readFile(join(dir, entry), 'utf8'));
   }

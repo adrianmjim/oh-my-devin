@@ -1,4 +1,4 @@
-import { access, readFile } from 'node:fs/promises';
+import { access, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { CommandResult } from '../engine/command-result';
@@ -136,6 +136,31 @@ describe('omd setup (e2e)', () => {
     expect(await exists(join(project.dir, '.devin', 'hooks.v1.json'))).toBe(
       false,
     );
+  });
+
+  it('leaves a previously installed component outside the scope exactly as found', async () => {
+    project = await createE2eProject();
+    await project.run(['setup']);
+    const rulesPath: string = join(project.dir, 'AGENTS.md');
+    const teamPath: string = join(
+      project.dir,
+      '.devin',
+      'teams',
+      'default.yaml',
+    );
+    const editedRules: string = `${await readFile(rulesPath, 'utf8')}\nMy own addendum.\n`;
+    await writeFile(rulesPath, editedRules, 'utf8');
+    const teamBefore: string = await readFile(teamPath, 'utf8');
+
+    const result: CommandResult = await project.run([
+      'setup',
+      '--scope=skills',
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).not.toContain('AGENTS.md');
+    expect(await readFile(rulesPath, 'utf8')).toBe(editedRules);
+    expect(await readFile(teamPath, 'utf8')).toBe(teamBefore);
   });
 
   it('never prompts or waits for input in a headless run', async () => {

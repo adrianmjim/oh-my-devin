@@ -82,7 +82,9 @@ function registryTarget(options: ResolveLayerTargetsOptions): RegistryTarget {
     reportPath: userLevel ? absolutePath : PROJECT_REGISTRY_PATH,
     shape: userLevel ? 'config-key' : 'document',
     hooksMap: buildHooksEventMap(
-      userLevel ? `node ${posixQuote(scriptAbsolutePath)}` : PROJECT_HOOK_COMMAND,
+      userLevel
+        ? `node ${posixQuote(scriptAbsolutePath)}`
+        : PROJECT_HOOK_COMMAND,
     ),
   };
 }
