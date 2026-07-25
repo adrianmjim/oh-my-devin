@@ -17,7 +17,11 @@ export function mergeContainer(request: MergeRequest): MergeOutcome {
   if (existing === null || existing.trim() === '') {
     outcome = { kind: 'created', content: framed };
   } else {
-    const scan: RegionScan = scanRegion(existing, request.framing.id);
+    const scan: RegionScan = scanRegion(
+      existing,
+      request.framing.id,
+      request.framing.style,
+    );
     if (scan.kind === 'malformed') {
       outcome = { kind: 'conflicted', reason: scan.reason };
     } else if (scan.kind === 'absent') {

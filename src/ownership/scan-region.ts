@@ -1,3 +1,6 @@
+import type { CommentDelimiters } from './comment-delimiters';
+import { commentDelimiters } from './comment-delimiters';
+import type { CommentStyle } from './comment-style';
 import { parseMarkerAttributes } from './parse-marker-attributes';
 import type { RegionMarker } from './region-marker';
 import { BEGIN_TOKEN, END_TOKEN } from './region-marker';
@@ -71,20 +74,27 @@ function resolve(
   return scan;
 }
 
-export function scanRegion(content: string, id: string): RegionScan {
+export function scanRegion(
+  content: string,
+  id: string,
+  style: CommentStyle,
+): RegionScan {
+  const delimiters: CommentDelimiters = commentDelimiters(style);
+  const beginSentinel: string = `${delimiters.open}${BEGIN_TOKEN} `;
+  const endSentinel: string = `${delimiters.open}${END_TOKEN} `;
   const begins: BeginSite[] = [];
   const ends: SentinelSite[] = [];
   let unreadable: boolean = false;
   let offset: number = 0;
   for (const line of content.split('\n')) {
-    if (line.includes(BEGIN_TOKEN)) {
+    if (line.startsWith(beginSentinel)) {
       const marker: RegionMarker | null = parseMarkerAttributes(line);
       if (marker === null) {
         unreadable = true;
       } else if (marker.id === id) {
         begins.push({ start: offset, length: line.length, marker });
       }
-    } else if (line.includes(END_TOKEN)) {
+    } else if (line.startsWith(endSentinel)) {
       const match: RegExpExecArray | null = END_ID_PATTERN.exec(line);
       if (match === null) {
         unreadable = true;

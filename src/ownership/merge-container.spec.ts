@@ -49,6 +49,16 @@ describe('mergeContainer', () => {
     expect(merged).toContain(frameRegion(FRAMING));
   });
 
+  it('appends the region to a file that mentions the tokens in prose', () => {
+    const existing: string =
+      '# My own rules\n\nOur guide quotes the omd:begin and omd:end markers.\n';
+
+    const outcome: MergeOutcome = mergeContainer(request(existing));
+
+    expect(outcome.kind).toBe('updated');
+    expect(contentOrThrow(outcome).startsWith(existing)).toBe(true);
+  });
+
   it('replaces a pristine region in place, leaving the text around it untouched', () => {
     const existing: string = `above\n\n${frameRegion(FRAMING)}\nbelow\n`;
     const updated: RegionFraming = { ...FRAMING, content: 'newer omd rules\n' };

@@ -17,7 +17,11 @@ const SHARED_SKILL_NAMES: readonly string[] = [
 ];
 
 async function installedContent(path: string, id: string): Promise<string> {
-  const scan: RegionScan = scanRegion(await readFile(path, 'utf8'), id);
+  const scan: RegionScan = scanRegion(
+    await readFile(path, 'utf8'),
+    id,
+    'markdown',
+  );
   if (scan.kind !== 'located') {
     throw new Error(`${path} carries no omd region named ${id}`);
   }
