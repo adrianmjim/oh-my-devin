@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { ALL_LAYER_COMPONENTS } from '../setup/layer-component';
 import { UsageError } from '../run/usage-error';
 import type {
   CouncilRunCommand,
@@ -160,6 +161,20 @@ describe('parseCliArgs', () => {
     expect(() => parseCliArgs(['setup', '--levl=user'])).toThrow(UsageError);
     expect(() => parseCliArgs(['setup', '--bogus'])).toThrow(UsageError);
     expect(() => parseCliArgs(['setup', 'user'])).toThrow(UsageError);
+  });
+
+  it('names every scope component in each setup usage message', () => {
+    const rejected: readonly (readonly string[])[] = [
+      ['setup', 'bogus'],
+      ['setup', '--scope='],
+      ['setup', '--scope=nope'],
+    ];
+
+    for (const invocation of rejected) {
+      for (const component of ALL_LAYER_COMPONENTS) {
+        expect(() => parseCliArgs(invocation)).toThrow(component);
+      }
+    }
   });
 
   it('rejects an unknown top-level command', () => {

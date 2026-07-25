@@ -1,3 +1,4 @@
+import { formatLayerComponents } from '../setup/format-layer-components';
 import type { InstallLevel } from '../setup/install-level';
 import { isInstallLevel } from '../setup/install-level';
 import type { LayerComponent } from '../setup/layer-component';
@@ -33,14 +34,14 @@ function parseSetupScope(
     .filter((part: string): boolean => part.length > 0);
   if (parts.length === 0) {
     throw new UsageError(
-      'usage: omd setup [--scope=rules,roles,skills,hooks,teams]',
+      `usage: omd setup [--scope=${formatLayerComponents(',')}]`,
     );
   }
   const components: LayerComponent[] = [];
   for (const part of parts) {
     if (!isLayerComponent(part)) {
       throw new UsageError(
-        `unknown setup scope component "${part}" (expected: rules, roles, skills, hooks, teams)`,
+        `unknown setup scope component "${part}" (expected: ${formatLayerComponents(', ')})`,
       );
     }
     components.push(part);
@@ -52,7 +53,7 @@ function assertKnownSetupArgs(rest: readonly string[]): void {
   for (const arg of rest) {
     if (!arg.startsWith(SCOPE_PREFIX) && !arg.startsWith(LEVEL_PREFIX)) {
       throw new UsageError(
-        'usage: omd setup [--level=<project|user>] [--scope=rules,roles,skills,hooks]',
+        `usage: omd setup [--level=<project|user>] [--scope=${formatLayerComponents(',')}]`,
       );
     }
   }

@@ -1,5 +1,6 @@
 import { createInterface } from 'node:readline/promises';
 import type { Interface } from 'node:readline/promises';
+import { formatLayerComponents } from './format-layer-components';
 import type { InstallLevel } from './install-level';
 import { isInstallLevel } from './install-level';
 import type { LayerComponent } from './layer-component';
@@ -27,11 +28,9 @@ type LineResolver = (line: string | null) => void;
 
 const LEVEL_PROMPT: string =
   'Install level? [project/user] (default: project) ';
-const SCOPE_PROMPT: string =
-  'Component scope? [full / comma-separated of rules,roles,skills,hooks] (default: full) ';
+const SCOPE_PROMPT: string = `Component scope? [full / comma-separated of ${formatLayerComponents(',')}] (default: full) `;
 const LEVEL_HINT: string = 'Please answer "project" or "user".\n';
-const SCOPE_HINT: string =
-  'Please answer "full" or a comma-separated subset of rules,roles,skills,hooks.\n';
+const SCOPE_HINT: string = `Please answer "full" or a comma-separated subset of ${formatLayerComponents(',')}.\n`;
 
 function createLineReader(
   input: NodeJS.ReadableStream,
@@ -107,7 +106,10 @@ async function promptLevel(
   while (resolved === null) {
     const answer: string | null = await reader.next(LEVEL_PROMPT);
     const normalized: string = (answer ?? '').trim().toLowerCase();
-    if (answer === null || normalized === '') {
+    if (answer === null) {
+      output.write('\n');
+      resolved = 'project';
+    } else if (normalized === '') {
       resolved = 'project';
     } else if (isInstallLevel(normalized)) {
       resolved = normalized;
@@ -127,7 +129,11 @@ async function promptScope(
   while (!done) {
     const answer: string | null = await reader.next(SCOPE_PROMPT);
     const normalized: string = (answer ?? '').trim().toLowerCase();
-    if (answer === null || normalized === '' || normalized === 'full') {
+    if (answer === null) {
+      output.write('\n');
+      resolved = null;
+      done = true;
+    } else if (normalized === '' || normalized === 'full') {
       resolved = null;
       done = true;
     } else {

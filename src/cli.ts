@@ -72,6 +72,7 @@ import { runRole } from './run/run-role';
 import { UsageError } from './run/usage-error';
 import { elicitSetupOptions } from './setup/elicit-setup-options';
 import type { ElicitedSetupOptions } from './setup/elicit-setup-options';
+import { formatLayerComponents } from './setup/format-layer-components';
 import type { ModeState } from './setup/mode-state';
 import { renderSetupResult } from './setup/render-setup-result';
 import { resolveUserConfigDir } from './setup/resolve-user-config-dir';
@@ -90,7 +91,7 @@ const USAGE: string = [
   '  omd doctor                                    Check the local runtime contract',
   '  omd roles list [--json]                       List the project’s roles',
   '  omd roles show <role> [--json]                Show a role’s expanded contract',
-  '  omd setup [--level=<project|user>] [--scope=<parts>]  Install the in-session layer (level: project|user; parts: rules,roles,skills,hooks,teams)',
+  `  omd setup [--level=<project|user>] [--scope=<parts>]  Install the in-session layer (level: project|user; parts: ${formatLayerComponents(',')})`,
   '  omd plugin build [--out <dir>]                Build the installable devin plugin bundle',
   '  omd team run [<team>] "<task>"                Run a team pipeline (architect → executor → reviewer); omits <team> to launch the default',
   '  omd council run <c> "<question>"              Run a deliberation council [--proposal <path>] [--then <team>] [--sign] [--json]',

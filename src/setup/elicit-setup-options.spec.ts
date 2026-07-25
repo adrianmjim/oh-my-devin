@@ -2,6 +2,7 @@ import { Readable, Writable } from 'node:stream';
 import { describe, expect, it } from 'vitest';
 import type { ElicitedSetupOptions } from './elicit-setup-options';
 import { elicitSetupOptions } from './elicit-setup-options';
+import { ALL_LAYER_COMPONENTS } from './layer-component';
 
 function input(text: string): Readable {
   return Readable.from([text]);
@@ -44,6 +45,9 @@ describe('elicitSetupOptions', () => {
     expect(prompts).toContain('project');
     expect(prompts).toContain('user');
     expect(prompts).toContain('full');
+    for (const component of ALL_LAYER_COMPONENTS) {
+      expect(prompts).toContain(component);
+    }
   });
 
   it('accepts every default on empty answers, reproducing the flagless install', async () => {
@@ -72,6 +76,7 @@ describe('elicitSetupOptions', () => {
 
     expect(result.level).toBe('project');
     expect(result.scope).toBeNull();
+    expect(sink.text().endsWith('\n')).toBe(true);
   });
 
   it('re-asks on an unrecognized answer', async () => {
@@ -104,6 +109,13 @@ describe('elicitSetupOptions', () => {
     expect(result.scope).toEqual(['skills']);
     expect(sink.text()).toContain('Please answer "full"');
     expect(occurrences(sink.text(), '[full')).toBeGreaterThanOrEqual(2);
+    const text: string = sink.text();
+    const hintStart: number = text.indexOf('Please answer "full"');
+    const hint: string = text.slice(hintStart, text.indexOf('\n', hintStart));
+    expect(hintStart).toBeGreaterThanOrEqual(0);
+    for (const component of ALL_LAYER_COMPONENTS) {
+      expect(hint).toContain(component);
+    }
   });
 
   it('issues no prompt when both options are fixed even in an interactive terminal', async () => {
