@@ -20,4 +20,22 @@ describe('resolveUserConfigDir', () => {
       join('/home/u', '.config', 'devin'),
     );
   });
+
+  it('ignores a relative XDG_CONFIG_HOME', () => {
+    expect(resolveUserConfigDir('cfg', '/home/u')).toBe(
+      join('/home/u', '.config', 'devin'),
+    );
+  });
+
+  it('ignores an explicitly current-directory-relative XDG_CONFIG_HOME', () => {
+    expect(resolveUserConfigDir('./cfg', '/home/u')).toBe(
+      join('/home/u', '.config', 'devin'),
+    );
+  });
+
+  it('ignores an XDG_CONFIG_HOME that is absolute only after trimming', () => {
+    expect(resolveUserConfigDir(' /x/cfg', '/home/u')).toBe(
+      join('/home/u', '.config', 'devin'),
+    );
+  });
 });

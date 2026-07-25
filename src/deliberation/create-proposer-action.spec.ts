@@ -76,6 +76,7 @@ function makeDeps(
     runnerFor: (): CommandRunner => NOOP_RUNNER,
     readArtifact: read,
     clock: (): number => 0,
+    userConfigDir: null,
   };
 }
 

@@ -79,7 +79,10 @@ describe('setupLayer', () => {
   it('installs an example role that the catalog can discover cleanly', async () => {
     await setupLayer(dir);
 
-    const discovery: RoleDiscovery = await discoverRoles(dir);
+    const discovery: RoleDiscovery = await discoverRoles({
+      projectDir: dir,
+      userConfigDir: null,
+    });
     expect(discovery.errors).toEqual([]);
     expect(discovery.roles.map((r) => r.name)).toContain('reviewer');
   });
@@ -94,7 +97,10 @@ describe('setupLayer', () => {
       await exists(join(dir, '.devin', 'schemas', 'architecture.schema.json')),
     ).toBe(true);
 
-    const discovery: RoleDiscovery = await discoverRoles(dir);
+    const discovery: RoleDiscovery = await discoverRoles({
+      projectDir: dir,
+      userConfigDir: null,
+    });
     const architect: RoleDefinition | undefined = discovery.roles.find(
       (r) => r.name === 'architect',
     );
@@ -114,7 +120,10 @@ describe('setupLayer', () => {
       await exists(join(dir, '.devin', 'schemas', 'evidence.schema.json')),
     ).toBe(true);
 
-    const discovery: RoleDiscovery = await discoverRoles(dir);
+    const discovery: RoleDiscovery = await discoverRoles({
+      projectDir: dir,
+      userConfigDir: null,
+    });
     const executor: RoleDefinition | undefined = discovery.roles.find(
       (r) => r.name === 'executor',
     );
@@ -125,7 +134,10 @@ describe('setupLayer', () => {
   it('installs the full canonical trio discoverable without errors', async () => {
     await setupLayer(dir);
 
-    const discovery: RoleDiscovery = await discoverRoles(dir);
+    const discovery: RoleDiscovery = await discoverRoles({
+      projectDir: dir,
+      userConfigDir: null,
+    });
     expect(discovery.errors).toEqual([]);
     expect([...discovery.roles.map((r) => r.name)].sort()).toEqual([
       'architect',
@@ -174,7 +186,10 @@ describe('setupLayer', () => {
       true,
     );
 
-    const team: TeamDefinition = await loadTeamDefinition(dir, 'default');
+    const team: TeamDefinition = await loadTeamDefinition(
+      { projectDir: dir, userConfigDir: null },
+      'default',
+    );
     expect(team.name).toBe('default');
     expect(team.members).toEqual([
       { role: 'architect', count: 1, strategy: null },

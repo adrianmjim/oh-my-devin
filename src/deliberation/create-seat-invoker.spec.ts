@@ -146,6 +146,7 @@ function makeDeps(
     runnerFor: (): CommandRunner => NOOP_RUNNER,
     readArtifact: read,
     clock: (): number => 0,
+    userConfigDir: null,
   };
 }
 
@@ -334,6 +335,7 @@ describe('createSeatInvoker', () => {
           new SeatEngineStub(workingDirectory),
         readArtifact: (): Promise<string> => Promise.resolve(POSITION_JSON),
         clock: (): number => 0,
+        userConfigDir: null,
       },
       new WorktreePool(worktrees),
     );

@@ -1,6 +1,6 @@
 import { formatLayerComponents } from '../setup/format-layer-components';
-import type { InstallLevel } from '../setup/install-level';
-import { isInstallLevel } from '../setup/install-level';
+import type { InstallLevel } from '../layer/install-level';
+import { isInstallLevel } from '../layer/install-level';
 import type { LayerComponent } from '../setup/layer-component';
 import { isLayerComponent } from '../setup/layer-component';
 import { UsageError } from '../run/usage-error';

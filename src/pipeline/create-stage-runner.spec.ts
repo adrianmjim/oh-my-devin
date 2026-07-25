@@ -66,6 +66,7 @@ function makeDeps(
   readArtifact: (path: string) => Promise<string> = (
     path: string,
   ): Promise<string> => Promise.resolve(`READ(${path})`),
+  userConfigDir: string | null = null,
 ): StageRunnerDeps {
   return {
     worktrees,
@@ -73,6 +74,7 @@ function makeDeps(
     runnerFor: (): CommandRunner => NOOP_RUNNER,
     readArtifact,
     clock: (): number => 0,
+    userConfigDir,
   };
 }
 
@@ -218,5 +220,30 @@ describe('createStageRunner', () => {
     expect(reads).toBe(0);
     expect(worktrees.captureCalls).toBe(0);
     expect(worktrees.removed).toEqual(['executor']);
+  });
+  it('runs the stage role against a lookup carrying the user-level location', async () => {
+    const worktrees = new FakeWorktrees();
+    const seen: RunRoleOptions[] = [];
+    const runStage: StageRunner = createStageRunner(
+      makeDeps(
+        (options: RunRoleOptions): Promise<RunReport> => {
+          seen.push(options);
+          return Promise.resolve(reportFor('architect'));
+        },
+        worktrees,
+        undefined,
+        '/home/u/.config/devin',
+      ),
+    );
+
+    await runStage({
+      stage: 'architect',
+      inputs: inputs([['requirements', 'r']]),
+    });
+
+    expect(seen[0]?.lookup).toEqual({
+      projectDir: '/wt/architect',
+      userConfigDir: '/home/u/.config/devin',
+    });
   });
 });

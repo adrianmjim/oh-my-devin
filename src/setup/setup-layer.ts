@@ -1,4 +1,4 @@
-import type { InstallLevel } from './install-level';
+import type { InstallLevel } from '../layer/install-level';
 import type { LayerComponent } from './layer-component';
 import { ALL_LAYER_COMPONENTS } from './layer-component';
 import { resolveLayerTargets } from './resolve-layer-targets';

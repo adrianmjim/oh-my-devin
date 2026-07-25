@@ -1,8 +1,10 @@
-import { join, sep } from 'node:path';
-import type { InstallLevel } from './install-level';
+import { join } from 'node:path';
+import type { InstallLevel } from '../layer/install-level';
+import { layerFilePath } from '../layer/layer-file-path';
 import { LAYER_FILES } from './layer-catalog';
 import type { LayerComponent } from './layer-component';
 import type { LayerFile } from './layer-file';
+import { posixQuote } from './posix-quote';
 import type {
   FileTarget,
   HooksMergeTarget,
@@ -25,11 +27,6 @@ export const USER_LEVEL_SUPPORTED: readonly LayerComponent[] = [
   'hooks',
 ];
 
-function toUserRelative(relativePath: string): string {
-  const segments: readonly string[] = relativePath.split(sep);
-  return segments[0] === '.devin' ? join(...segments.slice(1)) : relativePath;
-}
-
 function fileTarget(
   file: LayerFile,
   level: InstallLevel,
@@ -37,9 +34,7 @@ function fileTarget(
   userConfigDir: string,
 ): FileTarget {
   const base: string = level === 'project' ? projectDir : userConfigDir;
-  const relativePath: string =
-    level === 'project' ? file.relativePath : toUserRelative(file.relativePath);
-  const absolutePath: string = join(base, relativePath);
+  const absolutePath: string = layerFilePath(level, base, file.relativePath);
   const reportPath: string =
     level === 'project' ? file.relativePath : absolutePath;
   return {
@@ -66,29 +61,28 @@ function hooksMergeTarget(userConfigDir: string): HooksMergeTarget {
     scriptContent: HOOK_SCRIPT,
     configAbsolutePath,
     configReportPath: configAbsolutePath,
-    hooksMap: buildHooksEventMap(`node "${scriptAbsolutePath}"`),
+    hooksMap: buildHooksEventMap(`node ${posixQuote(scriptAbsolutePath)}`),
   };
 }
 
 function refusal(component: LayerComponent): RefusedTarget {
-  const pluginBacked: boolean = component === 'skills' || component === 'rules';
-  const reason: string = pluginBacked
-    ? 'no verified user-level discovery location; install it through the devin plugin channel instead'
-    : 'no verified user-level discovery location';
-  return { kind: 'refused', component, reason };
+  return {
+    kind: 'refused',
+    component,
+    reason: 'no verified user-level discovery location',
+  };
 }
 
 export function resolveLayerTargets(
   options: ResolveLayerTargetsOptions,
-  userLevelSupported: readonly LayerComponent[] = USER_LEVEL_SUPPORTED,
 ): readonly ResolvedTarget[] {
   const { projectDir, userConfigDir, level, scope } = options;
   const selected: ReadonlySet<LayerComponent> = new Set(scope);
   const userLevel: boolean = level === 'user';
-  const supported: ReadonlySet<LayerComponent> = new Set(userLevelSupported);
+  const supported: ReadonlySet<LayerComponent> = new Set(USER_LEVEL_SUPPORTED);
   const targets: ResolvedTarget[] = [];
 
-  for (const component of scope) {
+  for (const component of selected) {
     if (userLevel && !supported.has(component)) {
       targets.push(refusal(component));
     }

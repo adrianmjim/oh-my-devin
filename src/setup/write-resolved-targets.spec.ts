@@ -124,8 +124,8 @@ describe('writeResolvedTargets', () => {
   it('writes no file for a refused target and reports the refusal', async () => {
     const target: RefusedTarget = {
       kind: 'refused',
-      component: 'skills',
-      reason: 'no verified user-level location; use the devin plugin channel',
+      component: 'teams',
+      reason: 'no verified user-level discovery location',
     };
 
     const result: SetupResult = await writeResolvedTargets([target]);
@@ -133,10 +133,10 @@ describe('writeResolvedTargets', () => {
     expect(result.writtenPaths).toEqual([]);
     expect(result.refusals).toEqual([
       {
-        component: 'skills',
-        reason: 'no verified user-level location; use the devin plugin channel',
+        component: 'teams',
+        reason: 'no verified user-level discovery location',
       },
     ]);
-    expect(await exists(join(dir, 'skills'))).toBe(false);
+    expect(await exists(join(dir, 'teams'))).toBe(false);
   });
 });

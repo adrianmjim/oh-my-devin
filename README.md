@@ -40,7 +40,15 @@ asked:
 omd setup                                # interactive; Enter through for a project-level full install
 omd setup --level=user                   # asks only the scope
 omd setup --level=user --scope=skills    # fully non-interactive
+omd setup --level user                   # rejected: only the --flag=value form is accepted
 ```
+
+Only the `--flag=value` form is accepted. A space-separated flag
+(`--level user`), an unknown flag (`--levl=user`), and a bare positional
+argument are all rejected as usage errors rather than ignored, each reporting
+the same line: `usage: omd setup [--level=<project|user>]
+[--scope=rules,roles,skills,hooks,teams]`. A well-formed flag carrying an
+unrecognized value reports that value instead. Every usage error exits `64`.
 
 A headless or piped run (no TTY) never prompts and never waits: unanswered
 options take their defaults — project level, full scope — so scripted
@@ -49,6 +57,12 @@ where the Devin CLI discovers it under `~/.config/devin/` (hooks are merged into
 `~/.config/devin/config.json`, preserving its other keys, rather than written as
 a standalone file); a component with no verified user-level location — the
 default team — is reported as refused and left uninstalled at that level.
+
+A user-level install is runnable from anywhere: `omd run <role>` and
+`omd roles list` resolve the union of the project's roles and the user-level
+ones, each role's output schema resolving from the level that installed it. A
+project role of the same name takes precedence, so a project can override an
+installed role without renaming it.
 
 Run the fixed architect → executor → reviewer pipeline on a task:
 

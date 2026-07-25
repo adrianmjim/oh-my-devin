@@ -1,11 +1,11 @@
-import { join } from 'node:path';
+import { isAbsolute, join } from 'node:path';
 
 export function resolveUserConfigDir(
   xdgConfigHome: string | undefined,
   homeDir: string,
 ): string {
   const base: string =
-    xdgConfigHome !== undefined && xdgConfigHome.trim() !== ''
+    xdgConfigHome !== undefined && isAbsolute(xdgConfigHome)
       ? xdgConfigHome
       : join(homeDir, '.config');
   return join(base, 'devin');

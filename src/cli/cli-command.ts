@@ -1,4 +1,4 @@
-import type { InstallLevel } from '../setup/install-level';
+import type { InstallLevel } from '../layer/install-level';
 import type { LayerComponent } from '../setup/layer-component';
 
 export interface RunCommand {

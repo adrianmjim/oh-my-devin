@@ -2,6 +2,7 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import type { LayerLookup } from '../layer/layer-lookup';
 import { UsageError } from '../run/usage-error';
 import type { CouncilDeclaration } from './council-declaration';
 import { loadCouncilDeclaration } from './load-council-declaration';
@@ -24,6 +25,7 @@ const COUNCIL_YAML: string = [
 
 describe('loadCouncilDeclaration', () => {
   let dir: string;
+  let lookup: LayerLookup;
 
   async function scaffoldRole(name: string): Promise<void> {
     const roleDir: string = join(dir, '.devin', 'agents', name);
@@ -47,6 +49,7 @@ describe('loadCouncilDeclaration', () => {
 
   beforeEach(async () => {
     dir = await mkdtemp(join(tmpdir(), 'omd-council-'));
+    lookup = { projectDir: dir, userConfigDir: null };
     await scaffoldRole('architect');
     await scaffoldRole('reviewer');
   });
@@ -59,7 +62,7 @@ describe('loadCouncilDeclaration', () => {
     await writeCouncil('design-council', COUNCIL_YAML);
 
     const council: CouncilDeclaration = await loadCouncilDeclaration(
-      dir,
+      lookup,
       'design-council',
     );
 
@@ -70,7 +73,7 @@ describe('loadCouncilDeclaration', () => {
   });
 
   it('raises a usage error when the council file is missing', async () => {
-    await expect(loadCouncilDeclaration(dir, 'ghost')).rejects.toThrow(
+    await expect(loadCouncilDeclaration(lookup, 'ghost')).rejects.toThrow(
       UsageError,
     );
   });
@@ -85,7 +88,7 @@ describe('loadCouncilDeclaration', () => {
       '  rounds_cap: 2',
     ].join('\n');
     await writeCouncil('broken', yaml);
-    await expect(loadCouncilDeclaration(dir, 'broken')).rejects.toThrow(
+    await expect(loadCouncilDeclaration(lookup, 'broken')).rejects.toThrow(
       UsageError,
     );
   });

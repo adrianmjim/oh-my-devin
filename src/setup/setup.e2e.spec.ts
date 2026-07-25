@@ -189,6 +189,25 @@ describe('omd setup (e2e)', () => {
     expect(config['hooks']).toBeDefined();
   });
 
+  it('ignores a relative XDG_CONFIG_HOME and writes outside the project', async () => {
+    project = await createE2eProject();
+    const home: string = join(project.dir, 'home');
+
+    const result: CommandResult = await project.run(
+      ['setup', '--level=user', '--scope=roles'],
+      { env: { XDG_CONFIG_HOME: 'relative-cfg', HOME: home } },
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(await exists(join(project.dir, 'relative-cfg'))).toBe(false);
+    expect(await exists(join(project.dir, '.devin'))).toBe(false);
+    expect(
+      await exists(
+        join(home, '.config', 'devin', 'agents', 'reviewer', 'AGENT.md'),
+      ),
+    ).toBe(true);
+  });
+
   it('refuses user-level teams, which have no verified user-level location', async () => {
     project = await createE2eProject();
     const xdg: string = join(project.dir, 'xdg');

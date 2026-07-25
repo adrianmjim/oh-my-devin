@@ -134,7 +134,24 @@ describe('resolveLayerTargets', () => {
     );
     const script: string = join(spaced, 'hooks', 'omd-mode.mjs');
     expect(merge?.hooksMap.SessionStart[0]?.hooks[0]?.command).toBe(
-      `node "${script}" session-start`,
+      `node '${script}' session-start`,
+    );
+  });
+
+  it('keeps a hook script path containing shell metacharacters literal', () => {
+    const tricky: string = join('/home', 'John $Doe`x`', '.config', 'devin');
+    const targets: readonly ResolvedTarget[] = resolveLayerTargets({
+      projectDir: PROJECT,
+      userConfigDir: tricky,
+      level: 'user',
+      scope: ['hooks'],
+    });
+    const merge: HooksMergeTarget | undefined = targets.find(
+      (t: ResolvedTarget): t is HooksMergeTarget => t.kind === 'hooks-merge',
+    );
+    const script: string = join(tricky, 'hooks', 'omd-mode.mjs');
+    expect(merge?.hooksMap.SessionStart[0]?.hooks[0]?.command).toBe(
+      `node '${script}' session-start`,
     );
   });
 
@@ -160,47 +177,6 @@ describe('resolveLayerTargets', () => {
     });
     expect(files(targets)).toHaveLength(1);
     expect(files(targets)[0]?.reportPath).toBe('AGENTS.md');
-  });
-
-  it('refuses a user-level component with no verified location, naming the plugin channel', () => {
-    const targets: readonly ResolvedTarget[] = resolveLayerTargets(
-      {
-        projectDir: PROJECT,
-        userConfigDir: USER_CONFIG,
-        level: 'user',
-        scope: ['skills'],
-      },
-      ['rules', 'roles', 'hooks'],
-    );
-    const refused: RefusedTarget | undefined = targets.find(
-      (t: ResolvedTarget): t is RefusedTarget => t.kind === 'refused',
-    );
-    expect(refused?.component).toBe('skills');
-    expect(refused?.reason.toLowerCase()).toContain('plugin');
-    expect(files(targets)).toHaveLength(0);
-  });
-
-  it('refuses a non-plugin-backed component without naming a plugin channel', () => {
-    const targets: readonly ResolvedTarget[] = resolveLayerTargets(
-      {
-        projectDir: PROJECT,
-        userConfigDir: USER_CONFIG,
-        level: 'user',
-        scope: ['hooks'],
-      },
-      ['rules', 'roles', 'skills'],
-    );
-    const refused: RefusedTarget | undefined = targets.find(
-      (t: ResolvedTarget): t is RefusedTarget => t.kind === 'refused',
-    );
-    expect(refused?.component).toBe('hooks');
-    expect(refused?.reason.toLowerCase()).toContain(
-      'no verified user-level discovery location',
-    );
-    expect(refused?.reason.toLowerCase()).not.toContain('plugin');
-    expect(
-      targets.some((t: ResolvedTarget): boolean => t.kind === 'hooks-merge'),
-    ).toBe(false);
   });
 
   it('refuses teams at user level by default, since it has no probe-verified location', () => {
@@ -230,18 +206,57 @@ describe('resolveLayerTargets', () => {
   });
 
   it('never refuses at project level', () => {
-    const targets: readonly ResolvedTarget[] = resolveLayerTargets(
-      {
-        projectDir: PROJECT,
-        userConfigDir: USER_CONFIG,
-        level: 'project',
-        scope: ['skills'],
-      },
-      [],
-    );
+    const targets: readonly ResolvedTarget[] = resolveLayerTargets({
+      projectDir: PROJECT,
+      userConfigDir: USER_CONFIG,
+      level: 'project',
+      scope: ['skills'],
+    });
     expect(
       targets.some((t: ResolvedTarget): boolean => t.kind === 'refused'),
     ).toBe(false);
     expect(files(targets).length).toBeGreaterThan(0);
+  });
+  it('refuses a component named more than once exactly once', () => {
+    const targets: readonly ResolvedTarget[] = resolveLayerTargets({
+      projectDir: PROJECT,
+      userConfigDir: USER_CONFIG,
+      level: 'user',
+      scope: ['teams', 'teams'],
+    });
+    const refusals: readonly RefusedTarget[] = targets.filter(
+      (t: ResolvedTarget): t is RefusedTarget => t.kind === 'refused',
+    );
+    expect(refusals).toHaveLength(1);
+    expect(refusals[0]?.component).toBe('teams');
+  });
+
+  it('refuses teams and nothing else at user level', () => {
+    const targets: readonly ResolvedTarget[] = resolveLayerTargets({
+      projectDir: PROJECT,
+      userConfigDir: USER_CONFIG,
+      level: 'user',
+      scope: ALL_LAYER_COMPONENTS,
+    });
+    const refusals: readonly RefusedTarget[] = targets.filter(
+      (t: ResolvedTarget): t is RefusedTarget => t.kind === 'refused',
+    );
+    expect(refusals.map((t: RefusedTarget): string => t.component)).toEqual([
+      'teams',
+    ]);
+  });
+
+  it('never names the plugin channel in a refusal reason', () => {
+    const targets: readonly ResolvedTarget[] = resolveLayerTargets({
+      projectDir: PROJECT,
+      userConfigDir: USER_CONFIG,
+      level: 'user',
+      scope: ALL_LAYER_COMPONENTS,
+    });
+    for (const target of targets) {
+      if (target.kind === 'refused') {
+        expect(target.reason.toLowerCase()).not.toContain('plugin');
+      }
+    }
   });
 });

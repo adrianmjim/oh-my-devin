@@ -15,19 +15,18 @@ describe('renderSetupResult', () => {
     expect(text).not.toContain('refused');
   });
 
-  it('reports each refusal naming the component and the alternative channel', () => {
+  it('reports each refusal naming the component and the reason', () => {
     const result: SetupResult = {
       writtenPaths: [],
       refusals: [
         {
-          component: 'skills',
-          reason:
-            'no verified user-level discovery location; install it through the devin plugin channel instead',
+          component: 'teams',
+          reason: 'no verified user-level discovery location',
         },
       ],
     };
     const text: string = renderSetupResult(result);
-    expect(text).toContain('refused skills:');
-    expect(text).toContain('devin plugin channel');
+    expect(text).toContain('refused teams:');
+    expect(text).toContain('no verified user-level discovery location');
   });
 });

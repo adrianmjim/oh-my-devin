@@ -1,5 +1,6 @@
 import type { Clock } from '../budget/clock';
 import type { RunnerFactory } from '../engine/runner-factory';
+import type { LayerLookup } from '../layer/layer-lookup';
 import type { ArtifactReader } from '../pipeline/artifact-reader';
 import type { RoleRunner } from '../pipeline/role-runner';
 import type { WorktreeProvisioner } from '../worktree/worktree-provisioner';
@@ -10,4 +11,5 @@ export interface SeatSessionDeps {
   readonly runnerFor: RunnerFactory;
   readonly readArtifact: ArtifactReader;
   readonly clock: Clock;
+  readonly userConfigDir: LayerLookup['userConfigDir'];
 }
