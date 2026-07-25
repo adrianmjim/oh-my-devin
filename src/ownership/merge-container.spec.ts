@@ -64,6 +64,18 @@ describe('mergeContainer', () => {
     );
   });
 
+  it('recognizes a pristine region converted to CRLF instead of preserving it as edited', () => {
+    const region: string = frameRegion(FRAMING).replace(/\n/g, '\r\n');
+    const existing: string = `above\r\n\r\n${region}\r\nbelow\r\n`;
+
+    const outcome: MergeOutcome = mergeContainer(request(existing));
+
+    expect(outcome.kind).toBe('updated');
+    expect(contentOrThrow(outcome)).toBe(
+      `above\r\n\r\n${frameRegion(FRAMING)}\r\nbelow\r\n`,
+    );
+  });
+
   it('reports unchanged and returns no content when the region is identical', () => {
     const existing: string = `above\n\n${frameRegion(FRAMING)}\nbelow\n`;
 

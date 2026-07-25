@@ -40,6 +40,15 @@ describe('scanRegion', () => {
     expect(located.body).toBe('alpha\nbeta');
   });
 
+  it('drops the whole line ending from the body of CRLF content', () => {
+    const content: string = FRAMED.replace(/\n/g, '\r\n');
+
+    const located: RegionLocated = locatedOrThrow(scanRegion(content, 'rules'));
+
+    expect(located.body).toBe('alpha\r\nbeta');
+    expect(digestContent(located.body)).toBe(located.marker.digest);
+  });
+
   it('reports the bounds so the text above and below is recoverable', () => {
     const content: string = `above the region\n\n${FRAMED}\nbelow the region\n`;
 

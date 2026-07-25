@@ -15,6 +15,7 @@ interface BeginSite {
 }
 
 const END_ID_PATTERN: RegExp = /id=([^\s]+)/;
+const TRAILING_LINE_ENDING_PATTERN: RegExp = /\r?\n$/;
 
 const UNREADABLE: string = 'its omd region marker cannot be read';
 const DUPLICATED: string = 'it carries more than one omd region of that name';
@@ -38,7 +39,7 @@ function locate(
     kind: 'located',
     marker: begin.marker,
     before: content.slice(0, begin.start),
-    body: rawBody.endsWith('\n') ? rawBody.slice(0, -1) : rawBody,
+    body: rawBody.replace(TRAILING_LINE_ENDING_PATTERN, ''),
     after: content.slice(afterOffset),
   };
 }
