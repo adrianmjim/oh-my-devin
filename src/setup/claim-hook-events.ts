@@ -23,10 +23,23 @@ function blockedReason(event: string): string {
   return `its ${event} hooks are not a list omd can extend`;
 }
 
+function installedCommandsOf(hooksMap: HooksEventMap): ReadonlySet<string> {
+  const commands: Set<string> = new Set<string>();
+  for (const event of CLAIMED_EVENTS) {
+    for (const entry of hooksMap[event]) {
+      for (const hook of entry.hooks) {
+        commands.add(hook.command);
+      }
+    }
+  }
+  return commands;
+}
+
 export function claimHookEvents(
   existing: Record<string, unknown>,
   hooksMap: HooksEventMap,
 ): ClaimOutcome {
+  const installed: ReadonlySet<string> = installedCommandsOf(hooksMap);
   const events: Record<string, unknown> = { ...existing };
   let blocked: string | null = null;
   for (const event of CLAIMED_EVENTS) {
@@ -37,7 +50,7 @@ export function claimHookEvents(
     } else if (Array.isArray(current)) {
       const foreign: readonly unknown[] = (
         current as readonly unknown[]
-      ).filter((entry: unknown): boolean => !isOmdHookEntry(entry));
+      ).filter((entry: unknown): boolean => !isOmdHookEntry(entry, installed));
       events[event] = [...foreign, ...claimed];
     } else {
       blocked ??= blockedReason(event);

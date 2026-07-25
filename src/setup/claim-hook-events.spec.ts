@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { ClaimOutcome } from './claim-hook-events';
 import { claimHookEvents } from './claim-hook-events';
+import { posixQuote } from './posix-quote';
 import type { HooksEventMap } from './setup-templates';
 import { buildHooksEventMap } from './setup-templates';
 
@@ -61,16 +62,31 @@ describe('claimHookEvents', () => {
     expect(twice).toEqual(once);
   });
 
-  it('replaces a predecessor whose command has changed', () => {
-    const previous: Record<string, unknown> = claimedOrThrow(
-      claimHookEvents({}, buildHooksEventMap('node /old/path/omd-mode.mjs')),
-    );
+  it('keeps an entry running the hook script from a foreign path', () => {
+    const foreign: Record<string, unknown> = {
+      hooks: [{ type: 'command', command: 'node /opt/acme/omd-mode.mjs stop' }],
+    };
 
     const events: Record<string, unknown> = claimedOrThrow(
-      claimHookEvents(previous, OMD_MAP),
+      claimHookEvents({ Stop: [foreign] }, OMD_MAP),
     );
 
-    expect(events['Stop']).toEqual([...OMD_MAP.Stop]);
+    expect(events['Stop']).toEqual([foreign, ...OMD_MAP.Stop]);
+  });
+
+  it('claims again without accumulating when the installed path carries an apostrophe', () => {
+    const script: string = "/home/O'Brien/.config/devin/hooks/omd-mode.mjs";
+    const map: HooksEventMap = buildHooksEventMap(`node ${posixQuote(script)}`);
+
+    const once: Record<string, unknown> = claimedOrThrow(
+      claimHookEvents({}, map),
+    );
+
+    const twice: Record<string, unknown> = claimedOrThrow(
+      claimHookEvents(once, map),
+    );
+
+    expect(twice).toEqual(once);
   });
 
   it('keeps sibling keys that are not events', () => {
