@@ -19,6 +19,7 @@ export interface RegistryTarget {
   readonly absolutePath: string;
   readonly reportPath: string;
   readonly shape: HookRegistryShape;
+  readonly scriptPath: string;
   readonly hooksMap: HooksEventMap;
 }
 

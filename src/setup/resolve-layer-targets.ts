@@ -67,11 +67,9 @@ function mergeTarget(
 
 function registryTarget(options: ResolveLayerTargetsOptions): RegistryTarget {
   const userLevel: boolean = options.level === 'user';
-  const scriptAbsolutePath: string = join(
-    options.userConfigDir,
-    'hooks',
-    HOOK_SCRIPT_FILENAME,
-  );
+  const scriptPath: string = userLevel
+    ? join(options.userConfigDir, 'hooks', HOOK_SCRIPT_FILENAME)
+    : join(options.projectDir, '.devin', 'hooks', HOOK_SCRIPT_FILENAME);
   const absolutePath: string = userLevel
     ? join(options.userConfigDir, 'config.json')
     : join(options.projectDir, PROJECT_REGISTRY_PATH);
@@ -81,10 +79,9 @@ function registryTarget(options: ResolveLayerTargetsOptions): RegistryTarget {
     absolutePath,
     reportPath: userLevel ? absolutePath : PROJECT_REGISTRY_PATH,
     shape: userLevel ? 'config-key' : 'document',
+    scriptPath,
     hooksMap: buildHooksEventMap(
-      userLevel
-        ? `node ${posixQuote(scriptAbsolutePath)}`
-        : PROJECT_HOOK_COMMAND,
+      userLevel ? `node ${posixQuote(scriptPath)}` : PROJECT_HOOK_COMMAND,
     ),
   };
 }
@@ -112,17 +109,17 @@ export function resolveLayerTargets(
     }
   }
 
-  const hooksInstallable: boolean =
-    selected.has('hooks') && (!userLevel || supported.has('hooks'));
-  if (hooksInstallable) {
-    targets.push(registryTarget(options));
-  }
-
   for (const file of LAYER_FILES) {
     const refused: boolean = userLevel && !supported.has(file.component);
     if (selected.has(file.component) && !refused) {
       targets.push(mergeTarget(file, options));
     }
+  }
+
+  const hooksInstallable: boolean =
+    selected.has('hooks') && (!userLevel || supported.has('hooks'));
+  if (hooksInstallable) {
+    targets.push(registryTarget(options));
   }
 
   return targets;

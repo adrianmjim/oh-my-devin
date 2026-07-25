@@ -129,6 +129,30 @@ describe('omd setup never destroys (e2e)', () => {
     );
   });
 
+  it('does not register hooks pointing at a script it refused to install', async () => {
+    project = await createE2eProject();
+    const myScript: string = 'export {};\n';
+    await writeAt(
+      project.dir,
+      join('.devin', 'hooks', 'omd-mode.mjs'),
+      myScript,
+    );
+
+    const result: CommandResult = await project.run(['setup']);
+
+    expect(result.exitCode).toBe(0);
+    expect(
+      await readFile(
+        join(project.dir, '.devin', 'hooks', 'omd-mode.mjs'),
+        'utf8',
+      ),
+    ).toBe(myScript);
+    const files: Map<string, string> = await snapshot(project.dir);
+    expect(files.has(join('.devin', 'hooks.v1.json'))).toBe(false);
+    expect(result.stdout).toContain('Blocked:');
+    expect(result.stdout).toContain(join('.devin', 'hooks.v1.json'));
+  });
+
   it('leaves every project-level target byte-identical on a second run', async () => {
     project = await createE2eProject();
     await project.run(['setup']);

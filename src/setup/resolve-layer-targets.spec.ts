@@ -240,6 +240,51 @@ describe('resolveLayerTargets', () => {
     );
   });
 
+  it('binds the registry claim to the hook script it registers', () => {
+    const project: readonly ResolvedTarget[] = resolveLayerTargets({
+      projectDir: PROJECT,
+      userConfigDir: USER_CONFIG,
+      level: 'project',
+      scope: ['hooks'],
+      version: VERSION,
+    });
+    const user: readonly ResolvedTarget[] = resolveLayerTargets({
+      projectDir: PROJECT,
+      userConfigDir: USER_CONFIG,
+      level: 'user',
+      scope: ['hooks'],
+      version: VERSION,
+    });
+
+    expect(registry(project)?.scriptPath).toBe(
+      join(PROJECT, '.devin', 'hooks', 'omd-mode.mjs'),
+    );
+    expect(registry(user)?.scriptPath).toBe(
+      join(USER_CONFIG, 'hooks', 'omd-mode.mjs'),
+    );
+  });
+
+  it('resolves the hook script before the registry that invokes it', () => {
+    const targets: readonly ResolvedTarget[] = resolveLayerTargets({
+      projectDir: PROJECT,
+      userConfigDir: USER_CONFIG,
+      level: 'project',
+      scope: ALL_LAYER_COMPONENTS,
+      version: VERSION,
+    });
+
+    const scriptIndex: number = targets.findIndex(
+      (t: ResolvedTarget): boolean =>
+        t.kind === 'merge' &&
+        t.absolutePath === join(PROJECT, '.devin', 'hooks', 'omd-mode.mjs'),
+    );
+    const registryIndex: number = targets.findIndex(
+      (t: ResolvedTarget): boolean => t.kind === 'registry',
+    );
+    expect(scriptIndex).toBeGreaterThanOrEqual(0);
+    expect(registryIndex).toBeGreaterThan(scriptIndex);
+  });
+
   it('installs only the components named in the scope', () => {
     const targets: readonly ResolvedTarget[] = resolveLayerTargets({
       projectDir: PROJECT,

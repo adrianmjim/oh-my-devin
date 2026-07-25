@@ -11,7 +11,18 @@ import type {
   RegistryTarget,
   ResolvedTarget,
 } from './resolved-target';
-import type { SetupRefusal, SetupResult, TargetReport } from './setup-result';
+import type {
+  SetupRefusal,
+  SetupResult,
+  TargetOutcome,
+  TargetReport,
+} from './setup-result';
+
+export const UNOWNED_HOOK_SCRIPT_REASON: string =
+  'its hook script was not installed by omd';
+
+const CLAIMABLE_SCRIPT_OUTCOMES: ReadonlySet<TargetOutcome> =
+  new Set<TargetOutcome>(['created', 'updated', 'unchanged', 'preserved']);
 
 async function readIfExists(path: string): Promise<string | null> {
   let content: string | null;
@@ -77,21 +88,48 @@ async function applyOutcome(
   };
 }
 
+function claimableScript(
+  target: RegistryTarget,
+  outcomes: ReadonlyMap<string, TargetOutcome>,
+): boolean {
+  const scriptOutcome: TargetOutcome | undefined = outcomes.get(
+    target.scriptPath,
+  );
+  return (
+    scriptOutcome !== undefined && CLAIMABLE_SCRIPT_OUTCOMES.has(scriptOutcome)
+  );
+}
+
+async function resolveOutcome(
+  target: MergeTarget | RegistryTarget,
+  outcomes: ReadonlyMap<string, TargetOutcome>,
+): Promise<MergeOutcome> {
+  const existing: string | null = await readIfExists(target.absolutePath);
+  let outcome: MergeOutcome;
+  if (target.kind === 'merge') {
+    outcome = mergeFile(target, existing);
+  } else if (claimableScript(target, outcomes)) {
+    outcome = mergeRegistry(target, existing);
+  } else {
+    outcome = { kind: 'blocked', reason: UNOWNED_HOOK_SCRIPT_REASON };
+  }
+  return outcome;
+}
+
 export async function writeResolvedTargets(
   targets: readonly ResolvedTarget[],
 ): Promise<SetupResult> {
   const reports: TargetReport[] = [];
   const refusals: SetupRefusal[] = [];
+  const outcomes: Map<string, TargetOutcome> = new Map<string, TargetOutcome>();
   for (const target of targets) {
     if (target.kind === 'refused') {
       refusals.push({ component: target.component, reason: target.reason });
     } else {
-      const existing: string | null = await readIfExists(target.absolutePath);
-      const outcome: MergeOutcome =
-        target.kind === 'merge'
-          ? mergeFile(target, existing)
-          : mergeRegistry(target, existing);
-      reports.push(await applyOutcome(target, outcome));
+      const outcome: MergeOutcome = await resolveOutcome(target, outcomes);
+      const report: TargetReport = await applyOutcome(target, outcome);
+      outcomes.set(target.absolutePath, report.outcome);
+      reports.push(report);
     }
   }
   return { targets: reports, refusals };

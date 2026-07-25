@@ -10,6 +10,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { frameRegion } from '../ownership/frame-region';
+import { frameUnit } from '../ownership/frame-unit';
 import type { RegionFraming } from '../ownership/region-framing';
 import type {
   MergeTarget,
@@ -83,6 +84,22 @@ describe('writeResolvedTargets', () => {
     };
   }
 
+  function scriptTarget(): MergeTarget {
+    return {
+      kind: 'merge',
+      component: 'hooks',
+      absolutePath: join(dir, 'hooks', 'omd-mode.mjs'),
+      reportPath: join('hooks', 'omd-mode.mjs'),
+      strategy: 'unit',
+      framing: {
+        id: 'hook-script',
+        version: '1.2.3',
+        style: 'script',
+        content: '#!/usr/bin/env node\nprocess.exit(0);\n',
+      },
+    };
+  }
+
   function registryTarget(): RegistryTarget {
     const configPath: string = join(dir, 'config.json');
     return {
@@ -91,6 +108,7 @@ describe('writeResolvedTargets', () => {
       absolutePath: configPath,
       reportPath: configPath,
       shape: 'config-key',
+      scriptPath: join(dir, 'hooks', 'omd-mode.mjs'),
       hooksMap: buildHooksEventMap('node .devin/hooks/omd-mode.mjs'),
     };
   }
@@ -152,7 +170,10 @@ describe('writeResolvedTargets', () => {
       'utf8',
     );
 
-    const result: SetupResult = await writeResolvedTargets([target]);
+    const result: SetupResult = await writeResolvedTargets([
+      scriptTarget(),
+      target,
+    ]);
 
     const parsed: Record<string, unknown> = JSON.parse(
       await readFile(target.absolutePath, 'utf8'),
@@ -163,12 +184,60 @@ describe('writeResolvedTargets', () => {
     expect(reportFor(result, target.reportPath).outcome).toBe('updated');
   });
 
+  it('withholds the registry claim when the hook script is not omd’s', async () => {
+    const script: MergeTarget = scriptTarget();
+    const mine: string = 'export {};\n';
+    await mkdir(dirname(script.absolutePath), { recursive: true });
+    await writeFile(script.absolutePath, mine, 'utf8');
+    const target: RegistryTarget = registryTarget();
+
+    const result: SetupResult = await writeResolvedTargets([script, target]);
+
+    expect(await readFile(script.absolutePath, 'utf8')).toBe(mine);
+    expect(reportFor(result, script.reportPath).outcome).toBe('conflicted');
+    const report: TargetReport = reportFor(result, target.reportPath);
+    expect(report.outcome).toBe('blocked');
+    expect(report.reason).not.toBeNull();
+    expect(await exists(target.absolutePath)).toBe(false);
+  });
+
+  it('claims the registry over an omd hook script the user has edited', async () => {
+    const script: MergeTarget = scriptTarget();
+    const edited: string = frameUnit(script.framing).replace(
+      'process.exit(0);',
+      'process.exit(1);',
+    );
+    await mkdir(dirname(script.absolutePath), { recursive: true });
+    await writeFile(script.absolutePath, edited, 'utf8');
+    const target: RegistryTarget = registryTarget();
+
+    const result: SetupResult = await writeResolvedTargets([script, target]);
+
+    expect(reportFor(result, script.reportPath).outcome).toBe('preserved');
+    expect(reportFor(result, target.reportPath).outcome).toBe('created');
+  });
+
+  it('blocks a registry that arrives without its hook script', async () => {
+    const target: RegistryTarget = registryTarget();
+
+    const result: SetupResult = await writeResolvedTargets([target]);
+
+    const report: TargetReport = reportFor(result, target.reportPath);
+    expect(report.outcome).toBe('blocked');
+    expect(report.reason).not.toBeNull();
+    expect(await exists(target.absolutePath)).toBe(false);
+  });
+
   it('lets a blocked target block only itself', async () => {
     const blocked: RegistryTarget = registryTarget();
     await writeFile(blocked.absolutePath, 'not valid json {{', 'utf8');
     const rules: MergeTarget = rulesTarget();
 
-    const result: SetupResult = await writeResolvedTargets([blocked, rules]);
+    const result: SetupResult = await writeResolvedTargets([
+      scriptTarget(),
+      blocked,
+      rules,
+    ]);
 
     expect(await readFile(blocked.absolutePath, 'utf8')).toBe(
       'not valid json {{',
@@ -184,10 +253,11 @@ describe('writeResolvedTargets', () => {
     const result: SetupResult = await writeResolvedTargets([
       rulesTarget(),
       skillTarget(),
+      scriptTarget(),
       registryTarget(),
     ]);
 
-    expect(result.targets).toHaveLength(3);
+    expect(result.targets).toHaveLength(4);
   });
 
   it('writes no file for a refused target and reports the refusal', async () => {
