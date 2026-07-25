@@ -7,6 +7,16 @@ import { ALL_LAYER_COMPONENTS } from './layer-component';
 import type { LayerComponent } from './layer-component';
 import type { LayerFile } from './layer-file';
 
+function byPath(relativePath: string): LayerFile {
+  const file: LayerFile | undefined = LAYER_FILES.find(
+    (candidate: LayerFile): boolean => candidate.relativePath === relativePath,
+  );
+  if (file === undefined) {
+    throw new Error(`no catalog entry at ${relativePath}`);
+  }
+  return file;
+}
+
 describe('LAYER_FILES', () => {
   it('yields exactly one skill file per mode skill', () => {
     const modePaths: readonly string[] = MODE_CATALOG.map(
@@ -56,5 +66,51 @@ describe('LAYER_FILES', () => {
     for (const file of LAYER_FILES) {
       expect(file.content.length).toBeGreaterThan(0);
     }
+  });
+
+  it('declares a merge strategy and a region identity for every target', () => {
+    for (const file of LAYER_FILES) {
+      expect(file.strategy.length).toBeGreaterThan(0);
+      expect(file.regionId.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('gives every target a region identity of its own', () => {
+    const ids: readonly string[] = LAYER_FILES.map(
+      (file: LayerFile): string => file.regionId,
+    );
+
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it('accumulates the rules file and takes over no other text file', () => {
+    expect(byPath('AGENTS.md').strategy).toBe('container');
+    expect(
+      byPath(join('.devin', 'skills', 'omd-delegate', 'SKILL.md')).strategy,
+    ).toBe('unit');
+    expect(
+      byPath(join('.devin', 'agents', 'architect', 'AGENT.md')).strategy,
+    ).toBe('unit');
+    expect(byPath(join('.devin', 'teams', 'default.yaml')).strategy).toBe(
+      'unit',
+    );
+    expect(byPath(join('.devin', 'hooks', 'omd-mode.mjs')).strategy).toBe(
+      'unit',
+    );
+  });
+
+  it('merges the role schemas as json documents', () => {
+    expect(
+      byPath(join('.devin', 'schemas', 'review.schema.json')).strategy,
+    ).toBe('json-document');
+  });
+
+  it('leaves the hook registry out of the file catalog, since it is claimed', () => {
+    const registry: LayerFile | undefined = LAYER_FILES.find(
+      (file: LayerFile): boolean =>
+        file.relativePath === join('.devin', 'hooks.v1.json'),
+    );
+
+    expect(registry).toBeUndefined();
   });
 });

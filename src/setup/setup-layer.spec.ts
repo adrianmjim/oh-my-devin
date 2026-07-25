@@ -73,7 +73,7 @@ describe('setupLayer', () => {
       await exists(join(dir, '.devin', 'skills', 'omd-install', 'SKILL.md')),
     ).toBe(true);
     expect(await exists(join(dir, '.devin', 'hooks.v1.json'))).toBe(true);
-    expect(result.writtenPaths.length).toBeGreaterThanOrEqual(4);
+    expect(result.targets.length).toBeGreaterThanOrEqual(4);
   });
 
   it('installs an example role that the catalog can discover cleanly', async () => {

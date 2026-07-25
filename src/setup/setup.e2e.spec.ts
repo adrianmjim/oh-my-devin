@@ -30,7 +30,7 @@ describe('omd setup (e2e)', () => {
     const result: CommandResult = await project.run(['setup']);
 
     expect(result.exitCode).toBe(0);
-    expect(result.stdout).toContain('Installed');
+    expect(result.stdout).toContain('Created:');
     expect(await exists(join(project.dir, 'AGENTS.md'))).toBe(true);
     expect(
       await exists(
@@ -218,7 +218,8 @@ describe('omd setup (e2e)', () => {
     );
 
     expect(result.exitCode).toBe(0);
-    expect(result.stdout).toContain('refused teams');
+    expect(result.stdout).toContain('Refused:');
+    expect(result.stdout).toContain('teams —');
     expect(await exists(join(xdg, 'devin', 'teams'))).toBe(false);
   });
 });

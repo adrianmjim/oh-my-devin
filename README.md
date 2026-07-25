@@ -64,6 +64,38 @@ ones, each role's output schema resolving from the level that installed it. A
 project role of the same name takes precedence, so a project can override an
 installed role without renaming it.
 
+### Installing never destroys what you wrote
+
+`omd setup` preserves every byte it did not write itself. What it installs is
+delimited in place by a marker in the file's own comment syntax, carrying the
+region's identity, the layer version, and a digest of the content written — so
+ownership is readable from the file alone, and a re-run replaces omd's region
+and nothing else. An existing `AGENTS.md` keeps all of its content and gains
+omd's block below it; hook registries are merged by claim, so every event omd
+does not claim and every entry it did not write stays registered.
+
+Each target is reported by what happened to it:
+
+- **Created** / **Updated** — omd wrote it. Creation and replacement are
+  distinct, so an upgrade is visible.
+- **Unchanged** — already installed and identical; nothing was written.
+- **Preserved** — the content inside omd's region no longer matches its digest,
+  so you edited it. omd leaves your version alone.
+- **Conflicted** — a file omd did not write already occupies that path, or its
+  markers are duplicated, unbalanced, or unreadable. Nothing is written.
+- **Blocked** — the target cannot be written safely (an engine configuration
+  that will not parse, for instance). It blocks only itself; the rest of the
+  install proceeds.
+
+To resolve a conflict, decide which version you want and make it explicit:
+move or delete the file to let `omd setup` install its own, or keep yours and
+leave it — a conflicted target is reported on every run and never overwritten.
+For a target reported as preserved, delete omd's region (both sentinels and
+everything between them) to take the shipped version on the next run. A layer
+installed before markers existed carries none, so its files are reported as
+conflicts the first time you run this version; removing them and re-running
+hands those paths back to omd.
+
 Run the fixed architect → executor → reviewer pipeline on a task:
 
 ```bash
