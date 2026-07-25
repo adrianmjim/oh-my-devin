@@ -272,15 +272,25 @@ export const HOOK_SCRIPT_FILENAME: string = 'omd-mode.mjs';
 
 export const PROJECT_HOOK_COMMAND: string = `node .devin/hooks/${HOOK_SCRIPT_FILENAME}`;
 
+const SESSION_START_PHASE: string = 'session-start';
+const USER_PROMPT_PHASE: string = 'user-prompt';
+const STOP_PHASE: string = 'stop';
+
+export const HOOK_PHASES: readonly string[] = [
+  SESSION_START_PHASE,
+  USER_PROMPT_PHASE,
+  STOP_PHASE,
+];
+
 function commandEntry(baseCommand: string, phase: string): HookMatcherEntry {
   return { hooks: [{ type: 'command', command: `${baseCommand} ${phase}` }] };
 }
 
 export function buildHooksEventMap(baseCommand: string): HooksEventMap {
   return {
-    SessionStart: [commandEntry(baseCommand, 'session-start')],
-    UserPromptSubmit: [commandEntry(baseCommand, 'user-prompt')],
-    Stop: [commandEntry(baseCommand, 'stop')],
+    SessionStart: [commandEntry(baseCommand, SESSION_START_PHASE)],
+    UserPromptSubmit: [commandEntry(baseCommand, USER_PROMPT_PHASE)],
+    Stop: [commandEntry(baseCommand, STOP_PHASE)],
   };
 }
 

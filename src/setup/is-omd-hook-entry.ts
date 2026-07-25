@@ -1,15 +1,19 @@
-import { HOOK_SCRIPT_FILENAME } from './setup-templates';
+import { HOOK_PHASES, HOOK_SCRIPT_FILENAME } from './setup-templates';
 
-const WHITESPACE_PATTERN: RegExp = /\s+/;
-const QUOTE_EDGE_PATTERN: RegExp = /^["']+|["']+$/g;
 const PATH_SEPARATOR_PATTERN: RegExp = /[/\\]/;
+const NODE_INVOCATION_PATTERN: RegExp = new RegExp(
+  `^node (?:'([^']*)'|"([^"]*)"|(\\S+)) (?:${HOOK_PHASES.join('|')})$`,
+);
 
 function commandOf(hook: unknown): string | null {
   const readable: boolean = typeof hook === 'object' && hook !== null;
-  const command: unknown = readable
-    ? (hook as Record<string, unknown>)['command']
-    : undefined;
-  return typeof command === 'string' ? command : null;
+  const record: Record<string, unknown> | null = readable
+    ? (hook as Record<string, unknown>)
+    : null;
+  const command: unknown = record?.['command'];
+  return record?.['type'] === 'command' && typeof command === 'string'
+    ? command
+    : null;
 }
 
 function hooksOf(entry: unknown): readonly unknown[] {
@@ -20,17 +24,18 @@ function hooksOf(entry: unknown): readonly unknown[] {
   return Array.isArray(hooks) ? (hooks as readonly unknown[]) : [];
 }
 
-function isHookScriptToken(token: string): boolean {
-  const segments: readonly string[] = token
-    .replace(QUOTE_EDGE_PATTERN, '')
-    .split(PATH_SEPARATOR_PATTERN);
-  return segments[segments.length - 1] === HOOK_SCRIPT_FILENAME;
+function invokedScriptOf(command: string): string | null {
+  const match: RegExpExecArray | null = NODE_INVOCATION_PATTERN.exec(command);
+  return match?.[1] ?? match?.[2] ?? match?.[3] ?? null;
 }
 
 function invokesHookScript(hook: unknown): boolean {
-  const tokens: readonly string[] =
-    commandOf(hook)?.split(WHITESPACE_PATTERN) ?? [];
-  return tokens.some(isHookScriptToken);
+  const command: string | null = commandOf(hook);
+  const script: string | null =
+    command === null ? null : invokedScriptOf(command);
+  const segments: readonly string[] =
+    script === null ? [] : script.split(PATH_SEPARATOR_PATTERN);
+  return segments[segments.length - 1] === HOOK_SCRIPT_FILENAME;
 }
 
 export function isOmdHookEntry(entry: unknown): boolean {
