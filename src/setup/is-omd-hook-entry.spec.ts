@@ -25,6 +25,19 @@ describe('isOmdHookEntry', () => {
     ).toBe(true);
   });
 
+  it('does not recognize a foreign script whose name ends with the hook script filename', () => {
+    expect(
+      isOmdHookEntry({
+        hooks: [
+          {
+            type: 'command',
+            command: 'node ./scripts/backup-omd-mode.mjs session-start',
+          },
+        ],
+      }),
+    ).toBe(false);
+  });
+
   it('does not recognize a foreign entry', () => {
     expect(
       isOmdHookEntry({
