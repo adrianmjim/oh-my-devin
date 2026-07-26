@@ -90,11 +90,15 @@ Each target is reported by what happened to it:
 To resolve a conflict, decide which version you want and make it explicit:
 move or delete the file to let `omd setup` install its own, or keep yours and
 leave it — a conflicted target is reported on every run and never overwritten.
-For a target reported as preserved, delete omd's region (both sentinels and
-everything between them) to take the shipped version on the next run. A layer
-installed before markers existed carries none, so its files are reported as
-conflicts the first time you run this version; removing them and re-running
-hands those paths back to omd.
+For a target reported as preserved, how to take the shipped version back
+depends on the file. In `AGENTS.md`, omd's region sits inside your document:
+delete the region (both sentinels and everything between them) and the next
+run reinstalls it. A skill, role, team, schema, or the hook script is omd's
+file whole: delete the file itself — stripping just its marker leaves an
+unmarked remnant (a shebang, frontmatter, the document body) reported as a
+conflict from then on. A layer installed before markers existed carries none,
+so its files are reported as conflicts the first time you run this version;
+removing them and re-running hands those paths back to omd.
 
 Run the fixed architect → executor → reviewer pipeline on a task:
 
