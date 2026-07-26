@@ -139,6 +139,7 @@ function makeDeps(
   runSeatRole: (options: RunRoleOptions) => Promise<RunReport>,
   worktrees: WorktreeProvisioner,
   read: (path: string) => Promise<string>,
+  userConfigDir: string | null = null,
 ): SeatSessionDeps {
   return {
     worktrees,
@@ -146,7 +147,7 @@ function makeDeps(
     runnerFor: (): CommandRunner => NOOP_RUNNER,
     readArtifact: read,
     clock: (): number => 0,
-    userConfigDir: null,
+    userConfigDir,
   };
 }
 
@@ -171,6 +172,30 @@ const POSITION_JSON: string = JSON.stringify({
 });
 
 describe('createSeatInvoker', () => {
+  it('runs the seat role against a lookup carrying the user-level location', async () => {
+    const worktrees = new FakeWorktrees();
+    const seen: RunRoleOptions[] = [];
+    const invoke: SeatInvoker = createSeatInvoker(
+      makeDeps(
+        (options: RunRoleOptions): Promise<RunReport> => {
+          seen.push(options);
+          return Promise.resolve(report());
+        },
+        worktrees,
+        (): Promise<string> => Promise.resolve(POSITION_JSON),
+        '/home/u/.config/devin',
+      ),
+      new WorktreePool(worktrees),
+    );
+
+    await invoke([invocation({})]);
+
+    expect(seen[0]?.lookup).toEqual({
+      projectDir: '/wt/seat-security',
+      userConfigDir: '/home/u/.config/devin',
+    });
+  });
+
   it('runs the seat role in a pooled worktree and maps its position artifact', async () => {
     const worktrees = new FakeWorktrees();
     const seen: RunRoleOptions[] = [];
