@@ -27,6 +27,7 @@ import { renderRolesListText } from './catalog/render-roles-list-text';
 import type { RoleDiscovery } from './catalog/role-discovery';
 import type { CliCommand } from './cli/cli-command';
 import type { CliErrorRendering } from './cli/cli-error-rendering';
+import { isInteractiveSession } from './cli/is-interactive-session';
 import { parseCliArgs } from './cli/parse-cli-args';
 import { readProposalFile } from './cli/read-proposal-file';
 import { renderCliError } from './cli/render-cli-error';
@@ -75,7 +76,8 @@ import type { ElicitedSetupOptions } from './setup/elicit-setup-options';
 import { formatLayerComponents } from './setup/format-layer-components';
 import type { ModeState } from './setup/mode-state';
 import { renderSetupResult } from './setup/render-setup-result';
-import { resolveUserConfigDir } from './setup/resolve-user-config-dir';
+import type { LayerLookup } from './layer/layer-lookup';
+import { resolveUserConfigDir } from './layer/resolve-user-config-dir';
 import { setupLayer } from './setup/setup-layer';
 import type { SetupResult } from './setup/setup-result';
 import { loadTeamDefinition } from './team/load-team-definition';
@@ -118,8 +120,10 @@ function reportLaunchIdentity(
 async function dispatch(
   command: CliCommand,
   cwd: string,
+  userConfigDir: string,
   runner: ProcessCommandRunner,
 ): Promise<number> {
+  const lookup: LayerLookup = { projectDir: cwd, userConfigDir };
   switch (command.kind) {
     case 'help':
       write(process.stdout, USAGE);
@@ -130,7 +134,7 @@ async function dispatch(
     case 'run': {
       if (command.detach) {
         const launchedId: RunId = await launchDetached(
-          cwd,
+          lookup,
           process.argv[1] ?? '',
           command.role,
           command.task,
@@ -144,7 +148,7 @@ async function dispatch(
         return 0;
       }
       const resolved: ResolvedRunInvocation = await resolveRunInvocation(
-        cwd,
+        lookup,
         command.role,
         command.task,
       );
@@ -201,7 +205,7 @@ async function dispatch(
       return report.exitCode;
     }
     case 'roles-list': {
-      const discovery: RoleDiscovery = await discoverRoles(cwd);
+      const discovery: RoleDiscovery = await discoverRoles(lookup);
       for (const error of discovery.errors) {
         write(process.stderr, `! ${error.name}: ${error.message}`);
       }
@@ -214,7 +218,7 @@ async function dispatch(
       return 0;
     }
     case 'roles-show': {
-      const role: RoleDefinition = await resolveRole(cwd, command.role);
+      const role: RoleDefinition = await resolveRole(lookup, command.role);
       write(
         process.stdout,
         command.json
@@ -224,7 +228,10 @@ async function dispatch(
       return 0;
     }
     case 'setup': {
-      const interactive: boolean = process.stdin.isTTY && process.stdout.isTTY;
+      const interactive: boolean = isInteractiveSession(
+        process.stdin.isTTY,
+        process.stdout.isTTY,
+      );
       const elicited: ElicitedSetupOptions = await elicitSetupOptions({
         input: process.stdin,
         output: process.stdout,
@@ -232,10 +239,6 @@ async function dispatch(
         level: command.level,
         scope: command.scope,
       });
-      const userConfigDir: string = resolveUserConfigDir(
-        process.env['XDG_CONFIG_HOME'],
-        homedir(),
-      );
       const result: SetupResult = await setupLayer(cwd, {
         level: elicited.level,
         userConfigDir,
@@ -254,7 +257,10 @@ async function dispatch(
       return 0;
     }
     case 'team-run': {
-      const team: TeamDefinition = await loadTeamDefinition(cwd, command.team);
+      const team: TeamDefinition = await loadTeamDefinition(
+        lookup,
+        command.team,
+      );
       const requirements: string | null = await readRequirements(cwd);
       const runId: RunId = generateRunId();
       const clock = (): number => Date.now();
@@ -266,7 +272,7 @@ async function dispatch(
         const options: RunPipelineOptions = {
           team,
           task: command.task,
-          runStage: createProcessStageRunner(cwd),
+          runStage: createProcessStageRunner(cwd, userConfigDir),
           gate: createStdinGate(reader, (text: string): void => {
             write(process.stdout, text);
           }),
@@ -293,14 +299,17 @@ async function dispatch(
           ? await readProposalFile(cwd, command.proposal)
           : null;
       const council: CouncilDeclaration = await loadCouncilDeclaration(
-        cwd,
+        lookup,
         command.council,
       );
       const team: TeamDefinition | null =
         command.team !== null
-          ? await loadTeamDefinition(cwd, command.team)
+          ? await loadTeamDefinition(lookup, command.team)
           : null;
-      const seatDeps: SeatSessionDeps = createProcessSeatDeps(cwd);
+      const seatDeps: SeatSessionDeps = createProcessSeatDeps(
+        cwd,
+        userConfigDir,
+      );
       const seatWorktrees: WorktreePool = new WorktreePool(seatDeps.worktrees);
       const reader: Interface = createInterface({ input: process.stdin });
       try {
@@ -315,7 +324,7 @@ async function dispatch(
           clusterArguments: createEchoClusterer(runner),
           summarizeEvidence: createEvidenceSummarizer(runner),
           launch: createPipelineLauncher({
-            runStage: createProcessStageRunner(cwd),
+            runStage: createProcessStageRunner(cwd, userConfigDir),
             gate: createStdinGate(reader, (text: string): void => {
               write(process.stdout, text);
             }),
@@ -362,9 +371,12 @@ function deliberationId(question: string): string {
   return `${slug.length > 0 ? slug : 'deliberation'}-${Date.now()}`;
 }
 
-async function resolveRole(cwd: string, name: string): Promise<RoleDefinition> {
+async function resolveRole(
+  lookup: LayerLookup,
+  name: string,
+): Promise<RoleDefinition> {
   try {
-    return await loadRoleDefinition(cwd, name);
+    return (await loadRoleDefinition(lookup, name)).role;
   } catch (error: unknown) {
     throw new UsageError(
       error instanceof Error ? error.message : `unknown role "${name}"`,
@@ -375,8 +387,12 @@ async function resolveRole(cwd: string, name: string): Promise<RoleDefinition> {
 async function main(): Promise<number> {
   const command: CliCommand = parseCliArgs(process.argv.slice(2));
   const cwd: string = process.cwd();
+  const userConfigDir: string = resolveUserConfigDir(
+    process.env['XDG_CONFIG_HOME'],
+    homedir(),
+  );
   const runner: ProcessCommandRunner = new ProcessCommandRunner(cwd);
-  return dispatch(command, cwd, runner);
+  return dispatch(command, cwd, userConfigDir, runner);
 }
 
 main()

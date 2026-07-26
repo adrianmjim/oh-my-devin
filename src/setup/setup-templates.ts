@@ -1,7 +1,4 @@
-export const RULES_FILE: string = [
-  '# Oh My Devin — in-session layer',
-  '',
-  'This project runs under the Oh My Devin organizational layer. It has two lanes:',
+const RULES_BODY: readonly string[] = [
   '',
   '- **Conversational lane** — roles run as native Devin subagents under soft',
   '  enforcement plus CLI-enforced tool contracts.',
@@ -21,6 +18,21 @@ export const RULES_FILE: string = [
   'Ask to delegate work to a named role and the `omd-delegate` skill runs',
   '`omd run` for you.',
   '',
+];
+
+export const RULES_FILE: string = [
+  '# Oh My Devin — in-session layer',
+  '',
+  'This project runs under the Oh My Devin organizational layer. It has two lanes:',
+  ...RULES_BODY,
+].join('\n');
+
+export const USER_RULES_FILE: string = [
+  '# Oh My Devin — in-session layer',
+  '',
+  'Every Devin session started by this user runs under the Oh My Devin',
+  'organizational layer. It has two lanes:',
+  ...RULES_BODY,
 ].join('\n');
 
 export const REVIEWER_ROLE_AGENT_MD: string = [
@@ -256,7 +268,19 @@ export interface HooksEventMap {
   readonly Stop: readonly HookMatcherEntry[];
 }
 
-export const PROJECT_HOOK_COMMAND: string = 'node .devin/hooks/omd-mode.mjs';
+export const HOOK_SCRIPT_FILENAME: string = 'omd-mode.mjs';
+
+export const PROJECT_HOOK_COMMAND: string = `node .devin/hooks/${HOOK_SCRIPT_FILENAME}`;
+
+const SESSION_START_PHASE: string = 'session-start';
+const USER_PROMPT_PHASE: string = 'user-prompt';
+const STOP_PHASE: string = 'stop';
+
+export const HOOK_PHASES: readonly string[] = [
+  SESSION_START_PHASE,
+  USER_PROMPT_PHASE,
+  STOP_PHASE,
+];
 
 function commandEntry(baseCommand: string, phase: string): HookMatcherEntry {
   return { hooks: [{ type: 'command', command: `${baseCommand} ${phase}` }] };
@@ -264,9 +288,9 @@ function commandEntry(baseCommand: string, phase: string): HookMatcherEntry {
 
 export function buildHooksEventMap(baseCommand: string): HooksEventMap {
   return {
-    SessionStart: [commandEntry(baseCommand, 'session-start')],
-    UserPromptSubmit: [commandEntry(baseCommand, 'user-prompt')],
-    Stop: [commandEntry(baseCommand, 'stop')],
+    SessionStart: [commandEntry(baseCommand, SESSION_START_PHASE)],
+    UserPromptSubmit: [commandEntry(baseCommand, USER_PROMPT_PHASE)],
+    Stop: [commandEntry(baseCommand, STOP_PHASE)],
   };
 }
 

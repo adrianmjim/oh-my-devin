@@ -69,6 +69,7 @@ function makeDeps(
   runProposerRole: (options: RunRoleOptions) => Promise<RunReport>,
   worktrees: FakeWorktrees,
   read: (path: string) => Promise<string>,
+  userConfigDir: string | null = null,
 ): SeatSessionDeps {
   return {
     worktrees,
@@ -76,6 +77,7 @@ function makeDeps(
     runnerFor: (): CommandRunner => NOOP_RUNNER,
     readArtifact: read,
     clock: (): number => 0,
+    userConfigDir,
   };
 }
 
@@ -231,6 +233,31 @@ describe('createProposerAction', () => {
     expect(worktrees.created).toEqual(['seat-architect-2']);
     expect(seen[0]?.roleName).toBe('architect');
     expect(seen[0]?.workingDirectory).toBe('/wt/seat-architect-2');
+  });
+
+  it('runs the proposer role against a lookup carrying the user-level location', async () => {
+    const worktrees = new FakeWorktrees();
+    const seen: RunRoleOptions[] = [];
+    const propose: ProposerAction = createProposerAction(
+      makeDeps(
+        (options: RunRoleOptions): Promise<RunReport> => {
+          seen.push(options);
+          return Promise.resolve(report());
+        },
+        worktrees,
+        (): Promise<string> =>
+          Promise.resolve(JSON.stringify({ proposal: 'v1' })),
+        '/home/u/.config/devin',
+      ),
+      new WorktreePool(worktrees),
+    );
+
+    await propose(request({}));
+
+    expect(seen[0]?.lookup).toEqual({
+      projectDir: '/wt/seat-architect',
+      userConfigDir: '/home/u/.config/devin',
+    });
   });
 
   it('names the seat instance id when the proposer fails', async () => {

@@ -55,6 +55,29 @@ describe('omd usage and error rendering (e2e)', () => {
     expect(result.stderr).toContain('usage: omd team run');
   });
 
+  it('rejects a space-separated setup argument with the usage-error exit code', async () => {
+    project = await createE2eProject();
+
+    const result: CommandResult = await project.run([
+      'setup',
+      '--level',
+      'user',
+    ]);
+
+    expect(result.exitCode).toBe(USAGE_ERROR_EXIT_CODE);
+    expect(result.stderr).toContain('usage error');
+    expect(result.stderr).toContain('usage: omd setup');
+  });
+
+  it('rejects an unknown setup flag with the usage-error exit code', async () => {
+    project = await createE2eProject();
+
+    const result: CommandResult = await project.run(['setup', '--levl=user']);
+
+    expect(result.exitCode).toBe(USAGE_ERROR_EXIT_CODE);
+    expect(result.stderr).toContain('usage: omd setup');
+  });
+
   it('prints the usage text for --help with a zero exit code', async () => {
     project = await createE2eProject();
 

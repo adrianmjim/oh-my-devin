@@ -1,5 +1,6 @@
 import { join } from 'node:path';
 import type { HandoffArtifactName } from '../handoff/handoff-artifact-name';
+import type { LayerLookup } from '../layer/layer-lookup';
 import type { PipelineStage } from '../handoff/pipeline-stage';
 import type { RunReport } from '../outcome/run-report';
 import type { Worktree } from '../worktree/worktree';
@@ -18,6 +19,10 @@ export function createStageRunner(deps: StageRunnerDeps): StageRunner {
   return async (request: StageRequest): Promise<StageResult> => {
     const worktree: Worktree = await deps.worktrees.create(request.stage);
     try {
+      const lookup: LayerLookup = {
+        projectDir: worktree.path,
+        userConfigDir: deps.userConfigDir,
+      };
       const report: RunReport = await deps.runRole({
         roleName: request.stage,
         task: composePrompt(request),
@@ -25,6 +30,7 @@ export function createStageRunner(deps: StageRunnerDeps): StageRunner {
         model: null,
         runner: deps.runnerFor(worktree.path),
         clock: deps.clock,
+        lookup,
       });
 
       if (report.failureTier !== null || !report.artifactValid) {

@@ -2,6 +2,7 @@ import { spawn } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
 import { closeSync } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
+import type { LayerLookup } from '../layer/layer-lookup';
 import { generateRunId } from '../observability/generate-run-id';
 import { RUN_ID_ENV } from '../observability/run-id-env';
 import type { RunId } from '../observability/run-id';
@@ -11,12 +12,13 @@ import type { RunLogDescriptors } from './run-log-descriptors';
 import { validateRunInvocation } from './validate-run-invocation';
 
 export async function launchDetached(
-  baseDir: string,
+  lookup: LayerLookup,
   cliPath: string,
   roleName: string,
   task: string,
 ): Promise<RunId> {
-  await validateRunInvocation(baseDir, roleName, task);
+  await validateRunInvocation(lookup, roleName, task);
+  const baseDir: string = lookup.projectDir;
   const runId: RunId = generateRunId();
   const paths: RunRecordPaths = new RunRecordPaths(baseDir, runId);
   await mkdir(paths.dir, { recursive: true });

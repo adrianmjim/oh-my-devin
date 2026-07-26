@@ -1,4 +1,5 @@
-import type { InstallLevel } from './install-level';
+import { reportVersion } from '../cli/report-version';
+import type { InstallLevel } from '../layer/install-level';
 import type { LayerComponent } from './layer-component';
 import { ALL_LAYER_COMPONENTS } from './layer-component';
 import { resolveLayerTargets } from './resolve-layer-targets';
@@ -10,6 +11,7 @@ export interface SetupLayerOptions {
   readonly level?: InstallLevel;
   readonly scope?: readonly LayerComponent[];
   readonly userConfigDir?: string;
+  readonly version?: string;
 }
 
 export async function setupLayer(
@@ -20,11 +22,13 @@ export async function setupLayer(
   const scope: readonly LayerComponent[] =
     options?.scope ?? ALL_LAYER_COMPONENTS;
   const userConfigDir: string = options?.userConfigDir ?? '';
+  const version: string = options?.version ?? (await reportVersion());
   const targets: readonly ResolvedTarget[] = resolveLayerTargets({
     projectDir,
     userConfigDir,
     level,
     scope,
+    version,
   });
   return writeResolvedTargets(targets);
 }

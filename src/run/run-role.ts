@@ -8,6 +8,7 @@ import type { AgentConfigBundle } from '../contract/agent-config-bundle';
 import type { Engine } from '../engine/engine';
 import { EngineError } from '../engine/engine-error';
 import { selectEngine } from '../engine/select-engine';
+import type { LayerLookup } from '../layer/layer-lookup';
 import { classifyOutcome } from '../outcome/classify-outcome';
 import type { FailureTier } from '../outcome/failure-tier';
 import type { RunReport } from '../outcome/run-report';
@@ -32,9 +33,13 @@ export async function runRole(options: RunRoleOptions): Promise<RunReport> {
 
   let resolved: ResolvedRunInvocation | undefined = options.resolved;
   if (resolved === undefined) {
+    const lookup: LayerLookup = options.lookup ?? {
+      projectDir: options.workingDirectory,
+      userConfigDir: null,
+    };
     try {
       resolved = await resolveRunInvocation(
-        options.workingDirectory,
+        lookup,
         options.roleName,
         options.task,
       );
@@ -47,7 +52,7 @@ export async function runRole(options: RunRoleOptions): Promise<RunReport> {
   const schemaText: string = resolved.schemaText;
   const bundle: AgentConfigBundle = resolved.bundle;
 
-  const schemaPath: string = join(options.workingDirectory, role.outputSchema);
+  const schemaPath: string = resolved.schemaPath;
   const artifactPath: string = join(
     options.workingDirectory,
     role.outputArtifact,

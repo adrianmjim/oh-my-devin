@@ -2,6 +2,7 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import type { LayerLookup } from '../layer/layer-lookup';
 import { UsageError } from './usage-error';
 import { validateRunInvocation } from './validate-run-invocation';
 
@@ -9,6 +10,7 @@ const SCHEMA = { type: 'object' };
 
 describe('validateRunInvocation', () => {
   let dir: string;
+  let lookup: LayerLookup;
 
   async function scaffold(): Promise<void> {
     const roleDir: string = join(dir, '.devin', 'agents', 'reviewer');
@@ -27,6 +29,7 @@ describe('validateRunInvocation', () => {
 
   beforeEach(async () => {
     dir = await mkdtemp(join(tmpdir(), 'omd-validate-'));
+    lookup = { projectDir: dir, userConfigDir: null };
   });
 
   afterEach(async () => {
@@ -36,21 +39,21 @@ describe('validateRunInvocation', () => {
   it('resolves without throwing for a defined role and a non-empty task', async () => {
     await scaffold();
     await expect(
-      validateRunInvocation(dir, 'reviewer', 'assess the diff'),
+      validateRunInvocation(lookup, 'reviewer', 'assess the diff'),
     ).resolves.toBeUndefined();
   });
 
   it('rejects an empty task as a usage error', async () => {
     await scaffold();
-    await expect(validateRunInvocation(dir, 'reviewer', '   ')).rejects.toThrow(
-      UsageError,
-    );
+    await expect(
+      validateRunInvocation(lookup, 'reviewer', '   '),
+    ).rejects.toThrow(UsageError);
   });
 
   it('rejects an unresolvable role as a usage error', async () => {
     await scaffold();
     await expect(
-      validateRunInvocation(dir, 'ghost', 'assess the diff'),
+      validateRunInvocation(lookup, 'ghost', 'assess the diff'),
     ).rejects.toThrow(UsageError);
   });
 
@@ -58,7 +61,7 @@ describe('validateRunInvocation', () => {
     await scaffold();
     await rm(join(dir, 'review.schema.json'), { force: true });
     await expect(
-      validateRunInvocation(dir, 'reviewer', 'assess the diff'),
+      validateRunInvocation(lookup, 'reviewer', 'assess the diff'),
     ).rejects.toThrow(UsageError);
   });
 });

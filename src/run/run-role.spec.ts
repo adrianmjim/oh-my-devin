@@ -559,7 +559,7 @@ describe('runRole', () => {
   it('honors a caller-resolved invocation without re-resolving from disk', async () => {
     await scaffold(8);
     const resolved: ResolvedRunInvocation = await resolveRunInvocation(
-      dir,
+      { projectDir: dir, userConfigDir: null },
       'reviewer',
       'assess the diff',
     );
@@ -581,6 +581,54 @@ describe('runRole', () => {
       clock: (): number => 0,
       resolved,
     });
+
+    expect(report.failureTier).toBeNull();
+    expect(report.artifactValid).toBe(true);
+  });
+
+  it('validates against the resolved schema path, not one under the working directory', async () => {
+    const userConfigDir: string = await mkdtemp(
+      join(tmpdir(), 'omd-run-user-'),
+    );
+    const roleDir: string = join(userConfigDir, 'agents', 'reviewer');
+    await mkdir(roleDir, { recursive: true });
+    await writeFile(
+      join(roleDir, 'AGENT.md'),
+      [
+        '---',
+        'omd-output: review.json',
+        `omd-schema: ${join('.devin', 'schemas', 'review.schema.json')}`,
+        'omd-max-turns: 8',
+        '---',
+        'You are the reviewer.',
+      ].join('\n'),
+      'utf8',
+    );
+    await mkdir(join(userConfigDir, 'schemas'), { recursive: true });
+    await writeFile(
+      join(userConfigDir, 'schemas', 'review.schema.json'),
+      JSON.stringify(SCHEMA),
+    );
+    const resolved: ResolvedRunInvocation = await resolveRunInvocation(
+      { projectDir: dir, userConfigDir },
+      'reviewer',
+      'assess the diff',
+    );
+
+    const report: RunReport = await runRole({
+      roleName: 'reviewer',
+      task: 'assess the diff',
+      workingDirectory: dir,
+      model: null,
+      runner: new FakeRunner(
+        artifactPath,
+        [{ write: JSON.stringify({ verdict: 'pass' }) }],
+        dir,
+      ),
+      clock: (): number => 0,
+      resolved,
+    });
+    await rm(userConfigDir, { recursive: true, force: true });
 
     expect(report.failureTier).toBeNull();
     expect(report.artifactValid).toBe(true);

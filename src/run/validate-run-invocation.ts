@@ -1,9 +1,10 @@
+import type { LayerLookup } from '../layer/layer-lookup';
 import { resolveRunInvocation } from './resolve-run-invocation';
 
 export async function validateRunInvocation(
-  baseDir: string,
+  lookup: LayerLookup,
   roleName: string,
   task: string,
 ): Promise<void> {
-  await resolveRunInvocation(baseDir, roleName, task);
+  await resolveRunInvocation(lookup, roleName, task);
 }

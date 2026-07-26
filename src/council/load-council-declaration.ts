@@ -2,16 +2,23 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { discoverRoles } from '../catalog/discover-roles';
 import type { RoleDiscovery } from '../catalog/role-discovery';
+import { ENGINE_LAYER_DIR } from '../layer/engine-layer-dir';
+import type { LayerLookup } from '../layer/layer-lookup';
 import type { RoleDefinition } from '../role/role-definition';
 import { UsageError } from '../run/usage-error';
 import type { CouncilDeclaration } from './council-declaration';
 import { parseCouncilDeclaration } from './parse-council-declaration';
 
 export async function loadCouncilDeclaration(
-  baseDir: string,
+  lookup: LayerLookup,
   name: string,
 ): Promise<CouncilDeclaration> {
-  const path: string = join(baseDir, '.devin', 'councils', `${name}.yaml`);
+  const path: string = join(
+    lookup.projectDir,
+    ENGINE_LAYER_DIR,
+    'councils',
+    `${name}.yaml`,
+  );
   let text: string;
   try {
     text = await readFile(path, 'utf8');
@@ -19,7 +26,7 @@ export async function loadCouncilDeclaration(
     throw new UsageError(`council "${name}" not found at ${path}`);
   }
 
-  const discovery: RoleDiscovery = await discoverRoles(baseDir);
+  const discovery: RoleDiscovery = await discoverRoles(lookup);
   const knownRoles: readonly string[] = discovery.roles.map(
     (role: RoleDefinition): string => role.name,
   );

@@ -1,4 +1,5 @@
 import { join } from 'node:path';
+import type { LayerLookup } from '../layer/layer-lookup';
 import type { RunReport } from '../outcome/run-report';
 import type { ParallelInstance } from '../parallel/parallel-instance';
 import type { ParallelSettlement } from '../parallel/parallel-settlement';
@@ -64,6 +65,10 @@ async function invokeSeat(
   invocation: SeatInvocation,
   worktree: Worktree,
 ): Promise<SeatPosition> {
+  const lookup: LayerLookup = {
+    projectDir: worktree.path,
+    userConfigDir: deps.userConfigDir,
+  };
   const report: RunReport = await deps.runRole({
     roleName: invocation.seat.role,
     task: composeSeatPrompt(invocation),
@@ -71,6 +76,7 @@ async function invokeSeat(
     model: invocation.seat.model,
     runner: deps.runnerFor(worktree.path),
     clock: deps.clock,
+    lookup,
   });
   if (report.failureTier !== null || !report.artifactValid) {
     throw new DeliberationError(
