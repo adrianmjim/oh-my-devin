@@ -1,14 +1,10 @@
+import { appendRegion } from './append-region';
 import { frameRegion } from './frame-region';
 import { mergeLocatedRegion } from './merge-located-region';
 import type { MergeOutcome } from './merge-outcome';
 import type { MergeRequest } from './merge-request';
 import type { RegionScan } from './region-scan';
 import { scanRegion } from './scan-region';
-
-function appendRegion(existing: string, framed: string): string {
-  const base: string = existing.endsWith('\n') ? existing : `${existing}\n`;
-  return `${base}\n${framed}`;
-}
 
 export function mergeContainer(request: MergeRequest): MergeOutcome {
   const existing: string | null = request.existing;

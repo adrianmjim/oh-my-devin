@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { deliberationOutcome } from './deliberation-outcome-fixture';
+import { deliberationOutcomeFixture } from './deliberation-outcome-fixture';
 import type { JsonDeliberationOutcome } from './json-deliberation-outcome';
 import { renderDeliberationOutcomeJson } from './render-deliberation-outcome-json';
 
 describe('renderDeliberationOutcomeJson', () => {
   it('projects a passed outcome with exit code 0', () => {
     const json: JsonDeliberationOutcome = renderDeliberationOutcomeJson(
-      deliberationOutcome('passed', 'proceed', true),
+      deliberationOutcomeFixture('passed', 'proceed', true),
     );
     expect(json.closure).toBe('passed');
     expect(json.exitCode).toBe(0);
@@ -17,7 +17,7 @@ describe('renderDeliberationOutcomeJson', () => {
 
   it('projects a blocked outcome with a non-zero exit code and dissent', () => {
     const json: JsonDeliberationOutcome = renderDeliberationOutcomeJson(
-      deliberationOutcome('blocked', 'escalate', false),
+      deliberationOutcomeFixture('blocked', 'escalate', false),
     );
     expect(json.closure).toBe('blocked');
     expect(json.exitCode).not.toBe(0);

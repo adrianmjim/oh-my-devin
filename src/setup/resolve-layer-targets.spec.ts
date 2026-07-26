@@ -1,12 +1,10 @@
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { ALL_LAYER_COMPONENTS } from '../layer/layer-component';
-import type {
-  MergeTarget,
-  RefusedTarget,
-  RegistryTarget,
-  ResolvedTarget,
-} from './resolved-target';
+import { ALL_LAYER_COMPONENTS } from '../layer/all-layer-components';
+import type { MergeTarget } from './merge-target';
+import type { RefusedTarget } from './refused-target';
+import type { RegistryTarget } from './registry-target';
+import type { ResolvedTarget } from './resolved-target';
 import { resolveLayerTargets } from './resolve-layer-targets';
 
 const PROJECT: string = join('/tmp', 'omd-project');

@@ -1,13 +1,12 @@
 import type { Interface } from 'node:readline';
 import type { OutputWriter } from '../io/output-writer';
+import { APPROVE_ANSWERS } from './approve-answers';
 import type { GateDecision } from './gate-decision';
 import type { GatePresentation } from './gate-presentation';
+import type { LineResolver } from './line-resolver';
 import type { PipelineGate } from './pipeline-gate';
-
-type LineResolver = (line: string | null) => void;
-
-const APPROVE: ReadonlySet<string> = new Set(['approve', 'a', 'y', 'yes']);
-const REJECT: ReadonlySet<string> = new Set(['reject', 'r', 'n', 'no']);
+import { REJECT_ANSWERS } from './reject-answers';
+import { renderGatePresentation } from './render-gate-presentation';
 
 export function createStdinGate(
   reader: Interface,
@@ -47,31 +46,18 @@ export function createStdinGate(
   };
 
   return async (presentation: GatePresentation): Promise<GateDecision> => {
-    write(render(presentation));
+    write(renderGatePresentation(presentation));
     const answer: string | null = await nextLine();
     if (answer === null) {
       return 'none';
     }
     const normalized: string = answer.trim().toLowerCase();
-    if (APPROVE.has(normalized)) {
+    if (APPROVE_ANSWERS.has(normalized)) {
       return 'approve';
     }
-    if (REJECT.has(normalized)) {
+    if (REJECT_ANSWERS.has(normalized)) {
       return 'reject';
     }
     return 'none';
   };
-}
-
-function render(presentation: GatePresentation): string {
-  const outcome: string =
-    presentation.report.failureTier === null
-      ? 'succeeded'
-      : `failed (${presentation.report.failureTier})`;
-  return [
-    `Stage "${presentation.stage}" ${outcome}.`,
-    `  artifact: ${presentation.report.artifactPath} (valid: ${presentation.report.artifactValid})`,
-    `  session: ${presentation.report.sessionId ?? '(none)'}`,
-    'Approve this stage? [approve/reject]',
-  ].join('\n');
 }

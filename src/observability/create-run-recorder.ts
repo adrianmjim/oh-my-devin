@@ -2,7 +2,7 @@ import type { Clock } from '../budget/clock';
 import { JournalRunRecorder } from './journal-run-recorder';
 import { JournalWriter } from './journal-writer';
 import { LivenessRefresher } from './liveness-refresher';
-import { LIVENESS_REFRESH_MS } from './liveness-timing';
+import { LIVENESS_REFRESH_MS } from './liveness-refresh-ms';
 import type { RunId } from './run-id';
 import type { RunObserver } from './run-observer';
 import { RunRecordPaths } from './run-record-paths';

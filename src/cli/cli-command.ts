@@ -1,79 +1,16 @@
-import type { InstallLevel } from '../layer/install-level';
-import type { LayerComponent } from '../layer/layer-component';
-
-export interface RunCommand {
-  readonly kind: 'run';
-  readonly role: string;
-  readonly task: string;
-  readonly json: boolean;
-  readonly detach: boolean;
-}
-
-export interface StatusCommand {
-  readonly kind: 'status';
-  readonly runId: string;
-  readonly json: boolean;
-}
-
-export interface DoctorCommand {
-  readonly kind: 'doctor';
-}
-
-export interface RolesListCommand {
-  readonly kind: 'roles-list';
-  readonly json: boolean;
-}
-
-export interface RolesShowCommand {
-  readonly kind: 'roles-show';
-  readonly role: string;
-  readonly json: boolean;
-}
-
-export interface SetupCommand {
-  readonly kind: 'setup';
-  readonly scope: readonly LayerComponent[] | null;
-  readonly level: InstallLevel | null;
-}
-
-export interface HelpCommand {
-  readonly kind: 'help';
-}
-
-export interface VersionCommand {
-  readonly kind: 'version';
-}
-
-export interface PluginBuildCommand {
-  readonly kind: 'plugin-build';
-  readonly out: string | null;
-}
-
-export interface TeamRunCommand {
-  readonly kind: 'team-run';
-  readonly team: string;
-  readonly task: string;
-  readonly json: boolean;
-}
-
-export interface CouncilRunCommand {
-  readonly kind: 'council-run';
-  readonly council: string;
-  readonly question: string;
-  readonly proposal: string | null;
-  readonly team: string | null;
-  readonly sign: boolean;
-  readonly json: boolean;
-}
-
-export interface ModeSetCommand {
-  readonly kind: 'mode-set';
-  readonly mode: string;
-}
-
-export interface ModeClearCommand {
-  readonly kind: 'mode-clear';
-}
+import type { CouncilRunCommand } from './council-run-command';
+import type { DoctorCommand } from './doctor-command';
+import type { HelpCommand } from './help-command';
+import type { ModeClearCommand } from './mode-clear-command';
+import type { ModeSetCommand } from './mode-set-command';
+import type { PluginBuildCommand } from './plugin-build-command';
+import type { RolesListCommand } from './roles-list-command';
+import type { RolesShowCommand } from './roles-show-command';
+import type { RunCommand } from './run-command';
+import type { SetupCommand } from './setup-command';
+import type { StatusCommand } from './status-command';
+import type { TeamRunCommand } from './team-run-command';
+import type { VersionCommand } from './version-command';
 
 export type CliCommand =
   | RunCommand

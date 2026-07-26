@@ -1,16 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { ALL_LAYER_COMPONENTS } from '../layer/layer-component';
+import { ALL_LAYER_COMPONENTS } from '../layer/all-layer-components';
 import { UsageError } from '../run/usage-error';
-import type {
-  CouncilRunCommand,
-  ModeSetCommand,
-  PluginBuildCommand,
-  RolesShowCommand,
-  RunCommand,
-  SetupCommand,
-  StatusCommand,
-  TeamRunCommand,
-} from './cli-command';
+import type { CouncilRunCommand } from './council-run-command';
+import type { ModeSetCommand } from './mode-set-command';
+import type { PluginBuildCommand } from './plugin-build-command';
+import type { RolesShowCommand } from './roles-show-command';
+import type { RunCommand } from './run-command';
+import type { SetupCommand } from './setup-command';
+import type { StatusCommand } from './status-command';
+import type { TeamRunCommand } from './team-run-command';
 import { parseCliArgs } from './parse-cli-args';
 
 describe('parseCliArgs', () => {

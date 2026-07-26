@@ -1,10 +1,8 @@
-import { formatLayerComponents } from './format-layer-components';
 import type { LayerComponent } from '../layer/layer-component';
 import type { LineReader } from './line-reader';
 import { parseScopeAnswer } from './parse-scope-answer';
-
-const SCOPE_PROMPT: string = `Component scope? [full / comma-separated of ${formatLayerComponents(',')}] (default: full) `;
-const SCOPE_HINT: string = `Please answer "full" or a comma-separated subset of ${formatLayerComponents(',')}.\n`;
+import { SCOPE_HINT } from './scope-hint';
+import { SCOPE_PROMPT } from './scope-prompt';
 
 export async function promptScope(
   reader: LineReader,

@@ -2,28 +2,17 @@ import { spawn } from 'node:child_process';
 import type { ChildProcessWithoutNullStreams } from 'node:child_process';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { delimiter, dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { delimiter, join } from 'node:path';
 import type { CommandInvocation } from '../engine/command-invocation';
 import type { CommandResult } from '../engine/command-result';
+import { CLI_PATH } from './cli-path';
 import type { DevinStubScript } from './devin-stub-script';
 import type { E2eProject } from './e2e-project';
 import type { E2eRunOptions } from './e2e-run-options';
-import {
-  STUB_LOG_ENV,
-  STUB_SCRIPT_ENV,
-  writeDevinStubBin,
-} from './write-devin-stub-bin';
-
-const CLI_PATH: string = resolve(
-  dirname(fileURLToPath(import.meta.url)),
-  '..',
-  '..',
-  'dist',
-  'cli.js',
-);
-
-const EMPTY_SCRIPT: DevinStubScript = { turns: [], listResponse: null };
+import { EMPTY_STUB_SCRIPT } from './empty-stub-script';
+import { STUB_LOG_ENV } from './stub-log-env';
+import { STUB_SCRIPT_ENV } from './stub-script-env';
+import { writeDevinStubBin } from './write-devin-stub-bin';
 
 export async function createE2eProject(): Promise<E2eProject> {
   const root: string = await mkdtemp(join(tmpdir(), 'omd-e2e-'));
@@ -34,7 +23,7 @@ export async function createE2eProject(): Promise<E2eProject> {
 
   await mkdir(dir, { recursive: true });
   await writeDevinStubBin(binDir);
-  await writeFile(scriptPath, JSON.stringify(EMPTY_SCRIPT), 'utf8');
+  await writeFile(scriptPath, JSON.stringify(EMPTY_STUB_SCRIPT), 'utf8');
 
   async function writeScript(script: DevinStubScript): Promise<void> {
     await writeFile(scriptPath, JSON.stringify(script), 'utf8');

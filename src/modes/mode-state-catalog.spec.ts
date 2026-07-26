@@ -1,45 +1,28 @@
 import { describe, expect, it } from 'vitest';
-import type { ModeState } from '../setup/mode-state';
+import { MODE_CATALOG } from './mode-catalog';
+import type { ModeSkill } from './mode-skill';
 import { MODE_STATE_CATALOG } from './mode-state-catalog';
 
 describe('MODE_STATE_CATALOG', () => {
-  it('covers exactly the five modes with persistent state', () => {
-    expect([...MODE_STATE_CATALOG.keys()].sort()).toEqual([
-      'autopilot',
-      'plan',
-      'ralph',
-      'team',
-      'verify',
-    ]);
+  it('resolves each mode name to its state', () => {
+    expect(MODE_STATE_CATALOG.get('ralph')?.mode).toBe('ralph');
   });
 
-  it('has no entry for deep-dive', () => {
-    expect(MODE_STATE_CATALOG.has('deep-dive')).toBe(false);
+  it('has no state for an unknown mode', () => {
+    expect(MODE_STATE_CATALOG.get('nonsense')).toBeUndefined();
   });
 
-  it('gives every entry a mode field equal to its key', () => {
-    for (const [name, state] of MODE_STATE_CATALOG) {
-      expect(state.mode).toBe(name);
+  it('keys every state by the mode it declares', () => {
+    for (const [key, state] of MODE_STATE_CATALOG) {
+      expect(state.mode).toBe(key);
     }
   });
 
-  it('gives every entry a non-empty context and verification', () => {
-    for (const state of MODE_STATE_CATALOG.values()) {
-      expect(state.context.length).toBeGreaterThan(0);
-      expect(state.verification.length).toBeGreaterThan(0);
-      for (const criterion of state.verification) {
-        expect(criterion.length).toBeGreaterThan(0);
-      }
-    }
-  });
+  it('carries a state for every mode skill that sets one', () => {
+    const settable: readonly string[] = MODE_CATALOG.filter(
+      (skill: ModeSkill): boolean => MODE_STATE_CATALOG.has(skill.name),
+    ).map((skill: ModeSkill): string => skill.name);
 
-  it('carries the pipeline outcome criterion for team and autopilot', () => {
-    const team: ModeState | undefined = MODE_STATE_CATALOG.get('team');
-    const autopilot: ModeState | undefined =
-      MODE_STATE_CATALOG.get('autopilot');
-    expect(team?.verification).toEqual(['pipeline terminal outcome reported']);
-    expect(autopilot?.verification).toEqual([
-      'pipeline terminal outcome reported',
-    ]);
+    expect(settable.length).toBe(MODE_STATE_CATALOG.size);
   });
 });

@@ -1,7 +1,6 @@
 import { createHash } from 'node:crypto';
+import { DIGEST_LENGTH } from './digest-length';
 import { normalizeForDigest } from './normalize-for-digest';
-
-const DIGEST_LENGTH: number = 32;
 
 export function digestContent(content: string): string {
   const hex: string = createHash('sha256')

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { IntervalHandle } from './interval-scheduler';
+import type { IntervalHandle } from './interval-handle';
 import { systemIntervalScheduler } from './system-interval-scheduler';
 
 describe('systemIntervalScheduler', () => {

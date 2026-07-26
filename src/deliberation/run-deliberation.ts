@@ -6,6 +6,7 @@ import type { ClosureState } from './closure-state';
 import type { DecisionRecord } from './decision-record';
 import type { DeliberationInput } from './deliberation-input';
 import type { DeliberationOutcome } from './deliberation-outcome';
+import { dedupeStrings } from './dedupe-strings';
 import { detectEchoes } from './detect-echoes';
 import type { EchoCluster } from './echo-cluster';
 import { emitDecisionRecord } from './emit-decision-record';
@@ -15,8 +16,10 @@ import { relayAnonymized } from './relay-anonymized';
 import { runRound } from './run-round';
 import type { RoundResult } from './round-result';
 import type { SeatArgument } from './seat-argument';
+import { supportingArguments } from './supporting-arguments';
 import type { TerminationDecision } from './termination-decision';
 import type { TypedPosition } from './typed-position';
+import { wallTimeExceeded } from './wall-time-exceeded';
 
 export async function runDeliberation(
   input: DeliberationInput,
@@ -97,12 +100,12 @@ export async function runDeliberation(
     authority: input.council.authority,
     supporting,
     objections: allPositions,
-    assumptions: dedupe(
+    assumptions: dedupeStrings(
       allPositions.flatMap(
         (position: TypedPosition): readonly string[] => position.assumptions,
       ),
     ),
-    reconsiderWhen: dedupe(
+    reconsiderWhen: dedupeStrings(
       allPositions.flatMap(
         (position: TypedPosition): readonly string[] => position.reconsiderWhen,
       ),
@@ -118,35 +121,4 @@ export async function runDeliberation(
   });
 
   return { record, authority, bridge, utilityTurns };
-}
-
-function supportingArguments(
-  positions: readonly TypedPosition[],
-): readonly SeatArgument[] {
-  return positions
-    .filter(
-      (position: TypedPosition): boolean => position.kind === 'preference',
-    )
-    .map((position: TypedPosition): SeatArgument => ({
-      seat: position.seat,
-      claim: position.concern,
-    }));
-}
-
-function dedupe(values: readonly string[]): readonly string[] {
-  const unique: string[] = [];
-  for (const value of values) {
-    if (!unique.includes(value)) {
-      unique.push(value);
-    }
-  }
-  return unique;
-}
-
-function wallTimeExceeded(input: DeliberationInput, start: number): boolean {
-  const cap: number | null = input.council.tunables.wallTimeMs;
-  if (cap === null) {
-    return false;
-  }
-  return input.clock() - start >= cap;
 }

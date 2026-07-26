@@ -1,8 +1,8 @@
 import { Readable, Writable } from 'node:stream';
 import { describe, expect, it } from 'vitest';
-import type { ElicitedSetupOptions } from './elicit-setup-options';
+import type { ElicitedSetupOptions } from './elicited-setup-options';
 import { elicitSetupOptions } from './elicit-setup-options';
-import { ALL_LAYER_COMPONENTS } from '../layer/layer-component';
+import { ALL_LAYER_COMPONENTS } from '../layer/all-layer-components';
 
 function input(text: string): Readable {
   return Readable.from([text]);

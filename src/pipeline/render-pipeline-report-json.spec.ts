@@ -1,15 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import type { JsonPipelineReport } from './json-pipeline-report';
-import { pipelineReport, stageRecord } from './pipeline-report-fixture';
+import { pipelineReportFixture } from './pipeline-report-fixture';
+import { stageRecordFixture } from './stage-record-fixture';
 import { renderPipelineReportJson } from './render-pipeline-report-json';
 
 describe('renderPipelineReportJson', () => {
   it('projects the report with an exit code and per-stage records', () => {
     const json: JsonPipelineReport = renderPipelineReportJson(
-      pipelineReport('succeeded', [
-        stageRecord('architect', 'approve'),
-        stageRecord('executor', 'approve'),
-        stageRecord('reviewer', 'approve'),
+      pipelineReportFixture('succeeded', [
+        stageRecordFixture('architect', 'approve'),
+        stageRecordFixture('executor', 'approve'),
+        stageRecordFixture('reviewer', 'approve'),
       ]),
     );
 
@@ -24,10 +25,10 @@ describe('renderPipelineReportJson', () => {
 
   it('carries the halting stage and a non-zero exit code', () => {
     const json: JsonPipelineReport = renderPipelineReportJson(
-      pipelineReport(
+      pipelineReportFixture(
         'halted',
         [
-          stageRecord('executor', null, {
+          stageRecordFixture('executor', null, {
             failureTier: 'deny',
             artifactValid: false,
           }),

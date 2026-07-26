@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { renderSetupResult } from './render-setup-result';
-import type { SetupResult, TargetOutcome, TargetReport } from './setup-result';
+import type { SetupResult } from './setup-result';
+import type { TargetOutcome } from './target-outcome';
+import type { TargetReport } from './target-report';
 
 function report(
   path: string,

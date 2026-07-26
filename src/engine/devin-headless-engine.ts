@@ -3,12 +3,8 @@ import type { CommandInvocation } from './command-invocation';
 import type { Engine } from './engine';
 import { EngineError } from './engine-error';
 import type { PromptTurn } from './prompt-turn';
+import type { RawSessionListing } from './raw-session-listing';
 import type { SessionListing } from './session-listing';
-
-interface RawSessionListing {
-  readonly id: unknown;
-  readonly working_directory: unknown;
-}
 
 export class DevinHeadlessEngine implements Engine {
   public readonly kind: EngineKind = 'devin';

@@ -4,9 +4,7 @@ import type { MergeOutcome } from './merge-outcome';
 import type { MergeRequest } from './merge-request';
 import type { RegionScan } from './region-scan';
 import { scanRegion } from './scan-region';
-
-export const UNMARKED_REASON: string =
-  'a file omd did not write already occupies that path';
+import { UNMARKED_REASON } from './unmarked-reason';
 
 export function mergeUnitFile(request: MergeRequest): MergeOutcome {
   const existing: string | null = request.existing;

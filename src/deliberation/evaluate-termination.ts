@@ -1,6 +1,6 @@
+import { isDissentUnchanged } from './is-dissent-unchanged';
 import type { TerminationDecision } from './termination-decision';
 import type { TerminationInput } from './termination-input';
-import type { TypedPosition } from './typed-position';
 
 export function evaluateTermination(
   input: TerminationInput,
@@ -18,19 +18,4 @@ export function evaluateTermination(
     return { terminated: true, closure: 'bankrupt' };
   }
   return { terminated: false, closure: null };
-}
-
-function isDissentUnchanged(
-  current: readonly TypedPosition[],
-  previous: readonly TypedPosition[],
-): boolean {
-  if (previous.length === 0) {
-    return false;
-  }
-  return current.some((now: TypedPosition): boolean =>
-    previous.some(
-      (before: TypedPosition): boolean =>
-        before.seat === now.seat && before.domain === now.domain,
-    ),
-  );
 }

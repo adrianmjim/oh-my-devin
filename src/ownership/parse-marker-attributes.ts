@@ -1,6 +1,5 @@
+import { ATTRIBUTE_PATTERN } from './attribute-pattern';
 import type { RegionMarker } from './region-marker';
-
-const ATTRIBUTE_PATTERN: RegExp = /([a-z]+)=([^\s]+)/g;
 
 export function parseMarkerAttributes(text: string): RegionMarker | null {
   const attributes: Map<string, string> = new Map<string, string>();

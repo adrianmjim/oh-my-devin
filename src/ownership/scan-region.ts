@@ -1,85 +1,22 @@
+import { BEGIN_TOKEN } from './begin-token';
+import type { BeginSite } from './begin-site';
 import type { CommentDelimiters } from './comment-delimiters';
-import { commentDelimiters } from './comment-delimiters';
+import { commentDelimitersFor } from './comment-delimiters-for';
 import type { CommentStyle } from './comment-style';
+import { END_ID_PATTERN } from './end-id-pattern';
+import { END_TOKEN } from './end-token';
 import { parseMarkerAttributes } from './parse-marker-attributes';
 import type { RegionMarker } from './region-marker';
-import { BEGIN_TOKEN, END_TOKEN } from './region-marker';
-import type { RegionLocated, RegionScan } from './region-scan';
-
-interface SentinelSite {
-  readonly start: number;
-  readonly length: number;
-}
-
-interface BeginSite {
-  readonly start: number;
-  readonly length: number;
-  readonly marker: RegionMarker;
-}
-
-const END_ID_PATTERN: RegExp = /id=([^\s]+)/;
-const TRAILING_LINE_ENDING_PATTERN: RegExp = /\r?\n$/;
-
-const UNREADABLE: string = 'its omd region marker cannot be read';
-const DUPLICATED: string = 'it carries more than one omd region of that name';
-const UNTERMINATED: string = 'its omd region has no end marker';
-const ORPHAN_END: string = 'its omd region end marker has no begin marker';
-const OUT_OF_ORDER: string =
-  'its omd region end marker precedes its begin marker';
-
-function locate(
-  content: string,
-  begin: BeginSite,
-  end: SentinelSite,
-): RegionLocated {
-  const bodyStart: number = begin.start + begin.length + 1;
-  const rawBody: string = content.slice(bodyStart, end.start);
-  const afterStart: number = end.start + end.length;
-  const afterOffset: number = content.startsWith('\n', afterStart)
-    ? afterStart + 1
-    : afterStart;
-  return {
-    kind: 'located',
-    marker: begin.marker,
-    before: content.slice(0, begin.start),
-    body: rawBody.replace(TRAILING_LINE_ENDING_PATTERN, ''),
-    after: content.slice(afterOffset),
-  };
-}
-
-function resolve(
-  content: string,
-  begins: readonly BeginSite[],
-  ends: readonly SentinelSite[],
-  unreadable: boolean,
-): RegionScan {
-  const begin: BeginSite | undefined = begins[0];
-  const end: SentinelSite | undefined = ends[0];
-  let scan: RegionScan;
-  if (unreadable) {
-    scan = { kind: 'malformed', reason: UNREADABLE };
-  } else if (begins.length > 1 || ends.length > 1) {
-    scan = { kind: 'malformed', reason: DUPLICATED };
-  } else if (begin === undefined && end === undefined) {
-    scan = { kind: 'absent' };
-  } else if (end === undefined) {
-    scan = { kind: 'malformed', reason: UNTERMINATED };
-  } else if (begin === undefined) {
-    scan = { kind: 'malformed', reason: ORPHAN_END };
-  } else if (end.start < begin.start) {
-    scan = { kind: 'malformed', reason: OUT_OF_ORDER };
-  } else {
-    scan = locate(content, begin, end);
-  }
-  return scan;
-}
+import type { RegionScan } from './region-scan';
+import { resolveRegionScan } from './resolve-region-scan';
+import type { SentinelSite } from './sentinel-site';
 
 export function scanRegion(
   content: string,
   id: string,
   style: CommentStyle,
 ): RegionScan {
-  const delimiters: CommentDelimiters = commentDelimiters(style);
+  const delimiters: CommentDelimiters = commentDelimitersFor(style);
   const beginSentinel: string = `${delimiters.open}${BEGIN_TOKEN} `;
   const endSentinel: string = `${delimiters.open}${END_TOKEN} `;
   const begins: BeginSite[] = [];
@@ -104,5 +41,5 @@ export function scanRegion(
     }
     offset += line.length + 1;
   }
-  return resolve(content, begins, ends, unreadable);
+  return resolveRegionScan(content, begins, ends, unreadable);
 }

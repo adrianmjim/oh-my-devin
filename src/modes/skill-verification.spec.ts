@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parseCliArgs } from '../cli/parse-cli-args';
-import { DELEGATION_SKILL } from '../setup/setup-templates';
+import { DELEGATION_SKILL } from '../setup/delegation-skill';
 import { extractInstructedCommands } from '../testing/extract-instructed-commands';
 import { parseSkillFrontmatter } from '../testing/parse-skill-frontmatter';
 import type { SkillFrontmatter } from '../testing/skill-frontmatter';

@@ -1,14 +1,7 @@
 import { digestContent } from './digest-content';
+import { EDITED_REASON } from './edited-reason';
+import type { LocatedRegionMerge } from './located-region-merge';
 import type { MergeOutcome } from './merge-outcome';
-import { EDITED_REASON } from './merge-outcome';
-import type { RegionLocated } from './region-scan';
-
-export interface LocatedRegionMerge {
-  readonly existing: string;
-  readonly located: RegionLocated;
-  readonly digestInput: string;
-  readonly merged: string;
-}
 
 export function mergeLocatedRegion(input: LocatedRegionMerge): MergeOutcome {
   const pristine: boolean =

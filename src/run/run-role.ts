@@ -15,12 +15,13 @@ import type { RunReport } from '../outcome/run-report';
 import { generateRunId } from '../observability/generate-run-id';
 import type { RunId } from '../observability/run-id';
 import type { RunObserver } from '../observability/run-observer';
-import type { SessionBoundary } from '../observability/session-boundary';
 import { attemptRepair } from '../repair/attempt-repair';
 import type { RoleDefinition } from '../role/role-definition';
 import { HeadlessSessionAdapter } from '../session/headless-session-adapter';
 import type { SessionTurnResult } from '../session/session-turn-result';
 import { detectDenyHit } from './detect-deny-hit';
+import { recordArtifactValidated } from './record-artifact-validated';
+import { recordTurnCompleted } from './record-turn-completed';
 import type { DenyDetector } from './deny-detector';
 import { resolveRunInvocation } from './resolve-run-invocation';
 import type { ResolvedRunInvocation } from './resolved-run-invocation';
@@ -191,33 +192,4 @@ export async function runRole(options: RunRoleOptions): Promise<RunReport> {
     }
     recorder?.close();
   }
-}
-
-async function recordTurnCompleted(
-  recorder: RunObserver | undefined,
-  timestamp: number,
-  turnIndex: number,
-): Promise<void> {
-  const boundary: SessionBoundary = turnIndex === 0 ? 'launch' : 'resume';
-  await recorder?.append({
-    type: 'turnCompleted',
-    timestamp,
-    turnIndex,
-    boundary,
-  });
-}
-
-async function recordArtifactValidated(
-  recorder: RunObserver | undefined,
-  timestamp: number,
-  role: RoleDefinition,
-  validation: ArtifactValidation,
-): Promise<void> {
-  await recorder?.append({
-    type: 'artifactValidated',
-    timestamp,
-    artifactPath: role.outputArtifact,
-    valid: validation.valid,
-    missing: validation.missing,
-  });
 }

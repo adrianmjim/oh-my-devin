@@ -1,34 +1,17 @@
-import type { SetupResult, TargetOutcome, TargetReport } from './setup-result';
-
-interface OutcomeGroup {
-  readonly outcome: TargetOutcome;
-  readonly heading: string;
-}
-
-const GROUPS: readonly OutcomeGroup[] = [
-  { outcome: 'created', heading: 'Created:' },
-  { outcome: 'updated', heading: 'Updated:' },
-  { outcome: 'unchanged', heading: 'Unchanged:' },
-  { outcome: 'preserved', heading: 'Preserved:' },
-  { outcome: 'conflicted', heading: 'Conflicted:' },
-  { outcome: 'blocked', heading: 'Blocked:' },
-];
-
-function entry(report: TargetReport): string {
-  return report.reason === null
-    ? `  ${report.path}`
-    : `  ${report.path} — ${report.reason}`;
-}
+import { OUTCOME_GROUPS } from './outcome-groups';
+import { renderTargetEntry } from './render-target-entry';
+import type { SetupResult } from './setup-result';
+import type { TargetReport } from './target-report';
 
 export function renderSetupResult(result: SetupResult): string {
   const lines: string[] = [];
-  for (const group of GROUPS) {
+  for (const group of OUTCOME_GROUPS) {
     const reports: readonly TargetReport[] = result.targets.filter(
       (report: TargetReport): boolean => report.outcome === group.outcome,
     );
     if (reports.length > 0) {
       lines.push(group.heading);
-      lines.push(...reports.map(entry));
+      lines.push(...reports.map(renderTargetEntry));
     }
   }
   if (result.refusals.length > 0) {

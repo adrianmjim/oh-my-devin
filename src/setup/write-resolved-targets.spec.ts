@@ -13,13 +13,12 @@ import { frameRegion } from '../ownership/frame-region';
 import { frameUnit } from '../ownership/frame-unit';
 import type { RegionFraming } from '../ownership/region-framing';
 import { legacyHookCommands } from './legacy-hook-commands';
-import type {
-  MergeTarget,
-  RefusedTarget,
-  RegistryTarget,
-} from './resolved-target';
-import type { SetupResult, TargetReport } from './setup-result';
-import { buildHooksEventMap } from './setup-templates';
+import type { MergeTarget } from './merge-target';
+import type { RefusedTarget } from './refused-target';
+import type { RegistryTarget } from './registry-target';
+import type { SetupResult } from './setup-result';
+import type { TargetReport } from './target-report';
+import { buildHooksEventMap } from './build-hooks-event-map';
 import { writeResolvedTargets } from './write-resolved-targets';
 
 async function exists(path: string): Promise<boolean> {

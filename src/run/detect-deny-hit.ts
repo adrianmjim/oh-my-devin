@@ -1,9 +1,5 @@
 import type { SessionTurnResult } from '../session/session-turn-result';
-
-const DENY_SIGNALS: readonly RegExp[] = [
-  /a tool was rejected by the user/i,
-  /rejected by (?:a |the )?deny rule/i,
-];
+import { DENY_SIGNALS } from './deny-signals';
 
 export function detectDenyHit(result: SessionTurnResult): string | null {
   if (result.exitCode === 0) {

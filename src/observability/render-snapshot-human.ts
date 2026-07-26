@@ -1,26 +1,6 @@
+import { artifactState } from './artifact-state';
+import { outcomeDetail } from './outcome-detail';
 import type { RunSnapshot } from './run-snapshot';
-
-function artifactState(valid: boolean | null): string {
-  if (valid === null) {
-    return 'pending';
-  }
-  return valid ? 'valid' : 'invalid';
-}
-
-function outcomeDetail(snapshot: RunSnapshot): string {
-  switch (snapshot.state) {
-    case 'succeeded':
-      return 'success';
-    case 'failed':
-      return `failure (${snapshot.failureTier ?? 'unknown'})`;
-    case 'running':
-      return 'in progress';
-    case 'stalled':
-      return 'stalled — no recent liveness';
-    case 'awaiting-gate':
-      return `awaiting gate at ${snapshot.pendingGate ?? '(unknown)'}`;
-  }
-}
 
 export function renderSnapshotHuman(snapshot: RunSnapshot): string {
   const subjectLabel: string =

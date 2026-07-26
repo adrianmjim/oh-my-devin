@@ -4,7 +4,7 @@ import type { RegionFraming } from './region-framing';
 import type { RegionMarker } from './region-marker';
 import { renderBeginSentinel } from './render-begin-sentinel';
 import { renderEndSentinel } from './render-end-sentinel';
-import type { SplitContent } from './split-preamble';
+import type { SplitContent } from './split-content';
 import { splitPreamble } from './split-preamble';
 
 export function frameUnit(framing: RegionFraming): string {

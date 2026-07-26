@@ -1,0 +1,1 @@
+export const LIVENESS_STALL_THRESHOLD_MS: number = 120000;
