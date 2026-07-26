@@ -1,12 +1,6 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
-import { MODE_CATALOG } from '../modes/mode-catalog';
-import type { ModeSkill } from '../modes/mode-skill';
-import {
-  DELEGATION_SKILL,
-  INSTALL_SKILL,
-  RULES_FILE,
-} from '../setup/setup-templates';
+import { LAYER_COMPONENT_CATALOG } from '../layer/layer-component-catalog';
 import type { PluginBundleResult } from './plugin-bundle-result';
 
 interface BundleFile {
@@ -14,30 +8,24 @@ interface BundleFile {
   readonly content: string;
 }
 
-const MODE_SKILL_FILES: readonly BundleFile[] = MODE_CATALOG.map(
-  (skill: ModeSkill): BundleFile => ({
-    relativePath: join('skills', skill.name, 'SKILL.md'),
-    content: skill.content,
-  }),
-);
-
 const PLUGIN_MANIFEST: string = `${JSON.stringify({ name: 'oh-my-devin' }, null, 2)}\n`;
+
+const PLUGIN_CARRIED_FILES: BundleFile[] = [];
+for (const entry of LAYER_COMPONENT_CATALOG) {
+  if (entry.plugin !== undefined) {
+    PLUGIN_CARRIED_FILES.push({
+      relativePath: entry.plugin.relativePath,
+      content: entry.content,
+    });
+  }
+}
 
 const BUNDLE_FILES: readonly BundleFile[] = [
   {
     relativePath: join('.devin-plugin', 'plugin.json'),
     content: PLUGIN_MANIFEST,
   },
-  { relativePath: 'AGENTS.md', content: RULES_FILE },
-  {
-    relativePath: join('skills', 'omd-delegate', 'SKILL.md'),
-    content: DELEGATION_SKILL,
-  },
-  {
-    relativePath: join('skills', 'omd-install', 'SKILL.md'),
-    content: INSTALL_SKILL,
-  },
-  ...MODE_SKILL_FILES,
+  ...PLUGIN_CARRIED_FILES,
 ];
 
 export async function buildPluginBundle(

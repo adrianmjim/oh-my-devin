@@ -1,10 +1,12 @@
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import type { LayerCatalogEntry } from '../layer/layer-catalog-entry';
+import { LAYER_COMPONENT_CATALOG } from '../layer/layer-component-catalog';
+import { ALL_LAYER_COMPONENTS } from '../layer/layer-component';
+import type { LayerComponent } from '../layer/layer-component';
 import { MODE_CATALOG } from '../modes/mode-catalog';
 import type { ModeSkill } from '../modes/mode-skill';
 import { LAYER_FILES } from './layer-catalog';
-import { ALL_LAYER_COMPONENTS } from './layer-component';
-import type { LayerComponent } from './layer-component';
 import type { LayerFile } from './layer-file';
 
 function byPath(relativePath: string): LayerFile {
@@ -103,6 +105,28 @@ describe('LAYER_FILES', () => {
     expect(
       byPath(join('.devin', 'schemas', 'review.schema.json')).strategy,
     ).toBe('json-document');
+  });
+
+  it('is the setup projection of the layer component catalog', () => {
+    expect(
+      LAYER_FILES.map((file: LayerFile): string => file.relativePath),
+    ).toEqual(
+      LAYER_COMPONENT_CATALOG.map(
+        (entry: LayerCatalogEntry): string => entry.setup.relativePath,
+      ),
+    );
+    LAYER_FILES.forEach((file: LayerFile, index: number): void => {
+      const entry: LayerCatalogEntry | undefined =
+        LAYER_COMPONENT_CATALOG[index];
+      if (entry === undefined) {
+        throw new Error(`no catalog entry at index ${String(index)}`);
+      }
+      expect(file.content, entry.regionId).toBe(entry.content);
+      expect(file.component, entry.regionId).toBe(entry.component);
+      expect(file.strategy, entry.regionId).toBe(entry.setup.strategy);
+      expect(file.regionId).toBe(entry.regionId);
+      expect(file.userContent, entry.regionId).toBe(entry.userContent);
+    });
   });
 
   it('leaves the hook registry out of the file catalog, since it is claimed', () => {
