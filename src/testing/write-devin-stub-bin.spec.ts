@@ -6,11 +6,9 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { CommandResult } from '../engine/command-result';
 import type { DevinStubScript } from './devin-stub-script';
-import {
-  STUB_LOG_ENV,
-  STUB_SCRIPT_ENV,
-  writeDevinStubBin,
-} from './write-devin-stub-bin';
+import { STUB_LOG_ENV } from './stub-log-env';
+import { STUB_SCRIPT_ENV } from './stub-script-env';
+import { writeDevinStubBin } from './write-devin-stub-bin';
 
 interface StubRun {
   readonly stdout: string;
