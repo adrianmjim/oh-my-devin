@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { digestContent } from './digest-content';
 import { mergeLocatedRegion } from './merge-located-region';
 import type { MergeOutcome } from './merge-outcome';
-import { EDITED_REASON } from './merge-outcome';
-import type { RegionLocated } from './region-scan';
+import { EDITED_REASON } from './edited-reason';
+import type { RegionLocated } from './region-located';
 
 function located(digest: string): RegionLocated {
   return {

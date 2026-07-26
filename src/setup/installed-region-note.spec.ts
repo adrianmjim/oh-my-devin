@@ -2,7 +2,7 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { REGION_NOTE } from '../ownership/region-marker';
+import { REGION_NOTE } from '../ownership/region-note';
 import type { SetupResult } from './setup-result';
 import type { TargetReport } from './target-report';
 import { setupLayer } from './setup-layer';

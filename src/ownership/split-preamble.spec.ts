@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { SplitContent } from './split-preamble';
+import type { SplitContent } from './split-content';
 import { splitPreamble } from './split-preamble';
 
 describe('splitPreamble', () => {

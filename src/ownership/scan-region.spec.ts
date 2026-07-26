@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { digestContent } from './digest-content';
 import { frameRegion } from './frame-region';
-import type { RegionLocated, RegionScan } from './region-scan';
+import type { RegionLocated } from './region-located';
+import type { RegionScan } from './region-scan';
 import { scanRegion } from './scan-region';
 
 const FRAMED: string = frameRegion({
