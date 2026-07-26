@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ALL_LAYER_COMPONENTS } from '../layer/layer-component';
+import { ALL_LAYER_COMPONENTS } from '../layer/all-layer-components';
 import { SCOPE_HINT } from './scope-hint';
 
 describe('SCOPE_HINT', () => {

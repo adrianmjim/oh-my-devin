@@ -1,5 +1,5 @@
 import type { InstallLevel } from '../layer/install-level';
-import { isInstallLevel } from '../layer/install-level';
+import { isInstallLevel } from '../layer/is-install-level';
 import { LEVEL_HINT } from './level-hint';
 import { LEVEL_PROMPT } from './level-prompt';
 import type { LineReader } from './line-reader';

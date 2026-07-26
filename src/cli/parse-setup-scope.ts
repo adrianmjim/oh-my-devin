@@ -1,5 +1,5 @@
 import type { LayerComponent } from '../layer/layer-component';
-import { isLayerComponent } from '../layer/layer-component';
+import { isLayerComponent } from '../layer/is-layer-component';
 import { UsageError } from '../run/usage-error';
 import { formatLayerComponents } from '../setup/format-layer-components';
 import { SCOPE_PREFIX } from './scope-prefix';

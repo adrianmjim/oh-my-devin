@@ -1,5 +1,5 @@
 import type { CouncilSeat } from '../council/council-seat';
-import { isSeverity } from '../council/severity';
+import { isSeverity } from '../council/is-severity';
 import { DeliberationError } from './deliberation-error';
 import { isPositionKind } from './is-position-kind';
 import { parseOptionalStrings } from './parse-optional-strings';

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ALL_LAYER_COMPONENTS } from '../layer/layer-component';
+import { ALL_LAYER_COMPONENTS } from '../layer/all-layer-components';
 import { UsageError } from '../run/usage-error';
 import type { CouncilRunCommand } from './council-run-command';
 import type { ModeSetCommand } from './mode-set-command';

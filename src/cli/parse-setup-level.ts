@@ -1,5 +1,5 @@
 import type { InstallLevel } from '../layer/install-level';
-import { isInstallLevel } from '../layer/install-level';
+import { isInstallLevel } from '../layer/is-install-level';
 import { UsageError } from '../run/usage-error';
 import { LEVEL_PREFIX } from './level-prefix';
 

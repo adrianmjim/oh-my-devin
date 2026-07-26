@@ -2,7 +2,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { LayerCatalogEntry } from '../layer/layer-catalog-entry';
 import { LAYER_COMPONENT_CATALOG } from '../layer/layer-component-catalog';
-import { ALL_LAYER_COMPONENTS } from '../layer/layer-component';
+import { ALL_LAYER_COMPONENTS } from '../layer/all-layer-components';
 import type { LayerComponent } from '../layer/layer-component';
 import { MODE_CATALOG } from '../modes/mode-catalog';
 import type { ModeSkill } from '../modes/mode-skill';

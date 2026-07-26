@@ -1,5 +1,5 @@
 import type { Severity } from '../council/severity';
-import { severityAtLeast } from '../council/severity';
+import { severityAtLeast } from '../council/severity-at-least';
 import { domainWithinLens } from './domain-within-lens';
 import type { TypedPosition } from './typed-position';
 

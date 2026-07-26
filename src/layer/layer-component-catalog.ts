@@ -1,6 +1,4 @@
 import { join } from 'node:path';
-import { MODE_CATALOG } from '../modes/mode-catalog';
-import type { ModeSkill } from '../modes/mode-skill';
 import { ARCHITECT_ROLE_AGENT_MD } from '../setup/architect-role-agent-md';
 import { ARCHITECT_ROLE_SCHEMA } from '../setup/architect-role-schema';
 import { DEFAULT_TEAM_YAML } from '../setup/default-team-yaml';
@@ -14,19 +12,7 @@ import { REVIEWER_ROLE_SCHEMA } from '../setup/reviewer-role-schema';
 import { RULES_FILE } from '../setup/rules-file';
 import { USER_RULES_FILE } from '../setup/user-rules-file';
 import type { LayerCatalogEntry } from './layer-catalog-entry';
-
-const MODE_SKILL_ENTRIES: readonly LayerCatalogEntry[] = MODE_CATALOG.map(
-  (skill: ModeSkill): LayerCatalogEntry => ({
-    regionId: `skill-${skill.name}`,
-    component: 'skills',
-    content: skill.content,
-    setup: {
-      relativePath: join('.devin', 'skills', skill.name, 'SKILL.md'),
-      strategy: 'unit',
-    },
-    plugin: { relativePath: join('skills', skill.name, 'SKILL.md') },
-  }),
-);
+import { MODE_SKILL_ENTRIES } from './mode-skill-entries';
 
 export const LAYER_COMPONENT_CATALOG: readonly LayerCatalogEntry[] = [
   {

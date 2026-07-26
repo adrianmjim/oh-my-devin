@@ -2,7 +2,7 @@ import { ArtifactStore } from '../handoff/artifact-store';
 import { composeStageInputs } from '../handoff/compose-stage-inputs';
 import type { HandoffArtifactName } from '../handoff/handoff-artifact-name';
 import type { PipelineStage } from '../handoff/pipeline-stage';
-import { isPipelineStage } from '../handoff/pipeline-stage';
+import { isPipelineStage } from '../handoff/is-pipeline-stage';
 import { generateRunId } from '../observability/generate-run-id';
 import type { RunId } from '../observability/run-id';
 import type { RunObserver } from '../observability/run-observer';

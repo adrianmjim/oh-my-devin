@@ -1,5 +1,5 @@
 import type { PipelineStage } from '../handoff/pipeline-stage';
-import { isPipelineStage } from '../handoff/pipeline-stage';
+import { isPipelineStage } from '../handoff/is-pipeline-stage';
 import type { TeamDefinition } from '../team/team-definition';
 import { PipelineError } from './pipeline-error';
 
