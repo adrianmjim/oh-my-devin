@@ -5,8 +5,7 @@ import { ContractCompilationError } from './contract-compilation-error';
 import type { PermissionRule } from './permission-rule';
 import { parsePermissionRule } from './parse-permission-rule';
 import { permissionRuleMatchesPath } from './permission-rule-matches-path';
-
-const WRITE_VERB: string = 'Write';
+import { WRITE_VERB } from './write-verb';
 
 export function compileAgentConfigBundle(
   role: RoleDefinition,

@@ -1,4 +1,4 @@
-const MAX_SUMMARY_LENGTH: number = 80;
+import { MAX_SUMMARY_LENGTH } from './max-summary-length';
 
 export function summarizePromptBody(promptBody: string): string {
   const firstLine: string =

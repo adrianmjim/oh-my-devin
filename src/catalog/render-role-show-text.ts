@@ -1,9 +1,6 @@
 import type { RoleDefinition } from '../role/role-definition';
+import { orNone } from './or-none';
 import { summarizePromptBody } from './summarize-prompt-body';
-
-function orNone(values: readonly string[]): string {
-  return values.length > 0 ? values.join(', ') : '(none)';
-}
 
 export function renderRoleShowText(role: RoleDefinition): string {
   return [

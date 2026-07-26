@@ -1,12 +1,6 @@
 import type { EngineKind } from '../role/engine-kind';
-import { DevinHeadlessEngine } from './devin-headless-engine';
 import type { Engine } from './engine';
-
-type EngineFactory = () => Engine;
-
-const ENGINE_FACTORIES: Record<EngineKind, EngineFactory> = {
-  devin: (): Engine => new DevinHeadlessEngine(),
-};
+import { ENGINE_FACTORIES } from './engine-factories';
 
 export function selectEngine(kind: EngineKind): Engine {
   return ENGINE_FACTORIES[kind]();
