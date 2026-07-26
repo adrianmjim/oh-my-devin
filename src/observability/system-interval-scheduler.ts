@@ -1,4 +1,5 @@
-import type { IntervalHandle, IntervalScheduler } from './interval-scheduler';
+import type { IntervalHandle } from './interval-handle';
+import type { IntervalScheduler } from './interval-scheduler';
 
 export const systemIntervalScheduler: IntervalScheduler = (
   callback: () => void,

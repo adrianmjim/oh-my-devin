@@ -1,4 +1,4 @@
-export type IntervalHandle = () => void;
+import type { IntervalHandle } from './interval-handle';
 
 export type IntervalScheduler = (
   callback: () => void,

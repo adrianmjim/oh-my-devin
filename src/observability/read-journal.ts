@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { isProgressEvent } from './is-progress-event';
 import type { ProgressEvent } from './progress-event';
+import { tryParseJson } from './try-parse-json';
 
 export async function readJournal(
   journalPath: string,
@@ -19,12 +20,4 @@ export async function readJournal(
     }
   }
   return events;
-}
-
-function tryParseJson(line: string): unknown {
-  try {
-    return JSON.parse(line);
-  } catch {
-    return undefined;
-  }
 }

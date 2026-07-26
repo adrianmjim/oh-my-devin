@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { deriveLiveness } from './liveness-verdict';
+import { deriveLiveness } from './derive-liveness';
 
 describe('deriveLiveness', () => {
   const threshold: number = 120000;

@@ -1,14 +1,12 @@
-import type { Stats } from 'node:fs';
-import { stat } from 'node:fs/promises';
 import { UsageError } from '../run/usage-error';
 import { deriveSnapshot } from './derive-snapshot';
 import { isValidRunId } from './is-valid-run-id';
-import type { Liveness } from './liveness';
-import { deriveLiveness } from './liveness-verdict';
+import { launchingSnapshot } from './launching-snapshot';
 import type { LivenessStamp } from './liveness-stamp';
 import type { ProgressEvent } from './progress-event';
 import { readJournal } from './read-journal';
 import { readLivenessStamp } from './read-liveness-stamp';
+import { recordDirMtime } from './record-dir-mtime';
 import type { RunId } from './run-id';
 import { RunRecordPaths } from './run-record-paths';
 import type { RunSnapshot } from './run-snapshot';
@@ -35,36 +33,4 @@ export async function loadRunSnapshot(
   }
   const stamp: LivenessStamp | null = await readLivenessStamp(paths.liveness);
   return deriveSnapshot(events, stamp?.stampedAt ?? null, now, thresholdMs);
-}
-
-async function recordDirMtime(dir: string): Promise<number | null> {
-  try {
-    const stats: Stats = await stat(dir);
-    return stats.isDirectory() ? stats.mtimeMs : null;
-  } catch {
-    return null;
-  }
-}
-
-function launchingSnapshot(
-  runId: RunId,
-  recordedAt: number,
-  now: number,
-  thresholdMs: number,
-): RunSnapshot {
-  const liveness: Liveness = deriveLiveness(recordedAt, now, thresholdMs);
-  return {
-    runId,
-    runKind: 'single-role',
-    state: liveness === 'stalled' ? 'stalled' : 'running',
-    subject: '',
-    currentStage: null,
-    turnsUsed: 0,
-    maxTurns: 0,
-    artifactPath: null,
-    artifactValid: null,
-    pendingGate: null,
-    failureTier: null,
-    lastEventAt: recordedAt,
-  };
 }

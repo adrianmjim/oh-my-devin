@@ -1,5 +1,6 @@
 import type { Clock } from '../budget/clock';
-import type { IntervalHandle, IntervalScheduler } from './interval-scheduler';
+import type { IntervalHandle } from './interval-handle';
+import type { IntervalScheduler } from './interval-scheduler';
 import { writeLivenessStamp } from './write-liveness-stamp';
 
 export class LivenessRefresher {

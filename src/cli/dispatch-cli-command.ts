@@ -32,7 +32,7 @@ import { ModeStateStore } from '../modes/mode-state-store';
 import { resolveModeState } from '../modes/resolve-mode-state';
 import { createRunRecorder } from '../observability/create-run-recorder';
 import { generateRunId } from '../observability/generate-run-id';
-import { LIVENESS_STALL_THRESHOLD_MS } from '../observability/liveness-timing';
+import { LIVENESS_STALL_THRESHOLD_MS } from '../observability/liveness-stall-threshold-ms';
 import { loadRunSnapshot } from '../observability/load-run-snapshot';
 import { renderSnapshotHuman } from '../observability/render-snapshot-human';
 import { renderSnapshotJson } from '../observability/render-snapshot-json';
