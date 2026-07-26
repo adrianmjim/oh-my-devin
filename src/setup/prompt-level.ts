@@ -1,10 +1,8 @@
 import type { InstallLevel } from '../layer/install-level';
 import { isInstallLevel } from '../layer/install-level';
+import { LEVEL_HINT } from './level-hint';
+import { LEVEL_PROMPT } from './level-prompt';
 import type { LineReader } from './line-reader';
-
-const LEVEL_PROMPT: string =
-  'Install level? [project/user] (default: project) ';
-const LEVEL_HINT: string = 'Please answer "project" or "user".\n';
 
 export async function promptLevel(
   reader: LineReader,

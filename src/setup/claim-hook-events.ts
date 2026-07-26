@@ -1,42 +1,10 @@
+import { claimBlockedReason } from './claim-blocked-reason';
+import { CLAIMED_EVENTS } from './claimed-events';
+import type { ClaimOutcome } from './claim-outcome';
+import type { HookMatcherEntry } from './hook-matcher-entry';
+import type { HooksEventMap } from './hooks-event-map';
 import { isOmdHookEntry } from './is-omd-hook-entry';
-import type { HookMatcherEntry, HooksEventMap } from './setup-templates';
-
-export interface EventsClaimed {
-  readonly kind: 'claimed';
-  readonly events: Record<string, unknown>;
-}
-
-export interface ClaimBlocked {
-  readonly kind: 'blocked';
-  readonly reason: string;
-}
-
-export type ClaimOutcome = EventsClaimed | ClaimBlocked;
-
-const CLAIMED_EVENTS: readonly (keyof HooksEventMap)[] = [
-  'SessionStart',
-  'UserPromptSubmit',
-  'Stop',
-];
-
-function blockedReason(event: string): string {
-  return `its ${event} hooks are not a list omd can extend`;
-}
-
-function ownedCommandsOf(
-  hooksMap: HooksEventMap,
-  legacyCommands: readonly string[],
-): ReadonlySet<string> {
-  const commands: Set<string> = new Set<string>(legacyCommands);
-  for (const event of CLAIMED_EVENTS) {
-    for (const entry of hooksMap[event]) {
-      for (const hook of entry.hooks) {
-        commands.add(hook.command);
-      }
-    }
-  }
-  return commands;
-}
+import { ownedCommandsOf } from './owned-commands-of';
 
 export function claimHookEvents(
   existing: Record<string, unknown>,
@@ -57,7 +25,7 @@ export function claimHookEvents(
       ).filter((entry: unknown): boolean => !isOmdHookEntry(entry, owned));
       events[event] = [...foreign, ...claimed];
     } else {
-      blocked ??= blockedReason(event);
+      blocked ??= claimBlockedReason(event);
     }
   }
   return blocked === null

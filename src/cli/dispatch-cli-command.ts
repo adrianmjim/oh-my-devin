@@ -62,7 +62,7 @@ import { resolveRunInvocation } from '../run/resolve-run-invocation';
 import type { ResolvedRunInvocation } from '../run/resolved-run-invocation';
 import { runRole } from '../run/run-role';
 import { elicitSetupOptions } from '../setup/elicit-setup-options';
-import type { ElicitedSetupOptions } from '../setup/elicit-setup-options';
+import type { ElicitedSetupOptions } from '../setup/elicited-setup-options';
 import type { ModeState } from '../setup/mode-state';
 import { renderSetupResult } from '../setup/render-setup-result';
 import { setupLayer } from '../setup/setup-layer';

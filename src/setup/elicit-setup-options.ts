@@ -1,22 +1,11 @@
 import type { InstallLevel } from '../layer/install-level';
-import { createLineReader } from './create-line-reader';
 import type { LayerComponent } from '../layer/layer-component';
+import { createLineReader } from './create-line-reader';
+import type { ElicitedSetupOptions } from './elicited-setup-options';
+import type { ElicitSetupOptionsInput } from './elicit-setup-options-input';
 import type { LineReader } from './line-reader';
 import { promptLevel } from './prompt-level';
 import { promptScope } from './prompt-scope';
-
-export interface ElicitSetupOptionsInput {
-  readonly input: NodeJS.ReadableStream;
-  readonly output: NodeJS.WritableStream;
-  readonly interactive: boolean;
-  readonly level: InstallLevel | null;
-  readonly scope: readonly LayerComponent[] | null;
-}
-
-export interface ElicitedSetupOptions {
-  readonly level: InstallLevel;
-  readonly scope: readonly LayerComponent[] | null;
-}
 
 export async function elicitSetupOptions(
   input: ElicitSetupOptionsInput,

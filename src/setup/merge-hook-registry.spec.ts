@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import type { MergeOutcome } from '../ownership/merge-outcome';
 import { legacyHookCommands } from './legacy-hook-commands';
-import type { HookRegistryMerge } from './merge-hook-registry';
+import type { HookRegistryMerge } from './hook-registry-merge';
 import { mergeHookRegistry } from './merge-hook-registry';
-import type { HooksEventMap } from './setup-templates';
-import { buildHooksEventMap } from './setup-templates';
+import type { HooksEventMap } from './hooks-event-map';
+import { buildHooksEventMap } from './build-hooks-event-map';
 
 const OMD_MAP: HooksEventMap = buildHooksEventMap(
   'node .devin/hooks/omd-mode.mjs',

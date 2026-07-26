@@ -6,7 +6,7 @@ import { ALL_LAYER_COMPONENTS } from '../layer/layer-component';
 import type { LayerComponent } from '../layer/layer-component';
 import { MODE_CATALOG } from '../modes/mode-catalog';
 import type { ModeSkill } from '../modes/mode-skill';
-import { LAYER_FILES } from './layer-catalog';
+import { LAYER_FILES } from './layer-files';
 import type { LayerFile } from './layer-file';
 
 function byPath(relativePath: string): LayerFile {

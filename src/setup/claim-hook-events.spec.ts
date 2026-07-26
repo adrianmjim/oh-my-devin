@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import type { ClaimOutcome } from './claim-hook-events';
+import type { ClaimOutcome } from './claim-outcome';
 import { claimHookEvents } from './claim-hook-events';
 import { legacyHookCommands } from './legacy-hook-commands';
 import { posixQuote } from './posix-quote';
-import type { HooksEventMap } from './setup-templates';
-import { buildHooksEventMap } from './setup-templates';
+import type { HooksEventMap } from './hooks-event-map';
+import { buildHooksEventMap } from './build-hooks-event-map';
 
 const OMD_MAP: HooksEventMap = buildHooksEventMap(
   'node .devin/hooks/omd-mode.mjs',

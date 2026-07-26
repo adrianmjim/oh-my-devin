@@ -3,7 +3,7 @@ import { parseCliArgs } from '../cli/parse-cli-args';
 import { extractInstructedCommands } from '../testing/extract-instructed-commands';
 import { parseSkillFrontmatter } from '../testing/parse-skill-frontmatter';
 import type { SkillFrontmatter } from '../testing/skill-frontmatter';
-import { INSTALL_SKILL } from './setup-templates';
+import { INSTALL_SKILL } from './install-skill';
 
 describe('the omd installation skill', () => {
   it('declares valid frontmatter naming the skill', () => {

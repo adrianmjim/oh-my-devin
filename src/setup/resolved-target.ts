@@ -1,33 +1,5 @@
-import type { RegionFraming } from '../ownership/region-framing';
-import type { LayerComponent } from '../layer/layer-component';
-import type { HookRegistryShape } from './merge-hook-registry';
-import type { MergeStrategy } from '../layer/merge-strategy';
-import type { HooksEventMap } from './setup-templates';
-
-export interface MergeTarget {
-  readonly kind: 'merge';
-  readonly component: LayerComponent;
-  readonly absolutePath: string;
-  readonly reportPath: string;
-  readonly strategy: MergeStrategy;
-  readonly framing: RegionFraming;
-}
-
-export interface RegistryTarget {
-  readonly kind: 'registry';
-  readonly component: 'hooks';
-  readonly absolutePath: string;
-  readonly reportPath: string;
-  readonly shape: HookRegistryShape;
-  readonly scriptPath: string;
-  readonly hooksMap: HooksEventMap;
-  readonly legacyCommands: readonly string[];
-}
-
-export interface RefusedTarget {
-  readonly kind: 'refused';
-  readonly component: LayerComponent;
-  readonly reason: string;
-}
+import type { MergeTarget } from './merge-target';
+import type { RefusedTarget } from './refused-target';
+import type { RegistryTarget } from './registry-target';
 
 export type ResolvedTarget = MergeTarget | RegistryTarget | RefusedTarget;

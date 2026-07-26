@@ -1,20 +1,18 @@
 import { join } from 'node:path';
 import { MODE_CATALOG } from '../modes/mode-catalog';
 import type { ModeSkill } from '../modes/mode-skill';
-import {
-  ARCHITECT_ROLE_AGENT_MD,
-  ARCHITECT_ROLE_SCHEMA,
-  DEFAULT_TEAM_YAML,
-  DELEGATION_SKILL,
-  EXECUTOR_ROLE_AGENT_MD,
-  EXECUTOR_ROLE_SCHEMA,
-  HOOK_SCRIPT,
-  INSTALL_SKILL,
-  REVIEWER_ROLE_AGENT_MD,
-  REVIEWER_ROLE_SCHEMA,
-  RULES_FILE,
-  USER_RULES_FILE,
-} from '../setup/setup-templates';
+import { ARCHITECT_ROLE_AGENT_MD } from '../setup/architect-role-agent-md';
+import { ARCHITECT_ROLE_SCHEMA } from '../setup/architect-role-schema';
+import { DEFAULT_TEAM_YAML } from '../setup/default-team-yaml';
+import { DELEGATION_SKILL } from '../setup/delegation-skill';
+import { EXECUTOR_ROLE_AGENT_MD } from '../setup/executor-role-agent-md';
+import { EXECUTOR_ROLE_SCHEMA } from '../setup/executor-role-schema';
+import { HOOK_SCRIPT } from '../setup/hook-script';
+import { INSTALL_SKILL } from '../setup/install-skill';
+import { REVIEWER_ROLE_AGENT_MD } from '../setup/reviewer-role-agent-md';
+import { REVIEWER_ROLE_SCHEMA } from '../setup/reviewer-role-schema';
+import { RULES_FILE } from '../setup/rules-file';
+import { USER_RULES_FILE } from '../setup/user-rules-file';
 import type { LayerCatalogEntry } from './layer-catalog-entry';
 
 const MODE_SKILL_ENTRIES: readonly LayerCatalogEntry[] = MODE_CATALOG.map(
