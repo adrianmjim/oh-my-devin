@@ -2,6 +2,7 @@ import { access, mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { LAYER_COMPONENT_CATALOG } from '../layer/layer-component-catalog';
 import { MODE_CATALOG } from '../modes/mode-catalog';
 import type { PluginBundleResult } from './plugin-bundle-result';
 import { buildPluginBundle } from './build-plugin-bundle';
@@ -54,17 +55,16 @@ describe('buildPluginBundle', () => {
     expect(JSON.parse(manifest)).toStrictEqual({ name: 'oh-my-devin' });
   });
 
-  it('writes exactly the manifest, the rules file, and the skills', async () => {
+  it('writes exactly the manifest and the plugin-carried catalog entries', async () => {
     const result: PluginBundleResult = await buildPluginBundle(dir);
 
-    const expected: readonly string[] = [
-      join('.devin-plugin', 'plugin.json'),
-      'AGENTS.md',
-      join('skills', 'omd-delegate', 'SKILL.md'),
-      join('skills', 'omd-install', 'SKILL.md'),
-      ...MODE_CATALOG.map((skill) => join('skills', skill.name, 'SKILL.md')),
-    ];
-    expect([...result.writtenPaths].sort()).toEqual([...expected].sort());
+    const expected: string[] = [join('.devin-plugin', 'plugin.json')];
+    for (const entry of LAYER_COMPONENT_CATALOG) {
+      if (entry.plugin !== undefined) {
+        expected.push(entry.plugin.relativePath);
+      }
+    }
+    expect([...result.writtenPaths].sort()).toEqual(expected.sort());
   });
 
   it('bundles no hooks, subagents, or project roles', async () => {

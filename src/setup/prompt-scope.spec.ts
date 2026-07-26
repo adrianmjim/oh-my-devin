@@ -1,6 +1,6 @@
 import { PassThrough } from 'node:stream';
 import { describe, expect, it } from 'vitest';
-import type { LayerComponent } from './layer-component';
+import type { LayerComponent } from '../layer/layer-component';
 import type { LineReader } from './line-reader';
 import { promptScope } from './prompt-scope';
 

@@ -1,7 +1,7 @@
 import { reportVersion } from '../cli/report-version';
 import type { InstallLevel } from '../layer/install-level';
-import type { LayerComponent } from './layer-component';
-import { ALL_LAYER_COMPONENTS } from './layer-component';
+import type { LayerComponent } from '../layer/layer-component';
+import { ALL_LAYER_COMPONENTS } from '../layer/layer-component';
 import { resolveLayerTargets } from './resolve-layer-targets';
 import type { ResolvedTarget } from './resolved-target';
 import type { SetupResult } from './setup-result';

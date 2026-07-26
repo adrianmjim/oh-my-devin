@@ -1,5 +1,5 @@
-import type { LayerComponent } from './layer-component';
-import type { MergeStrategy } from './merge-strategy';
+import type { LayerComponent } from '../layer/layer-component';
+import type { MergeStrategy } from '../layer/merge-strategy';
 
 export interface LayerFile {
   readonly relativePath: string;

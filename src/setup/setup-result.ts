@@ -1,4 +1,4 @@
-import type { LayerComponent } from './layer-component';
+import type { LayerComponent } from '../layer/layer-component';
 
 export type TargetOutcome =
   'created' | 'updated' | 'unchanged' | 'preserved' | 'conflicted' | 'blocked';

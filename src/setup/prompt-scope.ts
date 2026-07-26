@@ -1,5 +1,5 @@
 import { formatLayerComponents } from './format-layer-components';
-import type { LayerComponent } from './layer-component';
+import type { LayerComponent } from '../layer/layer-component';
 import type { LineReader } from './line-reader';
 import { parseScopeAnswer } from './parse-scope-answer';
 

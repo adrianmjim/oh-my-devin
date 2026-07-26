@@ -1,6 +1,6 @@
 import type { InstallLevel } from '../layer/install-level';
 import { createLineReader } from './create-line-reader';
-import type { LayerComponent } from './layer-component';
+import type { LayerComponent } from '../layer/layer-component';
 import type { LineReader } from './line-reader';
 import { promptLevel } from './prompt-level';
 import { promptScope } from './prompt-scope';

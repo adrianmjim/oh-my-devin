@@ -1,6 +1,6 @@
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { ALL_LAYER_COMPONENTS } from './layer-component';
+import { ALL_LAYER_COMPONENTS } from '../layer/layer-component';
 import type {
   MergeTarget,
   RefusedTarget,
