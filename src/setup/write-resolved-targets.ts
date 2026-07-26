@@ -55,6 +55,7 @@ function mergeRegistry(
     existing,
     shape: target.shape,
     hooksMap: target.hooksMap,
+    legacyCommands: target.legacyCommands,
   });
 }
 

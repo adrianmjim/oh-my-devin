@@ -11,6 +11,7 @@ export interface HookRegistryMerge {
   readonly existing: string | null;
   readonly shape: HookRegistryShape;
   readonly hooksMap: HooksEventMap;
+  readonly legacyCommands: readonly string[];
 }
 
 const HOOKS_KEY: string = 'hooks';
@@ -73,7 +74,11 @@ function mergeDocument(
   if (events === null) {
     outcome = { kind: 'blocked', reason: UNREADABLE_HOOKS_KEY_REASON };
   } else {
-    const claim: ClaimOutcome = claimHookEvents(events, input.hooksMap);
+    const claim: ClaimOutcome = claimHookEvents(
+      events,
+      input.hooksMap,
+      input.legacyCommands,
+    );
     outcome =
       claim.kind === 'blocked'
         ? { kind: 'blocked', reason: claim.reason }

@@ -264,6 +264,31 @@ describe('resolveLayerTargets', () => {
     );
   });
 
+  it('carries the legacy command forms a previous user-level install wrote', () => {
+    const project: readonly ResolvedTarget[] = resolveLayerTargets({
+      projectDir: PROJECT,
+      userConfigDir: USER_CONFIG,
+      level: 'project',
+      scope: ['hooks'],
+      version: VERSION,
+    });
+    const user: readonly ResolvedTarget[] = resolveLayerTargets({
+      projectDir: PROJECT,
+      userConfigDir: USER_CONFIG,
+      level: 'user',
+      scope: ['hooks'],
+      version: VERSION,
+    });
+
+    const script: string = join(USER_CONFIG, 'hooks', 'omd-mode.mjs');
+    expect(registry(user)?.legacyCommands).toEqual([
+      `node "${script}" session-start`,
+      `node "${script}" user-prompt`,
+      `node "${script}" stop`,
+    ]);
+    expect(registry(project)?.legacyCommands).toEqual([]);
+  });
+
   it('resolves the hook script before the registry that invokes it', () => {
     const targets: readonly ResolvedTarget[] = resolveLayerTargets({
       projectDir: PROJECT,

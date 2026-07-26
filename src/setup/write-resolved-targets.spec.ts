@@ -12,6 +12,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { frameRegion } from '../ownership/frame-region';
 import { frameUnit } from '../ownership/frame-unit';
 import type { RegionFraming } from '../ownership/region-framing';
+import { legacyHookCommands } from './legacy-hook-commands';
 import type {
   MergeTarget,
   RefusedTarget,
@@ -110,6 +111,7 @@ describe('writeResolvedTargets', () => {
       shape: 'config-key',
       scriptPath: join(dir, 'hooks', 'omd-mode.mjs'),
       hooksMap: buildHooksEventMap('node .devin/hooks/omd-mode.mjs'),
+      legacyCommands: [],
     };
   }
 
@@ -182,6 +184,31 @@ describe('writeResolvedTargets', () => {
     expect(parsed['token']).toBe('secret');
     expect(parsed['hooks']).toBeDefined();
     expect(reportFor(result, target.reportPath).outcome).toBe('updated');
+  });
+
+  it('replaces registry entries a previous release wrote in its legacy command form', async () => {
+    const script: string = join(dir, 'hooks', 'omd-mode.mjs');
+    const target: RegistryTarget = {
+      ...registryTarget(),
+      hooksMap: buildHooksEventMap(`node '${script}'`),
+      legacyCommands: legacyHookCommands(script),
+    };
+    await writeFile(
+      target.absolutePath,
+      JSON.stringify({ hooks: buildHooksEventMap(`node "${script}"`) }),
+      'utf8',
+    );
+
+    await writeResolvedTargets([scriptTarget(), target]);
+
+    const parsed: Record<string, unknown> = JSON.parse(
+      await readFile(target.absolutePath, 'utf8'),
+    ) as Record<string, unknown>;
+    expect(parsed['hooks']).toEqual({
+      SessionStart: [...target.hooksMap.SessionStart],
+      UserPromptSubmit: [...target.hooksMap.UserPromptSubmit],
+      Stop: [...target.hooksMap.Stop],
+    });
   });
 
   it('withholds the registry claim when the hook script is not omd’s', async () => {

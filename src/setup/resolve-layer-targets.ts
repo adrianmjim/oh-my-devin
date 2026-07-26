@@ -5,6 +5,7 @@ import { commentStyleForPath } from '../ownership/comment-style-for-path';
 import { LAYER_FILES } from './layer-catalog';
 import type { LayerComponent } from './layer-component';
 import type { LayerFile } from './layer-file';
+import { legacyHookCommands } from './legacy-hook-commands';
 import { posixQuote } from './posix-quote';
 import type {
   MergeTarget,
@@ -83,6 +84,7 @@ function registryTarget(options: ResolveLayerTargetsOptions): RegistryTarget {
     hooksMap: buildHooksEventMap(
       userLevel ? `node ${posixQuote(scriptPath)}` : PROJECT_HOOK_COMMAND,
     ),
+    legacyCommands: userLevel ? legacyHookCommands(scriptPath) : [],
   };
 }
 

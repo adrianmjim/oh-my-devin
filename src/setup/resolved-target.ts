@@ -21,6 +21,7 @@ export interface RegistryTarget {
   readonly shape: HookRegistryShape;
   readonly scriptPath: string;
   readonly hooksMap: HooksEventMap;
+  readonly legacyCommands: readonly string[];
 }
 
 export interface RefusedTarget {

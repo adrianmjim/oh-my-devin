@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { MergeOutcome } from '../ownership/merge-outcome';
+import { legacyHookCommands } from './legacy-hook-commands';
 import type { HookRegistryMerge } from './merge-hook-registry';
 import { mergeHookRegistry } from './merge-hook-registry';
 import type { HooksEventMap } from './setup-templates';
@@ -13,11 +14,16 @@ const FOREIGN_ENTRY: Record<string, unknown> = {
 };
 
 function documentMerge(existing: string | null): HookRegistryMerge {
-  return { existing, shape: 'document', hooksMap: OMD_MAP };
+  return { existing, shape: 'document', hooksMap: OMD_MAP, legacyCommands: [] };
 }
 
 function configMerge(existing: string | null): HookRegistryMerge {
-  return { existing, shape: 'config-key', hooksMap: OMD_MAP };
+  return {
+    existing,
+    shape: 'config-key',
+    hooksMap: OMD_MAP,
+    legacyCommands: [],
+  };
 }
 
 function written(outcome: MergeOutcome): Record<string, unknown> {
@@ -73,6 +79,30 @@ describe('mergeHookRegistry', () => {
       SessionStart: [...OMD_MAP.SessionStart],
       UserPromptSubmit: [...OMD_MAP.UserPromptSubmit],
       Stop: [...OMD_MAP.Stop],
+    });
+  });
+
+  it('replaces entries a previous release wrote under its legacy command form', () => {
+    const script: string = '/home/u/.config/devin/hooks/omd-mode.mjs';
+    const previous: MergeOutcome = mergeHookRegistry({
+      existing: null,
+      shape: 'config-key',
+      hooksMap: buildHooksEventMap(`node "${script}"`),
+      legacyCommands: [],
+    });
+    const map: HooksEventMap = buildHooksEventMap(`node '${script}'`);
+
+    const outcome: MergeOutcome = mergeHookRegistry({
+      existing: previous.kind === 'created' ? previous.content : '',
+      shape: 'config-key',
+      hooksMap: map,
+      legacyCommands: legacyHookCommands(script),
+    });
+
+    expect(written(outcome)['hooks']).toEqual({
+      SessionStart: [...map.SessionStart],
+      UserPromptSubmit: [...map.UserPromptSubmit],
+      Stop: [...map.Stop],
     });
   });
 

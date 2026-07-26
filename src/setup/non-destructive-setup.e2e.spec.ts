@@ -184,6 +184,43 @@ describe('omd setup never destroys (e2e)', () => {
     expect(await snapshot(join(xdg, 'devin'))).toEqual(first);
   });
 
+  it('claims hook entries a previous release registered without duplicating them', async () => {
+    project = await createE2eProject();
+    const xdg: string = join(project.dir, 'xdg');
+    const script: string = join(xdg, 'devin', 'hooks', 'omd-mode.mjs');
+    const legacyEntry = (phase: string): Record<string, unknown> => ({
+      hooks: [{ type: 'command', command: `node "${script}" ${phase}` }],
+    });
+    await writeAt(
+      xdg,
+      join('devin', 'config.json'),
+      JSON.stringify({
+        hooks: {
+          SessionStart: [legacyEntry('session-start')],
+          UserPromptSubmit: [legacyEntry('user-prompt')],
+          Stop: [legacyEntry('stop')],
+        },
+      }),
+    );
+
+    const result: CommandResult = await project.run(
+      ['setup', '--level=user', '--scope=hooks'],
+      { env: { XDG_CONFIG_HOME: xdg } },
+    );
+
+    expect(result.exitCode).toBe(0);
+    const config: Record<string, unknown> = JSON.parse(
+      await readFile(join(xdg, 'devin', 'config.json'), 'utf8'),
+    ) as Record<string, unknown>;
+    const hooks: Record<string, readonly unknown[]> = config['hooks'] as Record<
+      string,
+      readonly unknown[]
+    >;
+    expect(hooks['SessionStart']).toHaveLength(1);
+    expect(hooks['UserPromptSubmit']).toHaveLength(1);
+    expect(hooks['Stop']).toHaveLength(1);
+  });
+
   it('lets an unparseable engine configuration block only itself', async () => {
     project = await createE2eProject();
     const xdg: string = join(project.dir, 'xdg');
