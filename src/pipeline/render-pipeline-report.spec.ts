@@ -1,14 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { pipelineReport, stageRecord } from './pipeline-report-fixture';
+import { pipelineReportFixture } from './pipeline-report-fixture';
+import { stageRecordFixture } from './stage-record-fixture';
 import { renderPipelineReport } from './render-pipeline-report';
 
 describe('renderPipelineReport', () => {
   it('summarizes a successful pipeline stage by stage', () => {
     const text: string = renderPipelineReport(
-      pipelineReport('succeeded', [
-        stageRecord('architect', 'approve'),
-        stageRecord('executor', 'approve'),
-        stageRecord('reviewer', 'approve'),
+      pipelineReportFixture('succeeded', [
+        stageRecordFixture('architect', 'approve'),
+        stageRecordFixture('executor', 'approve'),
+        stageRecordFixture('reviewer', 'approve'),
       ]),
     );
 
@@ -21,11 +22,11 @@ describe('renderPipelineReport', () => {
 
   it('names the halting stage when the pipeline halts', () => {
     const text: string = renderPipelineReport(
-      pipelineReport(
+      pipelineReportFixture(
         'halted',
         [
-          stageRecord('architect', 'approve'),
-          stageRecord('executor', null, {
+          stageRecordFixture('architect', 'approve'),
+          stageRecordFixture('executor', null, {
             failureTier: 'invalid_artifact',
             artifactValid: false,
           }),

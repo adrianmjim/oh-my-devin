@@ -1,19 +1,14 @@
 import { join } from 'node:path';
 import type { HandoffArtifactName } from '../handoff/handoff-artifact-name';
 import type { LayerLookup } from '../layer/layer-lookup';
-import type { PipelineStage } from '../handoff/pipeline-stage';
 import type { RunReport } from '../outcome/run-report';
 import type { Worktree } from '../worktree/worktree';
+import { composeStagePrompt } from './compose-stage-prompt';
+import { ROLE_ARTIFACT } from './role-artifact';
 import type { StageRequest } from './stage-request';
 import type { StageResult } from './stage-result';
 import type { StageRunner } from './stage-runner';
 import type { StageRunnerDeps } from './stage-runner-deps';
-
-const ROLE_ARTIFACT: Record<PipelineStage, HandoffArtifactName> = {
-  architect: 'architecture.json',
-  executor: 'evidence.json',
-  reviewer: 'review.json',
-};
 
 export function createStageRunner(deps: StageRunnerDeps): StageRunner {
   return async (request: StageRequest): Promise<StageResult> => {
@@ -25,7 +20,7 @@ export function createStageRunner(deps: StageRunnerDeps): StageRunner {
       };
       const report: RunReport = await deps.runRole({
         roleName: request.stage,
-        task: composePrompt(request),
+        task: composeStagePrompt(request),
         workingDirectory: worktree.path,
         model: null,
         runner: deps.runnerFor(worktree.path),
@@ -56,18 +51,4 @@ export function createStageRunner(deps: StageRunnerDeps): StageRunner {
       await deps.worktrees.remove(worktree);
     }
   };
-}
-
-function composePrompt(request: StageRequest): string {
-  const sections: string[] = [];
-  const requirements: string | undefined = request.inputs.get('requirements');
-  if (requirements !== undefined) {
-    sections.push(requirements);
-  }
-  for (const [name, content] of request.inputs) {
-    if (name !== 'requirements') {
-      sections.push(`## ${name}\n${content}`);
-    }
-  }
-  return sections.join('\n\n');
 }

@@ -1,21 +1,14 @@
 import { parse as parseYaml } from 'yaml';
 import type { ContextPolicy } from './context-policy';
-import { isContextPolicy } from './context-policy';
+import { DURATION_PATTERN } from './duration-pattern';
+import { DURATION_UNIT_MS } from './duration-unit-ms';
+import { FRONTMATTER_PATTERN } from './frontmatter-pattern';
+import { isContextPolicy } from './is-context-policy';
 import type { EngineKind } from './engine-kind';
-import { isEngineKind } from './engine-kind';
+import { isEngineKind } from './is-engine-kind';
 import type { RoleDefinition } from './role-definition';
 import { RoleDefinitionError } from './role-definition-error';
 import type { RolePermissions } from './role-permissions';
-
-const FRONTMATTER_PATTERN: RegExp =
-  /^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/;
-const DURATION_PATTERN: RegExp = /^(\d+)(ms|s|m|h)?$/;
-const DURATION_UNIT_MS: Record<string, number> = {
-  ms: 1,
-  s: 1000,
-  m: 60000,
-  h: 3600000,
-};
 
 export function parseRoleDefinition(
   agentMarkdown: string,
