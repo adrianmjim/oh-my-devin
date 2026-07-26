@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import type { CommandResult } from '../engine/command-result';
-import { ALL_LAYER_COMPONENTS } from '../setup/layer-component';
+import { ALL_LAYER_COMPONENTS } from '../layer/layer-component';
 import { createE2eProject } from '../testing/create-e2e-project';
 import type { E2eProject } from '../testing/e2e-project';
 

@@ -1,7 +1,7 @@
 import type { RegionFraming } from '../ownership/region-framing';
-import type { LayerComponent } from './layer-component';
+import type { LayerComponent } from '../layer/layer-component';
 import type { HookRegistryShape } from './merge-hook-registry';
-import type { MergeStrategy } from './merge-strategy';
+import type { MergeStrategy } from '../layer/merge-strategy';
 import type { HooksEventMap } from './setup-templates';
 
 export interface MergeTarget {

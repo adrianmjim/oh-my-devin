@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { formatLayerComponents } from './format-layer-components';
-import { ALL_LAYER_COMPONENTS } from './layer-component';
+import { ALL_LAYER_COMPONENTS } from '../layer/layer-component';
 
 describe('formatLayerComponents', () => {
   it('renders every component in declaration order', () => {

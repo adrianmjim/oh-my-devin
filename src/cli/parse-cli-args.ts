@@ -1,8 +1,8 @@
 import { formatLayerComponents } from '../setup/format-layer-components';
 import type { InstallLevel } from '../layer/install-level';
 import { isInstallLevel } from '../layer/install-level';
-import type { LayerComponent } from '../setup/layer-component';
-import { isLayerComponent } from '../setup/layer-component';
+import type { LayerComponent } from '../layer/layer-component';
+import { isLayerComponent } from '../layer/layer-component';
 import { UsageError } from '../run/usage-error';
 import type { CliCommand } from './cli-command';
 import { resolveTeamRunInvocation } from './resolve-team-run-invocation';

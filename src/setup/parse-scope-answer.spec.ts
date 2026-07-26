@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { LayerComponent } from './layer-component';
+import type { LayerComponent } from '../layer/layer-component';
 import { parseScopeAnswer } from './parse-scope-answer';
 
 describe('parseScopeAnswer', () => {

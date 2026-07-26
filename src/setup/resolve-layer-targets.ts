@@ -3,7 +3,7 @@ import type { InstallLevel } from '../layer/install-level';
 import { layerFilePath } from '../layer/layer-file-path';
 import { commentStyleForPath } from '../ownership/comment-style-for-path';
 import { LAYER_FILES } from './layer-catalog';
-import type { LayerComponent } from './layer-component';
+import type { LayerComponent } from '../layer/layer-component';
 import type { LayerFile } from './layer-file';
 import { legacyHookCommands } from './legacy-hook-commands';
 import { posixQuote } from './posix-quote';

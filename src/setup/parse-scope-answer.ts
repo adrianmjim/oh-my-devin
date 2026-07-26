@@ -1,5 +1,5 @@
-import type { LayerComponent } from './layer-component';
-import { isLayerComponent } from './layer-component';
+import type { LayerComponent } from '../layer/layer-component';
+import { isLayerComponent } from '../layer/layer-component';
 
 export function parseScopeAnswer(
   normalized: string,
