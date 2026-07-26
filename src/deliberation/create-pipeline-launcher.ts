@@ -1,6 +1,6 @@
 import type { PipelineReport } from '../pipeline/pipeline-report';
 import { runPipeline } from '../pipeline/run-pipeline';
-import type { LaunchRequest } from './pipeline-launcher';
+import type { LaunchRequest } from './launch-request';
 import type { PipelineLauncher } from './pipeline-launcher';
 import type { PipelineLauncherDeps } from './pipeline-launcher-deps';
 

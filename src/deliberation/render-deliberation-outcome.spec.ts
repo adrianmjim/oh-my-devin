@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { deliberationOutcome } from './deliberation-outcome-fixture';
+import { deliberationOutcomeFixture } from './deliberation-outcome-fixture';
 import { renderDeliberationOutcome } from './render-deliberation-outcome';
 
 describe('renderDeliberationOutcome', () => {
   it('summarizes a passed deliberation with its authority resolution', () => {
     const text: string = renderDeliberationOutcome(
-      deliberationOutcome('passed', 'proceed', true),
+      deliberationOutcomeFixture('passed', 'proceed', true),
     );
     expect(text).toContain('passed');
     expect(text).toContain('should we ship?');
@@ -16,7 +16,7 @@ describe('renderDeliberationOutcome', () => {
 
   it('shows escalation and carried dissent when the gate escalates', () => {
     const text: string = renderDeliberationOutcome(
-      deliberationOutcome('passed', 'escalate', false),
+      deliberationOutcomeFixture('passed', 'escalate', false),
     );
     expect(text).toContain('escalate');
     expect(text).toContain('dissent carried: 1');

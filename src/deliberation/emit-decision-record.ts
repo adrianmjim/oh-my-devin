@@ -1,6 +1,7 @@
 import type { DecisionRecord } from './decision-record';
 import type { EchoCluster } from './echo-cluster';
 import type { RecordInput } from './record-input';
+import { dedupeObjections } from './dedupe-objections';
 import type { RecordedObjection } from './recorded-objection';
 import type { SupportingArgument } from './supporting-argument';
 import type { TypedPosition } from './typed-position';
@@ -39,24 +40,4 @@ export function emitDecisionRecord(input: RecordInput): DecisionRecord {
     humanDecisionRequired:
       input.closure !== 'passed' || input.authority === 'human',
   };
-}
-
-function dedupeObjections(
-  objections: readonly RecordedObjection[],
-): readonly RecordedObjection[] {
-  const seen: Set<string> = new Set<string>();
-  const unique: RecordedObjection[] = [];
-  for (const objection of objections) {
-    const key: string = JSON.stringify([
-      objection.seat,
-      objection.domain,
-      objection.severity,
-      objection.concern,
-    ]);
-    if (!seen.has(key)) {
-      seen.add(key);
-      unique.push(objection);
-    }
-  }
-  return unique;
 }

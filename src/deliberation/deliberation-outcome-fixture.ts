@@ -3,7 +3,7 @@ import type { DecisionRecord } from './decision-record';
 import type { DeliberationOutcome } from './deliberation-outcome';
 import type { GateResolution } from './gate-resolution';
 
-export function deliberationOutcome(
+export function deliberationOutcomeFixture(
   closure: ClosureState,
   resolution: GateResolution,
   bridgeLaunched: boolean,

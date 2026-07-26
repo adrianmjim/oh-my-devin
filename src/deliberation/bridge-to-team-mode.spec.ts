@@ -6,7 +6,7 @@ import type { BridgeInput } from './bridge-input';
 import type { BridgeResult } from './bridge-result';
 import type { ClosureState } from './closure-state';
 import type { DecisionRecord } from './decision-record';
-import type { LaunchRequest } from './pipeline-launcher';
+import type { LaunchRequest } from './launch-request';
 import { bridgeToTeamMode } from './bridge-to-team-mode';
 
 const TEAM: TeamDefinition = {

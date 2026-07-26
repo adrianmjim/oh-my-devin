@@ -1,6 +1,7 @@
 import type { ArgumentClusterer } from './argument-clusterer';
 import type { ClaimClusters } from './claim-clusters';
 import type { EchoCluster } from './echo-cluster';
+import { requireSeatArgument } from './require-seat-argument';
 import type { SeatArgument } from './seat-argument';
 
 export async function detectEchoes(
@@ -16,7 +17,7 @@ export async function detectEchoes(
   for (const group of groups) {
     const members: readonly SeatArgument[] = group
       .filter((index: number): boolean => index >= 0 && index < args.length)
-      .map((index: number): SeatArgument => requireArgument(args[index]));
+      .map((index: number): SeatArgument => requireSeatArgument(args[index]));
     if (members.length > 0) {
       const seats: string[] = [];
       for (const member of members) {
@@ -26,18 +27,11 @@ export async function detectEchoes(
       }
       clusters.push({
         id: `${idPrefix}-cluster-${clusters.length}`,
-        claim: requireArgument(members[0]).claim,
+        claim: requireSeatArgument(members[0]).claim,
         endorsements: seats.length,
         seats,
       });
     }
   }
   return clusters;
-}
-
-function requireArgument(argument: SeatArgument | undefined): SeatArgument {
-  if (argument === undefined) {
-    throw new Error('echo cluster member vanished');
-  }
-  return argument;
 }

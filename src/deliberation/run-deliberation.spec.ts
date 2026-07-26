@@ -8,7 +8,7 @@ import type { AnonymizedArgument } from './anonymized-argument';
 import type { ClaimClusters } from './claim-clusters';
 import type { DeliberationInput } from './deliberation-input';
 import type { DeliberationOutcome } from './deliberation-outcome';
-import type { LaunchRequest } from './pipeline-launcher';
+import type { LaunchRequest } from './launch-request';
 import type { SeatInvocation } from './seat-invocation';
 import type { SeatPosition } from './seat-position';
 import type { TypedPosition } from './typed-position';
