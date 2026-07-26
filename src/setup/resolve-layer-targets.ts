@@ -1,23 +1,29 @@
 import { join } from 'node:path';
 import type { InstallLevel } from '../layer/install-level';
 import { layerFilePath } from '../layer/layer-file-path';
+import { commentStyleForPath } from '../ownership/comment-style-for-path';
 import { LAYER_FILES } from './layer-catalog';
 import type { LayerComponent } from './layer-component';
 import type { LayerFile } from './layer-file';
 import { posixQuote } from './posix-quote';
 import type {
-  FileTarget,
-  HooksMergeTarget,
+  MergeTarget,
   RefusedTarget,
+  RegistryTarget,
   ResolvedTarget,
 } from './resolved-target';
-import { buildHooksEventMap, HOOK_SCRIPT } from './setup-templates';
+import {
+  buildHooksEventMap,
+  HOOK_SCRIPT_FILENAME,
+  PROJECT_HOOK_COMMAND,
+} from './setup-templates';
 
 export interface ResolveLayerTargetsOptions {
   readonly projectDir: string;
   readonly userConfigDir: string;
   readonly level: InstallLevel;
   readonly scope: readonly LayerComponent[];
+  readonly version: string;
 }
 
 export const USER_LEVEL_SUPPORTED: readonly LayerComponent[] = [
@@ -27,41 +33,56 @@ export const USER_LEVEL_SUPPORTED: readonly LayerComponent[] = [
   'hooks',
 ];
 
-function fileTarget(
+const PROJECT_REGISTRY_PATH: string = join('.devin', 'hooks.v1.json');
+
+function mergeTarget(
   file: LayerFile,
-  level: InstallLevel,
-  projectDir: string,
-  userConfigDir: string,
-): FileTarget {
-  const base: string = level === 'project' ? projectDir : userConfigDir;
-  const absolutePath: string = layerFilePath(level, base, file.relativePath);
-  const reportPath: string =
-    level === 'project' ? file.relativePath : absolutePath;
+  options: ResolveLayerTargetsOptions,
+): MergeTarget {
+  const userLevel: boolean = options.level === 'user';
+  const base: string = userLevel ? options.userConfigDir : options.projectDir;
+  const absolutePath: string = layerFilePath(
+    options.level,
+    base,
+    file.relativePath,
+  );
+  const content: string =
+    userLevel && file.userContent !== undefined
+      ? file.userContent
+      : file.content;
   return {
-    kind: 'file',
+    kind: 'merge',
     component: file.component,
     absolutePath,
-    reportPath,
-    content: file.content,
+    reportPath: userLevel ? absolutePath : file.relativePath,
+    strategy: file.strategy,
+    framing: {
+      id: file.regionId,
+      version: options.version,
+      style: commentStyleForPath(file.relativePath),
+      content,
+    },
   };
 }
 
-function hooksMergeTarget(userConfigDir: string): HooksMergeTarget {
-  const scriptAbsolutePath: string = join(
-    userConfigDir,
-    'hooks',
-    'omd-mode.mjs',
-  );
-  const configAbsolutePath: string = join(userConfigDir, 'config.json');
+function registryTarget(options: ResolveLayerTargetsOptions): RegistryTarget {
+  const userLevel: boolean = options.level === 'user';
+  const scriptPath: string = userLevel
+    ? join(options.userConfigDir, 'hooks', HOOK_SCRIPT_FILENAME)
+    : join(options.projectDir, '.devin', 'hooks', HOOK_SCRIPT_FILENAME);
+  const absolutePath: string = userLevel
+    ? join(options.userConfigDir, 'config.json')
+    : join(options.projectDir, PROJECT_REGISTRY_PATH);
   return {
-    kind: 'hooks-merge',
+    kind: 'registry',
     component: 'hooks',
-    scriptAbsolutePath,
-    scriptReportPath: scriptAbsolutePath,
-    scriptContent: HOOK_SCRIPT,
-    configAbsolutePath,
-    configReportPath: configAbsolutePath,
-    hooksMap: buildHooksEventMap(`node ${posixQuote(scriptAbsolutePath)}`),
+    absolutePath,
+    reportPath: userLevel ? absolutePath : PROJECT_REGISTRY_PATH,
+    shape: userLevel ? 'config-key' : 'document',
+    scriptPath,
+    hooksMap: buildHooksEventMap(
+      userLevel ? `node ${posixQuote(scriptPath)}` : PROJECT_HOOK_COMMAND,
+    ),
   };
 }
 
@@ -76,7 +97,7 @@ function refusal(component: LayerComponent): RefusedTarget {
 export function resolveLayerTargets(
   options: ResolveLayerTargetsOptions,
 ): readonly ResolvedTarget[] {
-  const { projectDir, userConfigDir, level, scope } = options;
+  const { level, scope } = options;
   const selected: ReadonlySet<LayerComponent> = new Set(scope);
   const userLevel: boolean = level === 'user';
   const supported: ReadonlySet<LayerComponent> = new Set(USER_LEVEL_SUPPORTED);
@@ -88,17 +109,17 @@ export function resolveLayerTargets(
     }
   }
 
-  if (userLevel && selected.has('hooks') && supported.has('hooks')) {
-    targets.push(hooksMergeTarget(userConfigDir));
+  for (const file of LAYER_FILES) {
+    const refused: boolean = userLevel && !supported.has(file.component);
+    if (selected.has(file.component) && !refused) {
+      targets.push(mergeTarget(file, options));
+    }
   }
 
-  for (const file of LAYER_FILES) {
-    const componentSelected: boolean = selected.has(file.component);
-    const asMerge: boolean = userLevel && file.component === 'hooks';
-    const refused: boolean = userLevel && !supported.has(file.component);
-    if (componentSelected && !asMerge && !refused) {
-      targets.push(fileTarget(file, level, projectDir, userConfigDir));
-    }
+  const hooksInstallable: boolean =
+    selected.has('hooks') && (!userLevel || supported.has('hooks'));
+  if (hooksInstallable) {
+    targets.push(registryTarget(options));
   }
 
   return targets;

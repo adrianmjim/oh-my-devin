@@ -31,7 +31,7 @@ async function exists(path: string): Promise<boolean> {
 }
 
 function runHook(dir: string, phase: string, event: unknown): unknown {
-  const stdout = execFileSync(
+  const stdout: string = execFileSync(
     process.execPath,
     [join('.devin', 'hooks', 'omd-mode.mjs'), phase],
     { cwd: dir, input: JSON.stringify(event), encoding: 'utf8' },
@@ -73,7 +73,7 @@ describe('setupLayer', () => {
       await exists(join(dir, '.devin', 'skills', 'omd-install', 'SKILL.md')),
     ).toBe(true);
     expect(await exists(join(dir, '.devin', 'hooks.v1.json'))).toBe(true);
-    expect(result.writtenPaths.length).toBeGreaterThanOrEqual(4);
+    expect(result.targets.length).toBeGreaterThanOrEqual(4);
   });
 
   it('installs an example role that the catalog can discover cleanly', async () => {
@@ -84,7 +84,9 @@ describe('setupLayer', () => {
       userConfigDir: null,
     });
     expect(discovery.errors).toEqual([]);
-    expect(discovery.roles.map((r) => r.name)).toContain('reviewer');
+    expect(
+      discovery.roles.map((r: RoleDefinition): string => r.name),
+    ).toContain('reviewer');
   });
 
   it('installs the architect role with its handoff contract and schema', async () => {
@@ -102,7 +104,7 @@ describe('setupLayer', () => {
       userConfigDir: null,
     });
     const architect: RoleDefinition | undefined = discovery.roles.find(
-      (r) => r.name === 'architect',
+      (r: RoleDefinition): boolean => r.name === 'architect',
     );
     expect(architect?.outputArtifact).toBe('architecture.json');
     expect(architect?.outputSchema).toBe(
@@ -125,7 +127,7 @@ describe('setupLayer', () => {
       userConfigDir: null,
     });
     const executor: RoleDefinition | undefined = discovery.roles.find(
-      (r) => r.name === 'executor',
+      (r: RoleDefinition): boolean => r.name === 'executor',
     );
     expect(executor?.outputArtifact).toBe('evidence.json');
     expect(executor?.outputSchema).toBe('.devin/schemas/evidence.schema.json');
@@ -139,11 +141,9 @@ describe('setupLayer', () => {
       userConfigDir: null,
     });
     expect(discovery.errors).toEqual([]);
-    expect([...discovery.roles.map((r) => r.name)].sort()).toEqual([
-      'architect',
-      'executor',
-      'reviewer',
-    ]);
+    expect(
+      [...discovery.roles.map((r: RoleDefinition): string => r.name)].sort(),
+    ).toEqual(['architect', 'executor', 'reviewer']);
   });
 
   it('names the canonical trio as the installed roles in the rules file', async () => {
@@ -198,15 +198,15 @@ describe('setupLayer', () => {
     ]);
 
     const architect: TeamTransition | undefined = team.workflow.find(
-      (t) => t.from === 'architect',
+      (t: TeamTransition): boolean => t.from === 'architect',
     );
     expect(architect?.then).toBe('executor');
     const executor: TeamTransition | undefined = team.workflow.find(
-      (t) => t.from === 'executor',
+      (t: TeamTransition): boolean => t.from === 'executor',
     );
     expect(executor?.then).toBe('reviewer');
     const reviewer: TeamTransition | undefined = team.workflow.find(
-      (t) => t.from === 'reviewer',
+      (t: TeamTransition): boolean => t.from === 'reviewer',
     );
     expect(reviewer?.outcomes).toContainEqual({
       outcome: 'blocked',
