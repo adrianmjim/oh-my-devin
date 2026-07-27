@@ -7,6 +7,11 @@ describe('HEADING_PATTERN', () => {
     expect(HEADING_PATTERN.test('###### Detail')).toBe(true);
   });
 
+  it('matches an empty heading', () => {
+    expect(HEADING_PATTERN.test('#')).toBe(true);
+    expect(HEADING_PATTERN.test('##')).toBe(true);
+  });
+
   it('does not match a hash that is not heading markup', () => {
     expect(HEADING_PATTERN.test('#not-a-heading is the tag.')).toBe(false);
     expect(HEADING_PATTERN.test('####### too deep')).toBe(false);
