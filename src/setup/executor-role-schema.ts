@@ -12,8 +12,8 @@ export const EXECUTOR_ROLE_SCHEMA: string = `${JSON.stringify(
           type: 'object',
           required: ['command', 'result'],
           properties: {
-            command: { type: 'string', minLength: 1 },
-            result: { type: 'string', minLength: 1 },
+            command: { type: 'string', minLength: 1, pattern: '\\S' },
+            result: { type: 'string', minLength: 1, pattern: '\\S' },
           },
           additionalProperties: false,
         },

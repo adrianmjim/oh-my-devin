@@ -45,6 +45,7 @@ describe('EXECUTOR_ROLE_SCHEMA', () => {
       expect(COMMAND_PROPERTIES[field], field).toEqual({
         type: 'string',
         minLength: 1,
+        pattern: '\\S',
       });
     }
   });
@@ -68,6 +69,21 @@ describe('EXECUTOR_ROLE_SCHEMA', () => {
     expect(
       validateAgainstSchema(
         { tests: 'passed', commands: [{ command: 'pnpm test' }] },
+        SCHEMA,
+      ),
+    ).not.toEqual([]);
+  });
+
+  it('rejects a command or result that is only whitespace', () => {
+    expect(
+      validateAgainstSchema(
+        { tests: 'passed', commands: [{ command: ' ', result: 'r' }] },
+        SCHEMA,
+      ),
+    ).not.toEqual([]);
+    expect(
+      validateAgainstSchema(
+        { tests: 'passed', commands: [{ command: 'c', result: '   ' }] },
         SCHEMA,
       ),
     ).not.toEqual([]);

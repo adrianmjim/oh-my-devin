@@ -26,7 +26,11 @@ describe('ARCHITECT_ROLE_SCHEMA', () => {
   });
 
   it('rejects an empty approach', () => {
-    expect(PROPERTIES['approach']).toEqual({ type: 'string', minLength: 1 });
+    expect(PROPERTIES['approach']).toEqual({
+      type: 'string',
+      minLength: 1,
+      pattern: '\\S',
+    });
   });
 
   it('requires at least one step', () => {
@@ -39,7 +43,7 @@ describe('ARCHITECT_ROLE_SCHEMA', () => {
     expect(STEP['required']).toEqual(['description']);
     expect(
       (STEP['properties'] as Record<string, unknown>)['description'],
-    ).toEqual({ type: 'string', minLength: 1 });
+    ).toEqual({ type: 'string', minLength: 1, pattern: '\\S' });
   });
 
   it('lets a step name the files it touches', () => {
@@ -76,6 +80,21 @@ describe('ARCHITECT_ROLE_SCHEMA', () => {
     expect(
       validateAgainstSchema(
         { approach: 'a', steps: [{ files: ['x.ts'] }] },
+        SCHEMA,
+      ),
+    ).not.toEqual([]);
+  });
+
+  it('rejects an approach or step that is only whitespace', () => {
+    expect(
+      validateAgainstSchema(
+        { approach: '   ', steps: [{ description: 'd' }] },
+        SCHEMA,
+      ),
+    ).not.toEqual([]);
+    expect(
+      validateAgainstSchema(
+        { approach: 'a', steps: [{ description: ' ' }] },
         SCHEMA,
       ),
     ).not.toEqual([]);

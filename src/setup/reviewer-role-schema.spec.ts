@@ -57,6 +57,7 @@ describe('REVIEWER_ROLE_SCHEMA', () => {
       expect(FINDING_PROPERTIES[field], field).toEqual({
         type: 'string',
         minLength: 1,
+        pattern: '\\S',
       });
     }
   });
@@ -90,6 +91,25 @@ describe('REVIEWER_ROLE_SCHEMA', () => {
         {
           verdict: 'request_changes',
           findings: [{ severity: 'high', location: 'a.ts', summary: 's' }],
+        },
+        SCHEMA,
+      ),
+    ).not.toEqual([]);
+  });
+
+  it('rejects a finding whose fix is only whitespace', () => {
+    expect(
+      validateAgainstSchema(
+        {
+          verdict: 'request_changes',
+          findings: [
+            {
+              severity: 'high',
+              location: 'a.ts',
+              summary: 's',
+              fix: '   ',
+            },
+          ],
         },
         SCHEMA,
       ),

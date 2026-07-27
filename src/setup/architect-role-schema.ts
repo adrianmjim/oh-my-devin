@@ -4,7 +4,7 @@ export const ARCHITECT_ROLE_SCHEMA: string = `${JSON.stringify(
     type: 'object',
     required: ['approach', 'steps'],
     properties: {
-      approach: { type: 'string', minLength: 1 },
+      approach: { type: 'string', minLength: 1, pattern: '\\S' },
       steps: {
         type: 'array',
         minItems: 1,
@@ -12,7 +12,7 @@ export const ARCHITECT_ROLE_SCHEMA: string = `${JSON.stringify(
           type: 'object',
           required: ['description'],
           properties: {
-            description: { type: 'string', minLength: 1 },
+            description: { type: 'string', minLength: 1, pattern: '\\S' },
             files: { type: 'array', items: { type: 'string' } },
           },
           additionalProperties: false,
