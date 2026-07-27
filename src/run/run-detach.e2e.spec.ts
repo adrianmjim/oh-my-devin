@@ -74,7 +74,7 @@ describe('omd run --detach (e2e)', () => {
     await project.writeScript(ONE_TURN);
     await writeFile(
       join(project.dir, 'review.json'),
-      JSON.stringify({ verdict: 'approve' }),
+      JSON.stringify({ verdict: 'approve', findings: [] }),
       'utf8',
     );
 
@@ -102,7 +102,7 @@ describe('omd run --detach (e2e)', () => {
     await project.writeScript(ONE_TURN);
     await writeFile(
       join(project.dir, 'review.json'),
-      JSON.stringify({ verdict: 'approve' }),
+      JSON.stringify({ verdict: 'approve', findings: [] }),
       'utf8',
     );
 

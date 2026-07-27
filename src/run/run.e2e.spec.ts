@@ -36,7 +36,7 @@ const TWO_TURNS: DevinStubScript = {
 async function writeValidArtifact(dir: string): Promise<void> {
   await writeFile(
     join(dir, 'review.json'),
-    JSON.stringify({ verdict: 'approve' }),
+    JSON.stringify({ verdict: 'approve', findings: [] }),
     'utf8',
   );
 }
