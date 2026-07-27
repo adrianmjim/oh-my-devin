@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { parseRoleDefinition } from '../role/parse-role-definition';
 import type { RoleDefinition } from '../role/role-definition';
 import type { AgentConfigBundle } from './agent-config-bundle';
 import { ContractCompilationError } from './contract-compilation-error';
@@ -119,5 +120,32 @@ describe('compileAgentConfigBundle', () => {
     );
 
     expect(bundle.permissions.deny).toEqual(['Bash(rm*)']);
+  });
+
+  it('sends no region marker as system instructions for an installed role', () => {
+    const installed: RoleDefinition = parseRoleDefinition(
+      [
+        '---',
+        'omd-output: review.json',
+        'omd-schema: schemas/review.schema.json',
+        'omd-max-turns: 8',
+        '---',
+        '<!-- omd:begin id=role-reviewer version=0.0.0 digest=sha256:abc -->',
+        '## Mission',
+        '',
+        'You are the reviewer.',
+        '<!-- omd:end id=role-reviewer -->',
+        '',
+      ].join('\n'),
+      'reviewer',
+    );
+
+    const bundle: AgentConfigBundle = compileAgentConfigBundle(installed);
+
+    expect(bundle.system_instructions[1]).toBe(
+      ['## Mission', '', 'You are the reviewer.'].join('\n'),
+    );
+    expect(JSON.stringify(bundle)).not.toContain('omd:begin');
+    expect(JSON.stringify(bundle)).not.toContain('omd:end');
   });
 });

@@ -14,7 +14,7 @@ const ROLE: RoleDefinition = {
   maxTurns: 6,
   contextPolicy: 'isolated',
   wallTimeMs: null,
-  promptBody: 'Assess the diff.\nThen write the verdict.',
+  promptBody: '## Mission\n\nAssess the diff.\nThen write the verdict.',
 };
 
 describe('renderRoleShowJson', () => {
@@ -37,5 +37,18 @@ describe('renderRoleShowJson', () => {
 
   it('summarizes the prompt rather than carrying it whole', () => {
     expect(renderRoleShowJson(ROLE).promptSummary).not.toContain('verdict');
+  });
+
+  it('summarizes a sectioned body with prose rather than its heading', () => {
+    expect(renderRoleShowJson(ROLE).promptSummary).not.toContain('#');
+  });
+
+  it('reports no summary for a body that carries no prose', () => {
+    expect(
+      renderRoleShowJson({
+        ...ROLE,
+        promptBody: '## Mission\n\n## Boundaries',
+      }).promptSummary,
+    ).toBe('');
   });
 });

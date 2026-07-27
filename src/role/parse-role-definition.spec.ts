@@ -29,6 +29,22 @@ const FULL_AGENT_MD: string = [
   '',
 ].join('\n');
 
+const INSTALLED_AGENT_MD: string = [
+  '---',
+  'omd-output: out.json',
+  'omd-schema: out.schema.json',
+  'omd-max-turns: 5',
+  '---',
+  '<!-- omd:begin id=role-worker version=0.0.0 digest=sha256:abc -->',
+  '## Mission',
+  '',
+  'You are the worker.',
+  '<!-- omd:end id=role-worker -->',
+  '',
+  'My own note.',
+  '',
+].join('\n');
+
 const MINIMAL_AGENT_MD: string = [
   '---',
   'omd-output: out.json',
@@ -77,6 +93,19 @@ describe('parseRoleDefinition', () => {
     expect(role.contextPolicy).toBe('isolated');
     expect(role.wallTimeMs).toBeNull();
     expect(role.promptBody).toBe('Do the work.');
+  });
+
+  it('excludes the owned-region markers from the prompt body', () => {
+    const role: RoleDefinition = parseRoleDefinition(
+      INSTALLED_AGENT_MD,
+      'worker',
+    );
+
+    expect(role.promptBody).toBe(
+      ['## Mission', '', 'You are the worker.', '', 'My own note.'].join('\n'),
+    );
+    expect(role.promptBody).not.toContain('omd:begin');
+    expect(role.promptBody).not.toContain('omd:end');
   });
 
   it('ignores unrecognized omd-* keys and other unknown frontmatter keys', () => {

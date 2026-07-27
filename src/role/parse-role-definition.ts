@@ -1,4 +1,5 @@
 import { parse as parseYaml } from 'yaml';
+import { withoutRegionMarkers } from '../ownership/without-region-markers';
 import type { ContextPolicy } from './context-policy';
 import { DURATION_PATTERN } from './duration-pattern';
 import { DURATION_UNIT_MS } from './duration-unit-ms';
@@ -155,6 +156,6 @@ export function parseRoleDefinition(
     maxTurns: requirePositiveInt(fields['omd-max-turns'], 'omd-max-turns'),
     contextPolicy,
     wallTimeMs: parseWallTimeMs(fields['omd-wall-time']),
-    promptBody: body.trim(),
+    promptBody: withoutRegionMarkers(body, 'markdown').trim(),
   };
 }

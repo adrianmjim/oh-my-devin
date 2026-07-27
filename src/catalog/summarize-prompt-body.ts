@@ -1,3 +1,4 @@
+import { isHeadingLine } from './is-heading-line';
 import { MAX_SUMMARY_LENGTH } from './max-summary-length';
 
 export function summarizePromptBody(promptBody: string): string {
@@ -5,7 +6,9 @@ export function summarizePromptBody(promptBody: string): string {
     promptBody
       .split('\n')
       .map((line: string): string => line.trim())
-      .find((line: string): boolean => line.length > 0) ?? '';
+      .find(
+        (line: string): boolean => line.length > 0 && !isHeadingLine(line),
+      ) ?? '';
   return firstLine.length > MAX_SUMMARY_LENGTH
     ? `${firstLine.slice(0, MAX_SUMMARY_LENGTH - 3)}...`
     : firstLine;
