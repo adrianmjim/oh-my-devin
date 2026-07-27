@@ -1,16 +1,20 @@
 import { describe, expect, it } from 'vitest';
+import { validateAgainstSchema } from '../artifact/validate-against-schema';
 import { parseRoleDefinition } from '../role/parse-role-definition';
 import type { RoleDefinition } from '../role/role-definition';
+import { arrayItemSchema } from '../testing/array-item-schema';
 import { assertGenericRoleContract } from '../testing/assert-generic-role-contract';
 import { bodyHeadings } from '../testing/body-headings';
 import { goodExampleBlock } from '../testing/good-example-block';
 import { ROLE_BODY_SECTIONS } from '../testing/role-body-sections';
 import { ARCHITECT_ROLE_AGENT_MD } from './architect-role-agent-md';
+import { ARCHITECT_ROLE_SCHEMA } from './architect-role-schema';
 
 const ROLE: RoleDefinition = parseRoleDefinition(
   ARCHITECT_ROLE_AGENT_MD,
   'architect',
 );
+const STEP_SCHEMA: object = arrayItemSchema(ARCHITECT_ROLE_SCHEMA, 'steps');
 
 describe('ARCHITECT_ROLE_AGENT_MD', () => {
   it('parses as the architect role definition', () => {
@@ -46,10 +50,13 @@ describe('ARCHITECT_ROLE_AGENT_MD', () => {
     expect(ROLE.promptBody).toContain('review.json');
   });
 
-  it('models a good example the role can copy verbatim', () => {
-    expect(() => {
-      JSON.parse(goodExampleBlock(ROLE.promptBody));
-    }).not.toThrow();
+  it('models a good example the installed schema accepts', () => {
+    expect(
+      validateAgainstSchema(
+        JSON.parse(goodExampleBlock(ROLE.promptBody)),
+        STEP_SCHEMA,
+      ),
+    ).toEqual([]);
   });
 
   it('honors the generic role contract', () => {

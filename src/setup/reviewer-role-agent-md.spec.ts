@@ -1,15 +1,22 @@
 import { describe, expect, it } from 'vitest';
+import { validateAgainstSchema } from '../artifact/validate-against-schema';
 import { parseRoleDefinition } from '../role/parse-role-definition';
 import type { RoleDefinition } from '../role/role-definition';
+import { arrayItemSchema } from '../testing/array-item-schema';
 import { assertGenericRoleContract } from '../testing/assert-generic-role-contract';
 import { bodyHeadings } from '../testing/body-headings';
 import { goodExampleBlock } from '../testing/good-example-block';
 import { ROLE_BODY_SECTIONS } from '../testing/role-body-sections';
 import { REVIEWER_ROLE_AGENT_MD } from './reviewer-role-agent-md';
+import { REVIEWER_ROLE_SCHEMA } from './reviewer-role-schema';
 
 const ROLE: RoleDefinition = parseRoleDefinition(
   REVIEWER_ROLE_AGENT_MD,
   'reviewer',
+);
+const FINDING_SCHEMA: object = arrayItemSchema(
+  REVIEWER_ROLE_SCHEMA,
+  'findings',
 );
 
 describe('REVIEWER_ROLE_AGENT_MD', () => {
@@ -56,10 +63,13 @@ describe('REVIEWER_ROLE_AGENT_MD', () => {
     expect(ROLE.promptBody).toContain('`request_changes`');
   });
 
-  it('models a good example the role can copy verbatim', () => {
-    expect(() => {
-      JSON.parse(goodExampleBlock(ROLE.promptBody));
-    }).not.toThrow();
+  it('models a good example the installed schema accepts', () => {
+    expect(
+      validateAgainstSchema(
+        JSON.parse(goodExampleBlock(ROLE.promptBody)),
+        FINDING_SCHEMA,
+      ),
+    ).toEqual([]);
   });
 
   it('honors the generic role contract', () => {
