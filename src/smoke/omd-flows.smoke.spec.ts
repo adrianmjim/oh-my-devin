@@ -122,7 +122,7 @@ describe("omd's own flows smoke suite", () => {
         const result: CommandResult = await runOmd(scratchDir, [
           'run',
           'reviewer',
-          'Assess the empty diff and write {"verdict":"approve"} to review.json.',
+          'Assess the empty diff and write {"verdict":"approve","findings":[]} to review.json.',
           '--json',
         ]);
         const report: JsonReport = JSON.parse(result.stdout) as JsonReport;
