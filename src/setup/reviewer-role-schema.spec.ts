@@ -38,6 +38,31 @@ describe('REVIEWER_ROLE_SCHEMA', () => {
     expect(FINDINGS['minItems']).toBeUndefined();
   });
 
+  it('ties each verdict to the findings that justify it', () => {
+    expect(SCHEMA['allOf']).toEqual([
+      {
+        if: {
+          properties: { verdict: { const: 'request_changes' } },
+          required: ['verdict'],
+        },
+        then: { properties: { findings: { minItems: 1 } } },
+      },
+      {
+        if: {
+          properties: { verdict: { const: 'approve' } },
+          required: ['verdict'],
+        },
+        then: {
+          properties: {
+            findings: {
+              items: { properties: { severity: { enum: ['medium', 'low'] } } },
+            },
+          },
+        },
+      },
+    ]);
+  });
+
   it('rates every finding on the severity scale', () => {
     expect(FINDING_PROPERTIES['severity']).toEqual({
       type: 'string',
@@ -122,10 +147,49 @@ describe('REVIEWER_ROLE_SCHEMA', () => {
     ).not.toEqual([]);
   });
 
+  it('rejects a rejection that states no finding', () => {
+    expect(
+      validateAgainstSchema(
+        { verdict: 'request_changes', findings: [] },
+        SCHEMA,
+      ),
+    ).not.toEqual([]);
+  });
+
+  it('rejects an approval that leaves a blocker open', () => {
+    for (const severity of ['critical', 'high']) {
+      expect(
+        validateAgainstSchema(
+          {
+            verdict: 'approve',
+            findings: [{ severity, location: 'a.ts', summary: 's', fix: 'f' }],
+          },
+          SCHEMA,
+        ),
+        severity,
+      ).not.toEqual([]);
+    }
+  });
+
   it('accepts an approval with nothing to report', () => {
     expect(
       validateAgainstSchema({ verdict: 'approve', findings: [] }, SCHEMA),
     ).toEqual([]);
+  });
+
+  it('accepts an approval annotated with minor findings', () => {
+    for (const severity of ['medium', 'low']) {
+      expect(
+        validateAgainstSchema(
+          {
+            verdict: 'approve',
+            findings: [{ severity, location: 'a.ts', summary: 's', fix: 'f' }],
+          },
+          SCHEMA,
+        ),
+        severity,
+      ).toEqual([]);
+    }
   });
 
   it('accepts a rated finding with a concrete fix', () => {

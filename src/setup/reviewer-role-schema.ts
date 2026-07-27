@@ -24,6 +24,28 @@ export const REVIEWER_ROLE_SCHEMA: string = `${JSON.stringify(
       },
       notes: { type: 'string' },
     },
+    allOf: [
+      {
+        if: {
+          properties: { verdict: { const: 'request_changes' } },
+          required: ['verdict'],
+        },
+        then: { properties: { findings: { minItems: 1 } } },
+      },
+      {
+        if: {
+          properties: { verdict: { const: 'approve' } },
+          required: ['verdict'],
+        },
+        then: {
+          properties: {
+            findings: {
+              items: { properties: { severity: { enum: ['medium', 'low'] } } },
+            },
+          },
+        },
+      },
+    ],
     additionalProperties: false,
   },
   null,
