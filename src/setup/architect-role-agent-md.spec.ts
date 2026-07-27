@@ -1,11 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { parseRoleDefinition } from '../role/parse-role-definition';
 import type { RoleDefinition } from '../role/role-definition';
-import { AGENT_TOOL_VOCABULARY } from '../testing/agent-tool-vocabulary';
+import { assertGenericRoleContract } from '../testing/assert-generic-role-contract';
 import { bodyHeadings } from '../testing/body-headings';
-import { ENGINE_FOREIGN_TOKENS } from '../testing/engine-foreign-tokens';
 import { goodExampleBlock } from '../testing/good-example-block';
-import { MAX_ROLE_BODY_LINES } from '../testing/max-role-body-lines';
 import { ROLE_BODY_SECTIONS } from '../testing/role-body-sections';
 import { ARCHITECT_ROLE_AGENT_MD } from './architect-role-agent-md';
 
@@ -54,32 +52,7 @@ describe('ARCHITECT_ROLE_AGENT_MD', () => {
     }).not.toThrow();
   });
 
-  it('reaches for no engine-foreign tooling or state', () => {
-    for (const token of ENGINE_FOREIGN_TOKENS) {
-      expect(ROLE.promptBody, token).not.toContain(token);
-    }
-  });
-
-  it('names every tool it is granted and no tool it is not', () => {
-    for (const tool of ROLE.tools) {
-      expect(ROLE.promptBody, tool).toContain(`\`${tool}\``);
-    }
-    for (const tool of AGENT_TOOL_VOCABULARY) {
-      if (!ROLE.tools.includes(tool)) {
-        expect(ROLE.promptBody, tool).not.toContain(`\`${tool}\``);
-      }
-    }
-  });
-
-  it('leaves the per-invocation contract to the run-time preamble', () => {
-    expect(ROLE.promptBody).not.toContain('.devin/schemas/');
-    expect(ROLE.promptBody).not.toContain('omd-max-turns');
-    expect(ROLE.promptBody).not.toContain('omd-wall-time');
-  });
-
-  it('stays within the role-body length budget', () => {
-    expect(ROLE.promptBody.split('\n').length).toBeLessThanOrEqual(
-      MAX_ROLE_BODY_LINES,
-    );
+  it('honors the generic role contract', () => {
+    assertGenericRoleContract(ROLE);
   });
 });
