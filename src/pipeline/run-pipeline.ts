@@ -1,8 +1,11 @@
 import { ArtifactStore } from '../handoff/artifact-store';
+import { baseStageEntry } from '../handoff/base-stage-entry';
 import { composeStageInputs } from '../handoff/compose-stage-inputs';
 import type { HandoffArtifactName } from '../handoff/handoff-artifact-name';
 import type { PipelineStage } from '../handoff/pipeline-stage';
 import { isPipelineStage } from '../handoff/is-pipeline-stage';
+import { reworkStageEntry } from '../handoff/rework-stage-entry';
+import type { StageEntry } from '../handoff/stage-entry';
 import { generateRunId } from '../observability/generate-run-id';
 import type { RunId } from '../observability/run-id';
 import type { RunObserver } from '../observability/run-observer';
@@ -43,8 +46,9 @@ export async function runPipeline(
       artifactPath: null,
     });
 
-    let current: PipelineStage = entryStage(options.team);
+    let entry: StageEntry = baseStageEntry(entryStage(options.team));
     for (;;) {
+      const current: PipelineStage = entry.stage;
       await observer?.append({
         type: 'stageStarted',
         timestamp: pipelineNow(options),
@@ -52,9 +56,10 @@ export async function runPipeline(
         stageIndex,
       });
       const inputs: ReadonlyMap<HandoffArtifactName, string> =
-        composeStageInputs(current, store);
+        composeStageInputs(entry, store);
       const result: StageResult = await options.runStage({
         stage: current,
+        reworkFrom: entry.reworkFrom,
         inputs,
       });
       const stageValid: boolean =
@@ -118,7 +123,10 @@ export async function runPipeline(
         );
         return terminatePipeline(options, runId, records, 'halted', current);
       }
-      current = successor;
+      entry =
+        decision === 'reject'
+          ? reworkStageEntry(successor, current)
+          : baseStageEntry(successor);
       stageIndex += 1;
     }
   } catch (error: unknown) {

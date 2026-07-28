@@ -283,6 +283,66 @@ describe('runPipeline', () => {
     expect(result.outcome).toBe('succeeded');
   });
 
+  it('conveys the rejecting reviewer findings and the rejected diff to the re-entered executor', async () => {
+    const stages = new RecordingStages({});
+    const gate = new RecordingGate([
+      'approve',
+      'approve',
+      'reject',
+      'approve',
+      'approve',
+    ]);
+
+    await runPipeline({
+      team: team(),
+      task: 'build the widget',
+      runStage: stages.run,
+      gate: gate.decide,
+    });
+
+    const first: StageRequest | undefined = stages.requests[1];
+    const reentered: StageRequest | undefined = stages.requests[3];
+    expect(first?.stage).toBe('executor');
+    expect([...(first?.inputs.keys() ?? [])]).toEqual([
+      'requirements',
+      'architecture.json',
+    ]);
+    expect(first?.reworkFrom).toBeNull();
+
+    expect(reentered?.stage).toBe('executor');
+    expect([...(reentered?.inputs.keys() ?? [])]).toEqual([
+      'requirements',
+      'architecture.json',
+      'review.json',
+      'diff',
+    ]);
+    expect(reentered?.inputs.get('review.json')).toBe('REV');
+    expect(reentered?.inputs.get('diff')).toBe('DIFF');
+    expect(reentered?.reworkFrom).toBe('reviewer');
+  });
+
+  it('conveys the base incoming set over an approving transition', async () => {
+    const stages = new RecordingStages({});
+    const gate = new RecordingGate(['approve', 'approve', 'approve']);
+
+    await runPipeline({
+      team: team(),
+      task: 'build the widget',
+      runStage: stages.run,
+      gate: gate.decide,
+    });
+
+    for (const request of stages.requests) {
+      expect(request.reworkFrom).toBeNull();
+      expect(request.inputs.has('review.json')).toBe(false);
+    }
+    expect([...(stages.requests[2]?.inputs.keys() ?? [])]).toEqual([
+      'requirements',
+      'diff',
+      'evidence.json',
+    ]);
+  });
+
   it('halts when a rejected stage has no declared successor', async () => {
     const stages = new RecordingStages({});
     const gate = new RecordingGate(['reject']);

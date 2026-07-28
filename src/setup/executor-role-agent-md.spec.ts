@@ -60,6 +60,44 @@ describe('EXECUTOR_ROLE_AGENT_MD', () => {
     expect(ROLE.promptBody).toContain('`failed`');
   });
 
+  it('reads a conveyed review.json as a rejected prior attempt', () => {
+    expect(ROLE.promptBody).toMatch(
+      /review\.json[\s\S]{0,160}?(rejected|prior attempt)/i,
+    );
+  });
+
+  it('directs the executor to resolve every finding rather than triage it away', () => {
+    expect(ROLE.promptBody).toMatch(/resolve every finding/i);
+  });
+
+  it('points the findings at the conveyed diff as the rejected work', () => {
+    expect(ROLE.promptBody).toMatch(
+      /diff[\s\S]{0,120}?finding|finding[\s\S]{0,120}?diff/i,
+    );
+  });
+
+  it('keeps the architecture governing the approach through a rework', () => {
+    expect(ROLE.promptBody).toMatch(/architecture\.json`? still governs/i);
+    expect(ROLE.promptBody).toMatch(/not a licence to redesign/i);
+  });
+
+  it('records a disputed finding in the evidence instead of dropping it', () => {
+    expect(ROLE.promptBody).toMatch(/disagree|dispute/i);
+    expect(ROLE.promptBody).toMatch(
+      /(disagree|dispute)[\s\S]{0,200}?evidence\.json/i,
+    );
+  });
+
+  it('keeps the rework contract inside the operating protocol', () => {
+    const sections: readonly string[] = ROLE.promptBody.split('\n## ');
+    const protocol: string | undefined = sections.find(
+      (section: string): boolean | undefined =>
+        section.startsWith('Operating protocol'),
+    );
+    expect(protocol).toMatch(/review\.json/);
+    expect(protocol).toMatch(/resolve every finding/i);
+  });
+
   it('models a good example the installed schema accepts', () => {
     expect(
       validateAgainstSchema(
