@@ -99,6 +99,7 @@ describe('createStageRunner', () => {
 
     const result: StageResult = await runStage({
       stage: 'architect',
+      reworkFrom: null,
       inputs: inputs([['requirements', 'build X']]),
     });
 
@@ -127,6 +128,7 @@ describe('createStageRunner', () => {
 
     const result: StageResult = await runStage({
       stage: 'executor',
+      reworkFrom: null,
       inputs: inputs([
         ['requirements', 'r'],
         ['architecture.json', 'A'],
@@ -152,6 +154,7 @@ describe('createStageRunner', () => {
 
     const result: StageResult = await runStage({
       stage: 'reviewer',
+      reworkFrom: null,
       inputs: inputs([
         ['requirements', 'r'],
         ['diff', 'D'],
@@ -177,6 +180,7 @@ describe('createStageRunner', () => {
 
     await runStage({
       stage: 'executor',
+      reworkFrom: null,
       inputs: inputs([
         ['requirements', 'REQ'],
         ['architecture.json', 'ARCH'],
@@ -210,6 +214,7 @@ describe('createStageRunner', () => {
 
     const result: StageResult = await runStage({
       stage: 'executor',
+      reworkFrom: null,
       inputs: inputs([
         ['requirements', 'r'],
         ['architecture.json', 'A'],
@@ -238,6 +243,7 @@ describe('createStageRunner', () => {
 
     await runStage({
       stage: 'architect',
+      reworkFrom: null,
       inputs: inputs([['requirements', 'r']]),
     });
 

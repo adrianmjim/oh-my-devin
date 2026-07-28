@@ -1,7 +1,6 @@
 import type { HandoffArtifactName } from '../handoff/handoff-artifact-name';
-import type { PipelineStage } from '../handoff/pipeline-stage';
+import type { StageEntry } from '../handoff/stage-entry';
 
-export interface StageRequest {
-  readonly stage: PipelineStage;
+export interface StageRequest extends StageEntry {
   readonly inputs: ReadonlyMap<HandoffArtifactName, string>;
 }
