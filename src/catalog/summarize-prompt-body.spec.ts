@@ -13,6 +13,48 @@ describe('summarizePromptBody', () => {
     expect(summarizePromptBody('\n  \n')).toBe('');
   });
 
+  it('skips a section heading and summarizes with the prose beneath it', () => {
+    expect(
+      summarizePromptBody('## Mission\n\nYou are the architect.\nYou plan.'),
+    ).toBe('You are the architect.');
+  });
+
+  it('skips a heading of any depth', () => {
+    expect(summarizePromptBody('# Role\n\n#### Mission\n\nDo the work.')).toBe(
+      'Do the work.',
+    );
+  });
+
+  it('keeps a line whose hash is not heading markup', () => {
+    expect(summarizePromptBody('#not-a-heading is the tag.')).toBe(
+      '#not-a-heading is the tag.',
+    );
+  });
+
+  it('is empty for a body of headings only', () => {
+    expect(summarizePromptBody('## Mission\n\n## Boundaries\n')).toBe('');
+  });
+
+  it('skips an empty heading', () => {
+    expect(summarizePromptBody('##\n\nDo the work.')).toBe('Do the work.');
+  });
+
+  it('skips a setext heading and its underline', () => {
+    expect(
+      summarizePromptBody('Architect\n=========\nYou design systems.'),
+    ).toBe('You design systems.');
+  });
+
+  it('skips a setext heading underlined with dashes', () => {
+    expect(summarizePromptBody('Mission\n---\nDo the work.')).toBe(
+      'Do the work.',
+    );
+  });
+
+  it('is empty for a body of setext headings only', () => {
+    expect(summarizePromptBody('Architect\n=========\n')).toBe('');
+  });
+
   it('elides a line longer than the summary bound', () => {
     const summary: string = summarizePromptBody('x'.repeat(200));
 

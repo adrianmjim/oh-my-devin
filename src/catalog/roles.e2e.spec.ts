@@ -13,6 +13,8 @@ interface RoleContract {
   readonly output: string;
 }
 
+const SEED_ROLES: readonly string[] = ['architect', 'executor', 'reviewer'];
+
 describe('omd roles (e2e)', () => {
   let project: E2eProject | null = null;
 
@@ -41,6 +43,33 @@ describe('omd roles (e2e)', () => {
     );
     expect(reviewer).toBeDefined();
     expect(reviewer?.output).toBe('review.json');
+  });
+
+  it('lists the installed roles with distinct summaries free of region markers', async () => {
+    project = await createE2eProject();
+    await project.run(['setup']);
+
+    const text: CommandResult = await project.run(['roles', 'list']);
+    expect(text.exitCode).toBe(0);
+    expect(text.stdout).not.toContain('omd:begin');
+    expect(text.stdout).not.toContain('omd:end');
+
+    const summaries: readonly string[] = SEED_ROLES.map(
+      (name: string): string => {
+        const line: string | undefined = text.stdout
+          .split('\n')
+          .find((candidate: string): boolean =>
+            candidate.startsWith(`${name} `),
+          );
+        expect(line).toBeDefined();
+        return (line ?? '').slice(name.length).trim();
+      },
+    );
+    for (const summary of summaries) {
+      expect(summary.length).toBeGreaterThan(0);
+      expect(summary.startsWith('#')).toBe(false);
+    }
+    expect(new Set(summaries).size).toBe(SEED_ROLES.length);
   });
 
   it('shows a role contract in text and json', async () => {

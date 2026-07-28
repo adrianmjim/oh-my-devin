@@ -15,7 +15,7 @@ function role(overrides: Partial<RoleDefinition>): RoleDefinition {
     maxTurns: 6,
     contextPolicy: 'isolated',
     wallTimeMs: null,
-    promptBody: 'Assess the diff.',
+    promptBody: '## Mission\n\nAssess the diff.',
     ...overrides,
   };
 }
@@ -52,9 +52,17 @@ describe('renderRoleShowText', () => {
     expect(text).toContain('allow=[(none)]');
   });
 
-  it('summarizes the prompt body', () => {
+  it('summarizes the prompt body with its first line of prose', () => {
     expect(renderRoleShowText(role({}))).toContain(
       'summary:       Assess the diff.',
     );
+  });
+
+  it('leaves the summary empty for a body that carries no prose', () => {
+    const lines: readonly string[] = renderRoleShowText(
+      role({ promptBody: '## Mission\n\n## Boundaries' }),
+    ).split('\n');
+
+    expect(lines[lines.length - 1]?.trimEnd()).toBe('summary:');
   });
 });
