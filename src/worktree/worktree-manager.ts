@@ -62,7 +62,7 @@ export class WorktreeManager implements WorktreeProvisioner {
         '--cached',
         '--',
         '.',
-        `:(exclude)${excludedArtifact}`,
+        `:(exclude,literal)${excludedArtifact}`,
       ],
     });
     return result.stdout;

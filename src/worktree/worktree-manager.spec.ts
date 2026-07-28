@@ -174,8 +174,45 @@ describe('WorktreeManager', () => {
       '--cached',
       '--',
       '.',
-      ':(exclude)evidence.json',
+      ':(exclude,literal)evidence.json',
     ]);
+  });
+
+  it('excludes only the artifact itself when its name carries glob characters', async () => {
+    const repo: string = await mkdtemp(join(tmpdir(), 'omd-capture-glob-'));
+    const runner: ProcessCommandRunner = new ProcessCommandRunner(repo);
+    try {
+      await runner.run({ command: 'git', args: ['-C', repo, 'init', '-q'] });
+      await runner.run({
+        command: 'git',
+        args: ['-C', repo, 'config', 'user.email', 'omd@example.com'],
+      });
+      await runner.run({
+        command: 'git',
+        args: ['-C', repo, 'config', 'user.name', 'omd'],
+      });
+      await writeFile(join(repo, 'evidence1.json'), 'source\n', 'utf8');
+      await runner.run({ command: 'git', args: ['-C', repo, 'add', '-A'] });
+      await runner.run({
+        command: 'git',
+        args: ['-C', repo, 'commit', '-qm', 'base'],
+      });
+
+      await writeFile(join(repo, 'evidence1.json'), 'changed\n', 'utf8');
+      await writeFile(join(repo, 'evidence[1].json'), '{}\n', 'utf8');
+
+      const manager = new WorktreeManager(runner, repo);
+      const diff: string = await manager.captureDiff(
+        { instanceId: 'exec-0', path: repo },
+        'evidence[1].json',
+      );
+
+      expect(diff).toContain('evidence1.json');
+      expect(diff).toContain('changed');
+      expect(diff).not.toContain('evidence[1].json');
+    } finally {
+      await rm(repo, { recursive: true, force: true });
+    }
   });
 
   it('excludes the declared artifact from a real git diff', async () => {

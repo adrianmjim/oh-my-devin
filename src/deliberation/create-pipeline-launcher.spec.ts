@@ -64,7 +64,7 @@ describe('createPipelineLauncher', () => {
             maxTurns: 8,
             wallTimeMs: 0,
             artifactPath: `${request.stage}.json`,
-            writeScope: 'artifact',
+            writeScope: request.stage === 'executor' ? 'worktree' : 'artifact',
             artifactValid: true,
             validationErrors: [],
             denyRule: null,
