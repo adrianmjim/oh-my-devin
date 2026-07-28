@@ -16,6 +16,7 @@ const ROLE: RoleDefinition = {
   maxTurns: 5,
   contextPolicy: 'isolated',
   wallTimeMs: null,
+  writeScope: 'artifact',
   promptBody: 'Do the work.',
 };
 

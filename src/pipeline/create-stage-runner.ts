@@ -26,6 +26,7 @@ export function createStageRunner(deps: StageRunnerDeps): StageRunner {
         runner: deps.runnerFor(worktree.path),
         clock: deps.clock,
         lookup,
+        provisionedWorktree: true,
       });
 
       if (report.failureTier !== null || !report.artifactValid) {
@@ -43,8 +44,11 @@ export function createStageRunner(deps: StageRunnerDeps): StageRunner {
         ROLE_ARTIFACT[request.stage],
         await deps.readArtifact(join(worktree.path, report.artifactPath)),
       );
-      if (request.stage === 'executor') {
-        produced.set('diff', await deps.worktrees.captureDiff(worktree));
+      if (report.writeScope === 'worktree') {
+        produced.set(
+          'diff',
+          await deps.worktrees.captureDiff(worktree, report.artifactPath),
+        );
       }
       return { report, produced };
     } finally {

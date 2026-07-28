@@ -16,6 +16,7 @@ function role(overrides: Partial<RoleDefinition>): RoleDefinition {
     maxTurns: 5,
     contextPolicy: 'isolated',
     wallTimeMs: null,
+    writeScope: 'artifact',
     promptBody: 'Do the work.',
     ...overrides,
   };
@@ -23,7 +24,9 @@ function role(overrides: Partial<RoleDefinition>): RoleDefinition {
 
 describe('compileRunBundle', () => {
   it('compiles the agent config bundle of a role', () => {
-    expect(compileRunBundle(role({})).allowed_tools).toEqual(['read']);
+    expect(compileRunBundle(role({}), '/tmp/omd-run').allowed_tools).toEqual([
+      'read',
+    ]);
   });
 
   it('reports a deny rule over its own artifact as a usage error', () => {
@@ -32,6 +35,7 @@ describe('compileRunBundle', () => {
         role({
           permissions: { allow: [], deny: ['Write(out.json)'], ask: [] },
         }),
+        '/tmp/omd-run',
       ),
     ).toThrow(UsageError);
   });

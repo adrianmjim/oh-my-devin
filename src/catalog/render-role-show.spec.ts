@@ -16,6 +16,7 @@ const ROLE: RoleDefinition = {
   maxTurns: 8,
   contextPolicy: 'isolated',
   wallTimeMs: 600000,
+  writeScope: 'artifact',
   promptBody: 'You are the reviewer. Assess the diff.',
 };
 

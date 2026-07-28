@@ -2,12 +2,13 @@ import { CouncilDeclarationError } from './council-declaration-error';
 import { parseSeatFlag } from './parse-seat-flag';
 import { parseSeatModel } from './parse-seat-model';
 import { requireCouncilString } from './require-council-string';
+import type { RoleWriteScopes } from './role-write-scopes';
 import type { SeatDraft } from './seat-draft';
 
 export function parseSeatDraft(
   entry: unknown,
   index: number,
-  knownRoles: readonly string[],
+  roleScopes: RoleWriteScopes,
 ): SeatDraft {
   if (entry === null || typeof entry !== 'object' || Array.isArray(entry)) {
     throw new CouncilDeclarationError(`seat ${index} must be a mapping`);
@@ -17,9 +18,14 @@ export function parseSeatDraft(
     fields['role'],
     `seats[${index}].role`,
   );
-  if (!knownRoles.includes(role)) {
+  if (!roleScopes.has(role)) {
     throw new CouncilDeclarationError(
       `seat "${role}" names a role with no definition`,
+    );
+  }
+  if (roleScopes.get(role) === 'worktree') {
+    throw new CouncilDeclarationError(
+      `seats[${index}] "${role}" declares the "worktree" write scope, which a council seat cannot hold: seat worktrees are torn down with no diff capture`,
     );
   }
   const lens: string = requireCouncilString(

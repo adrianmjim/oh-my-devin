@@ -10,6 +10,8 @@ describe('PROBE_ROLE', () => {
   });
 
   it('compiles into an agent config bundle', () => {
-    expect(compileAgentConfigBundle(PROBE_ROLE).allowed_tools).toEqual([]);
+    expect(
+      compileAgentConfigBundle(PROBE_ROLE, '/tmp/omd-doctor').allowed_tools,
+    ).toEqual([]);
   });
 });

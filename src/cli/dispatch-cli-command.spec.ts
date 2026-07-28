@@ -1,17 +1,41 @@
 import { readFile } from 'node:fs/promises';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProcessCommandRunner } from '../engine/process-command-runner';
+import { UsageError } from '../run/usage-error';
 import { CLI_USAGE } from './cli-usage';
 import { dispatchCliCommand } from './dispatch-cli-command';
+import { renderCliError } from './render-cli-error';
 
 describe('dispatchCliCommand', () => {
   let cwd: string;
   let userConfigDir: string;
   let runner: ProcessCommandRunner;
   let written: string[];
+
+  async function scaffoldConstructor(): Promise<void> {
+    const roleDir: string = join(cwd, '.devin', 'agents', 'executor');
+    await mkdir(roleDir, { recursive: true });
+    await writeFile(
+      join(roleDir, 'AGENT.md'),
+      [
+        '---',
+        'omd-output: evidence.json',
+        'omd-schema: evidence.schema.json',
+        'omd-max-turns: 12',
+        'omd-write-scope: worktree',
+        '---',
+        'You are the executor.',
+      ].join('\n'),
+      'utf8',
+    );
+    await writeFile(
+      join(cwd, 'evidence.schema.json'),
+      JSON.stringify({ type: 'object' }),
+    );
+  }
 
   beforeEach(async () => {
     cwd = await mkdtemp(join(tmpdir(), 'omd-dispatch-project-'));
@@ -95,5 +119,49 @@ describe('dispatchCliCommand', () => {
     await expect(
       readFile(join(cwd, '.omd', 'mode.json'), 'utf8'),
     ).rejects.toThrow();
+  });
+
+  it('refuses a worktree-scoped role for a blocking run, as a usage error', async () => {
+    await scaffoldConstructor();
+
+    const rejection: unknown = await dispatchCliCommand(
+      {
+        kind: 'run',
+        role: 'executor',
+        task: 'implement',
+        json: false,
+        detach: false,
+      },
+      cwd,
+      userConfigDir,
+      runner,
+    ).catch((error: unknown): unknown => error);
+
+    expect(rejection).toBeInstanceOf(UsageError);
+    expect(renderCliError(rejection, false).exitCode).toBe(64);
+    expect(renderCliError(rejection, false).stderrText).toContain(
+      'role "executor" declares the "worktree" write scope',
+    );
+  });
+
+  it('refuses a worktree-scoped role for a detached run before launching it', async () => {
+    await scaffoldConstructor();
+
+    const rejection: unknown = await dispatchCliCommand(
+      {
+        kind: 'run',
+        role: 'executor',
+        task: 'implement',
+        json: false,
+        detach: true,
+      },
+      cwd,
+      userConfigDir,
+      runner,
+    ).catch((error: unknown): unknown => error);
+
+    expect(rejection).toBeInstanceOf(UsageError);
+    expect(renderCliError(rejection, false).exitCode).toBe(64);
+    expect(written.join('')).toBe('');
   });
 });

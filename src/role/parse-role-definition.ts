@@ -7,9 +7,11 @@ import { FRONTMATTER_PATTERN } from './frontmatter-pattern';
 import { isContextPolicy } from './is-context-policy';
 import type { EngineKind } from './engine-kind';
 import { isEngineKind } from './is-engine-kind';
+import { isWriteScope } from './is-write-scope';
 import type { RoleDefinition } from './role-definition';
 import { RoleDefinitionError } from './role-definition-error';
 import type { RolePermissions } from './role-permissions';
+import type { WriteScope } from './write-scope';
 
 export function parseRoleDefinition(
   agentMarkdown: string,
@@ -142,6 +144,16 @@ export function parseRoleDefinition(
         ? contextValue
         : fail(`unsupported "omd-context": ${JSON.stringify(contextValue)}`);
 
+  const writeScopeValue: unknown = fields['omd-write-scope'];
+  const writeScope: WriteScope =
+    writeScopeValue === undefined || writeScopeValue === null
+      ? 'artifact'
+      : isWriteScope(writeScopeValue)
+        ? writeScopeValue
+        : fail(
+            `unsupported "omd-write-scope": ${JSON.stringify(writeScopeValue)}`,
+          );
+
   const toolsValue: unknown = fields['allowed-tools'] ?? fields['tools'];
 
   return {
@@ -156,6 +168,7 @@ export function parseRoleDefinition(
     maxTurns: requirePositiveInt(fields['omd-max-turns'], 'omd-max-turns'),
     contextPolicy,
     wallTimeMs: parseWallTimeMs(fields['omd-wall-time']),
+    writeScope,
     promptBody: withoutRegionMarkers(body, 'markdown').trim(),
   };
 }

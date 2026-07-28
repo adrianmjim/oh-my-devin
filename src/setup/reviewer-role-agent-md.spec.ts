@@ -34,6 +34,11 @@ describe('REVIEWER_ROLE_AGENT_MD', () => {
     expect(ROLE.contextPolicy).toBe('isolated');
   });
 
+  it('stays artifact-scoped by declaring no write scope at all', () => {
+    expect(REVIEWER_ROLE_AGENT_MD).not.toContain('omd-write-scope');
+    expect(ROLE.writeScope).toBe('artifact');
+  });
+
   it('grants the read-only toolset and writes only its own artifact', () => {
     expect(ROLE.tools).toEqual(['read', 'grep', 'create', 'edit']);
     expect(ROLE.permissions.allow).toEqual(['Write(review.json)']);

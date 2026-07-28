@@ -16,6 +16,7 @@ function role(name: string, promptBody: string): RoleDefinition {
     maxTurns: 5,
     contextPolicy: 'isolated',
     wallTimeMs: null,
+    writeScope: 'artifact',
     promptBody,
   };
 }

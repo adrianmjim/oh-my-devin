@@ -5,10 +5,12 @@ import { ContractCompilationError } from './contract-compilation-error';
 import type { PermissionRule } from './permission-rule';
 import { parsePermissionRule } from './parse-permission-rule';
 import { permissionRuleMatchesPath } from './permission-rule-matches-path';
+import { worktreeWriteRule } from './worktree-write-rule';
 import { WRITE_VERB } from './write-verb';
 
 export function compileAgentConfigBundle(
   role: RoleDefinition,
+  workingDirectory: string,
 ): AgentConfigBundle {
   const artifact: string = role.outputArtifact;
 
@@ -37,6 +39,9 @@ export function compileAgentConfigBundle(
   }
   if (!artifactWriteDeclared) {
     allow.unshift(`Write(${artifact})`);
+  }
+  if (role.writeScope === 'worktree') {
+    allow.push(worktreeWriteRule(workingDirectory));
   }
 
   return {

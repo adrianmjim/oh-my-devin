@@ -14,6 +14,7 @@ const ROLE: RoleDefinition = {
   maxTurns: 6,
   contextPolicy: 'isolated',
   wallTimeMs: null,
+  writeScope: 'artifact',
   promptBody: '## Mission\n\nAssess the diff.\nThen write the verdict.',
 };
 
@@ -31,6 +32,7 @@ describe('renderRoleShowJson', () => {
       maxTurns: 6,
       context: 'isolated',
       wallTimeMs: null,
+      writeScope: 'artifact',
       promptSummary: 'Assess the diff.',
     });
   });
@@ -50,5 +52,11 @@ describe('renderRoleShowJson', () => {
         promptBody: '## Mission\n\n## Boundaries',
       }).promptSummary,
     ).toBe('');
+  });
+
+  it('carries a declared worktree write scope', () => {
+    expect(
+      renderRoleShowJson({ ...ROLE, writeScope: 'worktree' }).writeScope,
+    ).toBe('worktree');
   });
 });

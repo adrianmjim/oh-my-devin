@@ -45,14 +45,25 @@ export class WorktreeManager implements WorktreeProvisioner {
     return { instanceId, path };
   }
 
-  public async captureDiff(worktree: Worktree): Promise<string> {
+  public async captureDiff(
+    worktree: Worktree,
+    excludedArtifact: string,
+  ): Promise<string> {
     await this.runner.run({
       command: 'git',
       args: ['-C', worktree.path, 'add', '-A'],
     });
     const result: CommandResult = await this.runner.run({
       command: 'git',
-      args: ['-C', worktree.path, 'diff', '--cached'],
+      args: [
+        '-C',
+        worktree.path,
+        'diff',
+        '--cached',
+        '--',
+        '.',
+        `:(exclude)${excludedArtifact}`,
+      ],
     });
     return result.stdout;
   }

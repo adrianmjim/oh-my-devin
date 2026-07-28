@@ -15,6 +15,7 @@ const ROLE: RoleDefinition = {
   maxTurns: 8,
   contextPolicy: 'isolated',
   wallTimeMs: null,
+  writeScope: 'artifact',
   promptBody: 'You are the reviewer.',
 };
 

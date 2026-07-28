@@ -562,6 +562,7 @@ describe('runRole', () => {
       { projectDir: dir, userConfigDir: null },
       'reviewer',
       'assess the diff',
+      { workingDirectory: dir, provisionedWorktree: false },
     );
     await rm(join(dir, '.devin', 'agents', 'reviewer'), {
       recursive: true,
@@ -613,6 +614,7 @@ describe('runRole', () => {
       { projectDir: dir, userConfigDir },
       'reviewer',
       'assess the diff',
+      { workingDirectory: dir, provisionedWorktree: false },
     );
 
     const report: RunReport = await runRole({

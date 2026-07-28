@@ -123,6 +123,7 @@ async function scaffoldCouncil(project: E2eProject): Promise<void> {
       `omd-output: ${stage.artifact}`,
       `omd-schema: .devin/schemas/${stage.role}.schema.json`,
       'omd-max-turns: 3',
+      ...(stage.role === 'executor' ? ['omd-write-scope: worktree'] : []),
       '---',
       `You are the ${stage.role}.`,
       '',

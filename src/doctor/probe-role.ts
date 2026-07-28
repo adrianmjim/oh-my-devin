@@ -12,5 +12,6 @@ export const PROBE_ROLE: RoleDefinition = {
   maxTurns: 1,
   contextPolicy: 'isolated',
   wallTimeMs: null,
+  writeScope: 'artifact',
   promptBody: 'probe',
 };

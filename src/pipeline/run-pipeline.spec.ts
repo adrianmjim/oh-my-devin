@@ -57,6 +57,7 @@ function report(
     maxTurns: 8,
     wallTimeMs: 0,
     artifactPath: `${stage}.json`,
+    writeScope: 'artifact',
     artifactValid: true,
     validationErrors: [],
     denyRule: null,

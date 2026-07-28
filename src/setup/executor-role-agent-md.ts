@@ -16,6 +16,7 @@ export const EXECUTOR_ROLE_AGENT_MD: string = [
   'omd-schema: .devin/schemas/evidence.schema.json',
   'omd-max-turns: 6',
   'omd-context: isolated',
+  'omd-write-scope: worktree',
   '---',
   '',
   '## Mission',

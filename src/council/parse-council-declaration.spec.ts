@@ -1,14 +1,16 @@
 import { describe, expect, it } from 'vitest';
+import type { WriteScope } from '../role/write-scope';
 import type { CouncilDeclaration } from './council-declaration';
 import { CouncilDeclarationError } from './council-declaration-error';
 import { parseCouncilDeclaration } from './parse-council-declaration';
+import type { RoleWriteScopes } from './role-write-scopes';
 
-const KNOWN: readonly string[] = [
-  'architect',
-  'product-manager',
-  'sre',
-  'security-reviewer',
-];
+const KNOWN: RoleWriteScopes = new Map<string, WriteScope>([
+  ['architect', 'artifact'],
+  ['product-manager', 'artifact'],
+  ['sre', 'artifact'],
+  ['security-reviewer', 'artifact'],
+]);
 
 const VALID: string = [
   'name: architecture-council',
@@ -119,7 +121,10 @@ describe('parseCouncilDeclaration', () => {
   });
 
   it('rejects a literal role name that collides with a generated seat id', () => {
-    const known: readonly string[] = [...KNOWN, 'architect-1'];
+    const known: RoleWriteScopes = new Map<string, WriteScope>([
+      ...KNOWN,
+      ['architect-1', 'artifact'],
+    ]);
     const yaml: string = [
       'name: colliding',
       'seats:',
@@ -207,5 +212,34 @@ describe('parseCouncilDeclaration', () => {
     expect(() => parseCouncilDeclaration(yaml, KNOWN)).toThrow(
       CouncilDeclarationError,
     );
+  });
+
+  it('rejects a seat naming a worktree-scoped role', () => {
+    const known: RoleWriteScopes = new Map<string, WriteScope>([
+      ...KNOWN,
+      ['executor', 'worktree'],
+    ]);
+    const yaml: string = [
+      'name: build-council',
+      'seats:',
+      '  - role: architect',
+      '    lens: system-boundaries',
+      '  - role: executor',
+      '    lens: implementation',
+      'deliberation:',
+      '  rounds_cap: 2',
+    ].join('\n');
+
+    expect(() => parseCouncilDeclaration(yaml, known)).toThrow(
+      CouncilDeclarationError,
+    );
+    expect(() => parseCouncilDeclaration(yaml, known)).toThrow(/executor/);
+    expect(() => parseCouncilDeclaration(yaml, known)).toThrow(/worktree/);
+  });
+
+  it('accepts a council whose seats are all artifact-scoped', () => {
+    const council: CouncilDeclaration = parseCouncilDeclaration(VALID, KNOWN);
+
+    expect(council.seats).toHaveLength(4);
   });
 });

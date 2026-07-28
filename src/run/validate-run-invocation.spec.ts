@@ -39,21 +39,56 @@ describe('validateRunInvocation', () => {
   it('resolves without throwing for a defined role and a non-empty task', async () => {
     await scaffold();
     await expect(
-      validateRunInvocation(lookup, 'reviewer', 'assess the diff'),
+      validateRunInvocation(lookup, 'reviewer', 'assess the diff', {
+        workingDirectory: dir,
+        provisionedWorktree: false,
+      }),
     ).resolves.toBeUndefined();
   });
 
   it('rejects an empty task as a usage error', async () => {
     await scaffold();
     await expect(
-      validateRunInvocation(lookup, 'reviewer', '   '),
+      validateRunInvocation(lookup, 'reviewer', '   ', {
+        workingDirectory: dir,
+        provisionedWorktree: false,
+      }),
     ).rejects.toThrow(UsageError);
   });
 
   it('rejects an unresolvable role as a usage error', async () => {
     await scaffold();
     await expect(
-      validateRunInvocation(lookup, 'ghost', 'assess the diff'),
+      validateRunInvocation(lookup, 'ghost', 'assess the diff', {
+        workingDirectory: dir,
+        provisionedWorktree: false,
+      }),
+    ).rejects.toThrow(UsageError);
+  });
+
+  it('rejects a worktree-scoped role outside a provisioned worktree', async () => {
+    const roleDir: string = join(dir, '.devin', 'agents', 'executor');
+    await mkdir(roleDir, { recursive: true });
+    await writeFile(
+      join(roleDir, 'AGENT.md'),
+      [
+        '---',
+        'omd-output: evidence.json',
+        'omd-schema: evidence.schema.json',
+        'omd-max-turns: 12',
+        'omd-write-scope: worktree',
+        '---',
+        'You are the executor.',
+      ].join('\n'),
+      'utf8',
+    );
+    await writeFile(join(dir, 'evidence.schema.json'), JSON.stringify(SCHEMA));
+
+    await expect(
+      validateRunInvocation(lookup, 'executor', 'implement the plan', {
+        workingDirectory: dir,
+        provisionedWorktree: false,
+      }),
     ).rejects.toThrow(UsageError);
   });
 
@@ -61,7 +96,10 @@ describe('validateRunInvocation', () => {
     await scaffold();
     await rm(join(dir, 'review.schema.json'), { force: true });
     await expect(
-      validateRunInvocation(lookup, 'reviewer', 'assess the diff'),
+      validateRunInvocation(lookup, 'reviewer', 'assess the diff', {
+        workingDirectory: dir,
+        provisionedWorktree: false,
+      }),
     ).rejects.toThrow(UsageError);
   });
 });

@@ -41,6 +41,17 @@ describe('EXECUTOR_ROLE_AGENT_MD', () => {
     ]);
   });
 
+  it('declares the worktree write scope its implementation mission needs', () => {
+    expect(ROLE.writeScope).toBe('worktree');
+  });
+
+  it('authors no write rule beyond its artifact, leaving the scope to omd', () => {
+    const authoredWrites: readonly string[] = ROLE.permissions.allow.filter(
+      (rule: string): boolean => rule.startsWith('Write('),
+    );
+    expect(authoredWrites).toEqual(['Write(evidence.json)']);
+  });
+
   it('carries the ten role-body sections as headings in order', () => {
     expect(bodyHeadings(ROLE.promptBody)).toEqual(ROLE_BODY_SECTIONS);
   });

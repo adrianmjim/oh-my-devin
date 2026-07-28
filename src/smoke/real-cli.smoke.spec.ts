@@ -31,6 +31,7 @@ const PROBE_ROLE: RoleDefinition = {
   maxTurns: 1,
   contextPolicy: 'isolated',
   wallTimeMs: null,
+  writeScope: 'artifact',
   promptBody: 'You are a smoke probe. Follow the task exactly.',
 };
 
@@ -62,7 +63,10 @@ describe.runIf(smokeEnabled)('real Devin CLI smoke suite', () => {
   beforeAll(async () => {
     scratchDir = await realpath(await mkdtemp(join(tmpdir(), 'omd-smoke-')));
     runner = new ProcessCommandRunner(scratchDir);
-    const bundle: AgentConfigBundle = compileAgentConfigBundle(PROBE_ROLE);
+    const bundle: AgentConfigBundle = compileAgentConfigBundle(
+      PROBE_ROLE,
+      scratchDir,
+    );
     agentConfigPath = join(scratchDir, 'agent-config.json');
     await writeFile(agentConfigPath, JSON.stringify(bundle), 'utf8');
   });
