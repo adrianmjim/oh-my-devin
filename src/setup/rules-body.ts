@@ -18,4 +18,12 @@ export const RULES_BODY: readonly string[] = [
   'Ask to delegate work to a named role and the `omd-delegate` skill runs',
   '`omd run` for you.',
   '',
+  '## Ambient run status',
+  '',
+  'Each session start and each prompt carry a summary of the project’s runs.',
+  'Surface an entry only when it is attention-worthy: a pending gate, a',
+  'stalled run, or a terminal outcome this conversation has not acknowledged',
+  'yet. Stay silent about unremarkable progress — a run that is simply',
+  'advancing needs no mention.',
+  '',
 ];

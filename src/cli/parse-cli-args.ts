@@ -44,7 +44,7 @@ export function parseCliArgs(argv: readonly string[]): CliCommand {
     case 'status': {
       const runId: string | undefined = positionals[0];
       if (runId === undefined) {
-        throw new UsageError('usage: omd status <run-id> [--json]');
+        return { kind: 'status-list', json };
       }
       return { kind: 'status', runId, json };
     }

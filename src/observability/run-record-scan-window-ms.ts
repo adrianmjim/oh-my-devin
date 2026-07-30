@@ -1,0 +1,1 @@
+export const RUN_RECORD_SCAN_WINDOW_MS: number = 2592000000;
