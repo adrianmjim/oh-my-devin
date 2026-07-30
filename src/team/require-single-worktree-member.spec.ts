@@ -35,6 +35,21 @@ describe('requireSingleWorktreeMember', () => {
     }).not.toThrow();
   });
 
+  it('rejects a worktree-scoped member declaring more than one instance', () => {
+    const members: readonly TeamMember[] = [
+      { role: 'executor', count: 2, strategy: 'parallel' },
+    ];
+
+    expect(() => {
+      requireSingleWorktreeMember(members, SCOPES);
+    }).toThrow(TeamDefinitionError);
+    expect(() => {
+      requireSingleWorktreeMember(members, SCOPES);
+    }).toThrow(
+      /members\[0\] "executor" declares the "worktree" write scope with more than one instance/,
+    );
+  });
+
   it('rejects a second worktree-scoped member naming both roles', () => {
     const members: readonly TeamMember[] = [
       member('architect'),
