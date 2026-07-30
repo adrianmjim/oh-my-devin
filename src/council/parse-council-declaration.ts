@@ -8,7 +8,7 @@ import { parseAuthority } from './parse-authority';
 import { parseDeliberationTunables } from './parse-deliberation-tunables';
 import { parseSeats } from './parse-seats';
 import { requireCouncilString } from './require-council-string';
-import type { RoleWriteScopes } from './role-write-scopes';
+import type { RoleWriteScopes } from '../catalog/role-write-scopes';
 
 export function parseCouncilDeclaration(
   yaml: string,

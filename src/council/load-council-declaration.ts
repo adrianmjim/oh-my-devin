@@ -9,7 +9,7 @@ import type { WriteScope } from '../role/write-scope';
 import { UsageError } from '../run/usage-error';
 import type { CouncilDeclaration } from './council-declaration';
 import { parseCouncilDeclaration } from './parse-council-declaration';
-import type { RoleWriteScopes } from './role-write-scopes';
+import type { RoleWriteScopes } from '../catalog/role-write-scopes';
 
 export async function loadCouncilDeclaration(
   lookup: LayerLookup,

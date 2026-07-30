@@ -30,7 +30,10 @@ describe('loadTeamDefinition', () => {
   let userConfigDir: string;
   let lookup: LayerLookup;
 
-  async function scaffoldRole(name: string): Promise<void> {
+  async function scaffoldRole(
+    name: string,
+    writeScope?: 'artifact' | 'worktree',
+  ): Promise<void> {
     const roleDir: string = join(dir, '.devin', 'agents', name);
     await mkdir(roleDir, { recursive: true });
     const agentMd: string = [
@@ -38,6 +41,7 @@ describe('loadTeamDefinition', () => {
       `omd-output: ${name}.json`,
       `omd-schema: ${name}.schema.json`,
       'omd-max-turns: 6',
+      ...(writeScope === undefined ? [] : [`omd-write-scope: ${writeScope}`]),
       '---',
       `You are the ${name}.`,
     ].join('\n');
@@ -134,6 +138,52 @@ describe('loadTeamDefinition', () => {
     );
 
     expect(team.members.map((m) => m.role)).toContain('reviewer');
+  });
+
+  it('loads a team whose single worktree-scoped member is the executor', async () => {
+    await rm(join(dir, '.devin', 'agents', 'executor'), {
+      recursive: true,
+      force: true,
+    });
+    await scaffoldRole('executor', 'worktree');
+    await writeTeam('feature-team', TEAM_YAML);
+
+    const team: TeamDefinition = await loadTeamDefinition(
+      lookup,
+      'feature-team',
+    );
+
+    expect(team.members.map((m) => m.role)).toContain('executor');
+  });
+
+  it('raises a usage error when two members resolve to worktree-scoped roles', async () => {
+    await rm(join(dir, '.devin', 'agents', 'executor'), {
+      recursive: true,
+      force: true,
+    });
+    await scaffoldRole('executor', 'worktree');
+    await scaffoldRole('builder', 'worktree');
+    const yaml: string = [
+      'name: twin-builders',
+      'members:',
+      '  - role: executor',
+      '    count: 1',
+      '  - role: builder',
+      '    count: 1',
+      'workflow:',
+      '  executor:',
+      '    then: builder',
+      '  builder:',
+      '    then: done',
+    ].join('\n');
+    await writeTeam('twin-builders', yaml);
+
+    await expect(loadTeamDefinition(lookup, 'twin-builders')).rejects.toThrow(
+      UsageError,
+    );
+    await expect(loadTeamDefinition(lookup, 'twin-builders')).rejects.toThrow(
+      /"builder" declares the "worktree" write scope, but "executor" already holds it/,
+    );
   });
 
   it('raises a usage error when a member names an undefined role', async () => {

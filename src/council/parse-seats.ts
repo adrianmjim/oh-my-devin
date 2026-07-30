@@ -2,7 +2,7 @@ import { assignSeatIds } from './assign-seat-ids';
 import { CouncilDeclarationError } from './council-declaration-error';
 import type { CouncilSeat } from './council-seat';
 import { parseSeatDraft } from './parse-seat-draft';
-import type { RoleWriteScopes } from './role-write-scopes';
+import type { RoleWriteScopes } from '../catalog/role-write-scopes';
 import type { SeatDraft } from './seat-draft';
 
 export function parseSeats(

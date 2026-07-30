@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { WriteScope } from '../role/write-scope';
 import { CouncilDeclarationError } from './council-declaration-error';
 import { parseSeatDraft } from './parse-seat-draft';
-import type { RoleWriteScopes } from './role-write-scopes';
+import type { RoleWriteScopes } from '../catalog/role-write-scopes';
 
 const KNOWN: RoleWriteScopes = new Map<string, WriteScope>([
   ['reviewer', 'artifact'],

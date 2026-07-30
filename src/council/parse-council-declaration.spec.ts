@@ -3,7 +3,7 @@ import type { WriteScope } from '../role/write-scope';
 import type { CouncilDeclaration } from './council-declaration';
 import { CouncilDeclarationError } from './council-declaration-error';
 import { parseCouncilDeclaration } from './parse-council-declaration';
-import type { RoleWriteScopes } from './role-write-scopes';
+import type { RoleWriteScopes } from '../catalog/role-write-scopes';
 
 const KNOWN: RoleWriteScopes = new Map<string, WriteScope>([
   ['architect', 'artifact'],

@@ -2,7 +2,7 @@ import { CouncilDeclarationError } from './council-declaration-error';
 import { parseSeatFlag } from './parse-seat-flag';
 import { parseSeatModel } from './parse-seat-model';
 import { requireCouncilString } from './require-council-string';
-import type { RoleWriteScopes } from './role-write-scopes';
+import type { RoleWriteScopes } from '../catalog/role-write-scopes';
 import type { SeatDraft } from './seat-draft';
 
 export function parseSeatDraft(

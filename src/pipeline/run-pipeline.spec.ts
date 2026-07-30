@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { RoleWriteScopes } from '../catalog/role-write-scopes';
 import type { HandoffArtifactName } from '../handoff/handoff-artifact-name';
 import type { PipelineStage } from '../handoff/pipeline-stage';
 import { deriveSnapshot } from '../observability/derive-snapshot';
@@ -6,6 +7,7 @@ import type { ProgressEvent } from '../observability/progress-event';
 import type { RunObserver } from '../observability/run-observer';
 import type { RunSnapshot } from '../observability/run-snapshot';
 import type { RunReport } from '../outcome/run-report';
+import type { WriteScope } from '../role/write-scope';
 import { parseTeamDefinition } from '../team/parse-team-definition';
 import type { TeamDefinition } from '../team/team-definition';
 import { exitCodeForPipelineOutcome } from './exit-code-for-pipeline-outcome';
@@ -18,6 +20,12 @@ import type { StageResult } from './stage-result';
 import { runPipeline } from './run-pipeline';
 
 const KNOWN_ROLES: readonly string[] = ['architect', 'executor', 'reviewer'];
+
+const KNOWN_SCOPES: RoleWriteScopes = new Map<string, WriteScope>([
+  ['architect', 'artifact'],
+  ['executor', 'worktree'],
+  ['reviewer', 'artifact'],
+]);
 
 const TEAM_YAML: string = [
   'name: feature-team',
@@ -39,7 +47,7 @@ const TEAM_YAML: string = [
 ].join('\n');
 
 function team(): TeamDefinition {
-  return parseTeamDefinition(TEAM_YAML, KNOWN_ROLES);
+  return parseTeamDefinition(TEAM_YAML, KNOWN_SCOPES);
 }
 
 function report(
@@ -649,10 +657,13 @@ describe('runPipeline observability', () => {
       '  executor:',
       '    on_passed: done',
     ].join('\n');
-    const analystTeam: TeamDefinition = parseTeamDefinition(analystYaml, [
-      'analyst',
-      'executor',
-    ]);
+    const analystTeam: TeamDefinition = parseTeamDefinition(
+      analystYaml,
+      new Map<string, WriteScope>([
+        ['analyst', 'artifact'],
+        ['executor', 'worktree'],
+      ]),
+    );
     const stages = new RecordingStages({});
     const gate = new RecordingGate([]);
     const observer = new RecordingObserver();
