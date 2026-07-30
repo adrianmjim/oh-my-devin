@@ -60,6 +60,18 @@ describe('renderRoleShowText', () => {
     expect(text).toContain('allow=[(none)]');
   });
 
+  it('lists the declared tools and permission rules', () => {
+    const text: string = renderRoleShowText(
+      role({
+        tools: ['read', 'grep'],
+        permissions: { allow: ['Write(review.json)'], deny: [], ask: [] },
+      }),
+    );
+
+    expect(text).toContain('tools:           read, grep');
+    expect(text).toContain('allow=[Write(review.json)]');
+  });
+
   it('summarizes the prompt body with its first line of prose', () => {
     expect(renderRoleShowText(role({}))).toContain(
       'summary:         Assess the diff.',

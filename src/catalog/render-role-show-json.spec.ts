@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { RoleDefinition } from '../role/role-definition';
+import type { RoleContractJson } from './role-contract-json';
 import { renderRoleShowJson } from './render-role-show-json';
 
 const ROLE: RoleDefinition = {
@@ -58,5 +59,16 @@ describe('renderRoleShowJson', () => {
     expect(
       renderRoleShowJson({ ...ROLE, writeScope: 'worktree' }).writeScope,
     ).toBe('worktree');
+  });
+
+  it('carries a declared agent type and model verbatim', () => {
+    const json: RoleContractJson = renderRoleShowJson({
+      ...ROLE,
+      agentType: 'reviewer',
+      model: 'opus',
+    });
+
+    expect(json.agentType).toBe('reviewer');
+    expect(json.model).toBe('opus');
   });
 });
