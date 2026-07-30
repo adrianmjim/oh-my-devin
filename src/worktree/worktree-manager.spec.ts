@@ -178,6 +178,52 @@ describe('WorktreeManager', () => {
     ]);
   });
 
+  it('propagates a git add failure instead of capturing a stale diff', async () => {
+    const runner = new GitRunner((inv: CommandInvocation): CommandResult =>
+      inv.args.includes('add')
+        ? { stdout: '', stderr: 'fatal: unable to write index', exitCode: 128 }
+        : { stdout: 'DIFF-BODY', stderr: '', exitCode: 0 },
+    );
+    const manager = new WorktreeManager(runner, BASE);
+    const worktree: Worktree = {
+      instanceId: 'exec-0',
+      path: '/repo/wt/exec-0',
+    };
+
+    await expect(
+      manager.captureDiff(worktree, 'evidence.json'),
+    ).rejects.toThrow(WorktreeError);
+    await expect(
+      manager.captureDiff(worktree, 'evidence.json'),
+    ).rejects.toThrow(
+      /git add failed for "exec-0": fatal: unable to write index/,
+    );
+  });
+
+  it('propagates a git diff failure instead of publishing an empty diff', async () => {
+    const runner = new GitRunner((inv: CommandInvocation): CommandResult =>
+      inv.args.includes('diff')
+        ? {
+            stdout: '',
+            stderr: "fatal: '../evidence.json' is outside repository",
+            exitCode: 128,
+          }
+        : { stdout: '', stderr: '', exitCode: 0 },
+    );
+    const manager = new WorktreeManager(runner, BASE);
+    const worktree: Worktree = {
+      instanceId: 'exec-0',
+      path: '/repo/wt/exec-0',
+    };
+
+    await expect(
+      manager.captureDiff(worktree, '../evidence.json'),
+    ).rejects.toThrow(WorktreeError);
+    await expect(
+      manager.captureDiff(worktree, '../evidence.json'),
+    ).rejects.toThrow(/git diff failed for "exec-0": .*outside repository/);
+  });
+
   it('excludes only the artifact itself when its name carries glob characters', async () => {
     const repo: string = await mkdtemp(join(tmpdir(), 'omd-capture-glob-'));
     const runner: ProcessCommandRunner = new ProcessCommandRunner(repo);

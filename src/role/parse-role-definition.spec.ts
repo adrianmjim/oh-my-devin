@@ -168,6 +168,47 @@ describe('parseRoleDefinition', () => {
     expect(() => parseRoleDefinition(md, 'x')).toThrow(/omd-output/);
   });
 
+  it('throws when omd-output traverses out of the working directory', () => {
+    const md: string = [
+      '---',
+      'omd-output: ../evidence.json',
+      'omd-schema: s.json',
+      'omd-max-turns: 3',
+      '---',
+      'body',
+    ].join('\n');
+    expect(() => parseRoleDefinition(md, 'x')).toThrow(RoleDefinitionError);
+    expect(() => parseRoleDefinition(md, 'x')).toThrow(
+      /"omd-output" must be a relative path inside the working directory: "\.\.\/evidence\.json"/,
+    );
+  });
+
+  it('throws when omd-output is an absolute path', () => {
+    const md: string = [
+      '---',
+      'omd-output: /tmp/evidence.json',
+      'omd-schema: s.json',
+      'omd-max-turns: 3',
+      '---',
+      'body',
+    ].join('\n');
+    expect(() => parseRoleDefinition(md, 'x')).toThrow(/omd-output/);
+  });
+
+  it('accepts a nested relative omd-output path', () => {
+    const md: string = [
+      '---',
+      'omd-output: reports/evidence.json',
+      'omd-schema: s.json',
+      'omd-max-turns: 3',
+      '---',
+      'body',
+    ].join('\n');
+    expect(parseRoleDefinition(md, 'x').outputArtifact).toBe(
+      'reports/evidence.json',
+    );
+  });
+
   it('throws when omd-max-turns is not a positive integer', () => {
     const md: string = [
       '---',

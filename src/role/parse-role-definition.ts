@@ -7,6 +7,7 @@ import { FRONTMATTER_PATTERN } from './frontmatter-pattern';
 import { isContextPolicy } from './is-context-policy';
 import type { EngineKind } from './engine-kind';
 import { isEngineKind } from './is-engine-kind';
+import { isRepoRelativePath } from './is-repo-relative-path';
 import { isWriteScope } from './is-write-scope';
 import type { RoleDefinition } from './role-definition';
 import { RoleDefinitionError } from './role-definition-error';
@@ -156,6 +157,16 @@ export function parseRoleDefinition(
 
   const toolsValue: unknown = fields['allowed-tools'] ?? fields['tools'];
 
+  const outputArtifact: string = requireString(
+    fields['omd-output'],
+    'omd-output',
+  );
+  if (!isRepoRelativePath(outputArtifact)) {
+    fail(
+      `"omd-output" must be a relative path inside the working directory: "${outputArtifact}"`,
+    );
+  }
+
   return {
     name: roleName,
     engine,
@@ -163,7 +174,7 @@ export function parseRoleDefinition(
     model: optionalString(fields['model'], 'model'),
     tools: optionalStringArray(toolsValue, 'allowed-tools'),
     permissions: parsePermissions(fields['permissions']),
-    outputArtifact: requireString(fields['omd-output'], 'omd-output'),
+    outputArtifact,
     outputSchema: requireString(fields['omd-schema'], 'omd-schema'),
     maxTurns: requirePositiveInt(fields['omd-max-turns'], 'omd-max-turns'),
     contextPolicy,
