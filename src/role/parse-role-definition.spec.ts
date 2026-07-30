@@ -23,6 +23,7 @@ const FULL_AGENT_MD: string = [
   'omd-max-turns: 8',
   'omd-context: isolated',
   'omd-wall-time: 10m',
+  'omd-write-scope: artifact',
   '---',
   '',
   'You are the reviewer. Assess the diff and write review.json.',
@@ -74,6 +75,7 @@ describe('parseRoleDefinition', () => {
     expect(role.maxTurns).toBe(8);
     expect(role.contextPolicy).toBe('isolated');
     expect(role.wallTimeMs).toBe(600000);
+    expect(role.writeScope).toBe('artifact');
     expect(role.promptBody).toBe(
       'You are the reviewer. Assess the diff and write review.json.',
     );
@@ -92,7 +94,24 @@ describe('parseRoleDefinition', () => {
     expect(role.permissions).toEqual({ allow: [], deny: [], ask: [] });
     expect(role.contextPolicy).toBe('isolated');
     expect(role.wallTimeMs).toBeNull();
+    expect(role.writeScope).toBe('artifact');
     expect(role.promptBody).toBe('Do the work.');
+  });
+
+  it('parses the worktree write scope', () => {
+    const md: string = [
+      '---',
+      'omd-output: evidence.json',
+      'omd-schema: evidence.schema.json',
+      'omd-max-turns: 12',
+      'omd-write-scope: worktree',
+      '---',
+      'Implement the architecture.',
+    ].join('\n');
+
+    const role: RoleDefinition = parseRoleDefinition(md, 'executor');
+
+    expect(role.writeScope).toBe('worktree');
   });
 
   it('excludes the owned-region markers from the prompt body', () => {
@@ -149,6 +168,47 @@ describe('parseRoleDefinition', () => {
     expect(() => parseRoleDefinition(md, 'x')).toThrow(/omd-output/);
   });
 
+  it('throws when omd-output traverses out of the working directory', () => {
+    const md: string = [
+      '---',
+      'omd-output: ../evidence.json',
+      'omd-schema: s.json',
+      'omd-max-turns: 3',
+      '---',
+      'body',
+    ].join('\n');
+    expect(() => parseRoleDefinition(md, 'x')).toThrow(RoleDefinitionError);
+    expect(() => parseRoleDefinition(md, 'x')).toThrow(
+      /"omd-output" must be a relative path inside the working directory: "\.\.\/evidence\.json"/,
+    );
+  });
+
+  it('throws when omd-output is an absolute path', () => {
+    const md: string = [
+      '---',
+      'omd-output: /tmp/evidence.json',
+      'omd-schema: s.json',
+      'omd-max-turns: 3',
+      '---',
+      'body',
+    ].join('\n');
+    expect(() => parseRoleDefinition(md, 'x')).toThrow(/omd-output/);
+  });
+
+  it('accepts a nested relative omd-output path', () => {
+    const md: string = [
+      '---',
+      'omd-output: reports/evidence.json',
+      'omd-schema: s.json',
+      'omd-max-turns: 3',
+      '---',
+      'body',
+    ].join('\n');
+    expect(parseRoleDefinition(md, 'x').outputArtifact).toBe(
+      'reports/evidence.json',
+    );
+  });
+
   it('throws when omd-max-turns is not a positive integer', () => {
     const md: string = [
       '---',
@@ -172,6 +232,20 @@ describe('parseRoleDefinition', () => {
       'body',
     ].join('\n');
     expect(() => parseRoleDefinition(md, 'x')).toThrow(/omd-context/);
+  });
+
+  it('throws on an unknown write scope', () => {
+    const md: string = [
+      '---',
+      'omd-output: o.json',
+      'omd-schema: s.json',
+      'omd-max-turns: 3',
+      'omd-write-scope: repository',
+      '---',
+      'body',
+    ].join('\n');
+    expect(() => parseRoleDefinition(md, 'x')).toThrow(RoleDefinitionError);
+    expect(() => parseRoleDefinition(md, 'x')).toThrow(/omd-write-scope/);
   });
 
   it('throws on an unsupported engine value', () => {

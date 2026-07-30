@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { RoleDefinition } from '../role/role-definition';
+import type { RoleContractJson } from './role-contract-json';
 import { renderRoleShowJson } from './render-role-show-json';
 
 const ROLE: RoleDefinition = {
@@ -14,6 +15,7 @@ const ROLE: RoleDefinition = {
   maxTurns: 6,
   contextPolicy: 'isolated',
   wallTimeMs: null,
+  writeScope: 'artifact',
   promptBody: '## Mission\n\nAssess the diff.\nThen write the verdict.',
 };
 
@@ -31,6 +33,7 @@ describe('renderRoleShowJson', () => {
       maxTurns: 6,
       context: 'isolated',
       wallTimeMs: null,
+      writeScope: 'artifact',
       promptSummary: 'Assess the diff.',
     });
   });
@@ -50,5 +53,22 @@ describe('renderRoleShowJson', () => {
         promptBody: '## Mission\n\n## Boundaries',
       }).promptSummary,
     ).toBe('');
+  });
+
+  it('carries a declared worktree write scope', () => {
+    expect(
+      renderRoleShowJson({ ...ROLE, writeScope: 'worktree' }).writeScope,
+    ).toBe('worktree');
+  });
+
+  it('carries a declared agent type and model verbatim', () => {
+    const json: RoleContractJson = renderRoleShowJson({
+      ...ROLE,
+      agentType: 'reviewer',
+      model: 'opus',
+    });
+
+    expect(json.agentType).toBe('reviewer');
+    expect(json.model).toBe('opus');
   });
 });

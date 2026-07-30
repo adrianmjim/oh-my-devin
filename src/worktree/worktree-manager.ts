@@ -45,15 +45,36 @@ export class WorktreeManager implements WorktreeProvisioner {
     return { instanceId, path };
   }
 
-  public async captureDiff(worktree: Worktree): Promise<string> {
-    await this.runner.run({
+  public async captureDiff(
+    worktree: Worktree,
+    excludedArtifact: string,
+  ): Promise<string> {
+    const staged: CommandResult = await this.runner.run({
       command: 'git',
       args: ['-C', worktree.path, 'add', '-A'],
     });
+    if (staged.exitCode !== 0) {
+      throw new WorktreeError(
+        `git add failed for "${worktree.instanceId}": ${staged.stderr.trim()}`,
+      );
+    }
     const result: CommandResult = await this.runner.run({
       command: 'git',
-      args: ['-C', worktree.path, 'diff', '--cached'],
+      args: [
+        '-C',
+        worktree.path,
+        'diff',
+        '--cached',
+        '--',
+        '.',
+        `:(exclude,literal)${excludedArtifact}`,
+      ],
     });
+    if (result.exitCode !== 0) {
+      throw new WorktreeError(
+        `git diff failed for "${worktree.instanceId}": ${result.stderr.trim()}`,
+      );
+    }
     return result.stdout;
   }
 

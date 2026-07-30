@@ -1,16 +1,22 @@
 import { describe, expect, it } from 'vitest';
+import type { RoleWriteScopes } from '../catalog/role-write-scopes';
 import type { HandoffArtifactName } from '../handoff/handoff-artifact-name';
 import type { PipelineStage } from '../handoff/pipeline-stage';
 import type { GateDecision } from '../pipeline/gate-decision';
 import type { PipelineReport } from '../pipeline/pipeline-report';
 import type { StageRequest } from '../pipeline/stage-request';
 import type { StageResult } from '../pipeline/stage-result';
+import type { WriteScope } from '../role/write-scope';
 import { parseTeamDefinition } from '../team/parse-team-definition';
 import type { TeamDefinition } from '../team/team-definition';
 import { createPipelineLauncher } from './create-pipeline-launcher';
 import type { PipelineLauncher } from './pipeline-launcher';
 
-const KNOWN_ROLES: readonly string[] = ['architect', 'executor', 'reviewer'];
+const KNOWN_ROLES: RoleWriteScopes = new Map<string, WriteScope>([
+  ['architect', 'artifact'],
+  ['executor', 'worktree'],
+  ['reviewer', 'artifact'],
+]);
 
 const TEAM_YAML: string = [
   'name: feature-team',
@@ -64,6 +70,7 @@ describe('createPipelineLauncher', () => {
             maxTurns: 8,
             wallTimeMs: 0,
             artifactPath: `${request.stage}.json`,
+            writeScope: request.stage === 'executor' ? 'worktree' : 'artifact',
             artifactValid: true,
             validationErrors: [],
             denyRule: null,

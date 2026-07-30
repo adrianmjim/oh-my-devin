@@ -20,10 +20,32 @@ function agentMd(schemaRef: string): string {
   ].join('\n');
 }
 
+function constructorAgentMd(): string {
+  return [
+    '---',
+    'omd-output: evidence.json',
+    'omd-schema: evidence.schema.json',
+    'omd-max-turns: 12',
+    'omd-write-scope: worktree',
+    '---',
+    'You are the executor.',
+  ].join('\n');
+}
+
 describe('resolveRunInvocation', () => {
   let projectDir: string;
   let userConfigDir: string;
   let lookup: LayerLookup;
+
+  async function scaffoldConstructor(): Promise<void> {
+    const roleDir: string = join(projectDir, '.devin', 'agents', 'executor');
+    await mkdir(roleDir, { recursive: true });
+    await writeFile(join(roleDir, 'AGENT.md'), constructorAgentMd(), 'utf8');
+    await writeFile(
+      join(projectDir, 'evidence.schema.json'),
+      JSON.stringify(SCHEMA),
+    );
+  }
 
   async function scaffold(): Promise<void> {
     const roleDir: string = join(projectDir, '.devin', 'agents', 'reviewer');
@@ -71,6 +93,7 @@ describe('resolveRunInvocation', () => {
       lookup,
       'reviewer',
       'assess the diff',
+      { workingDirectory: projectDir, provisionedWorktree: false },
     );
     expect(resolved.role.name).toBe('reviewer');
     expect(JSON.parse(resolved.schemaText)).toEqual(SCHEMA);
@@ -83,6 +106,7 @@ describe('resolveRunInvocation', () => {
       lookup,
       'reviewer',
       'assess the diff',
+      { workingDirectory: projectDir, provisionedWorktree: false },
     );
     expect(resolved.schemaPath).toBe(join(projectDir, 'review.schema.json'));
   });
@@ -94,6 +118,7 @@ describe('resolveRunInvocation', () => {
       lookup,
       'reviewer',
       'assess the diff',
+      { workingDirectory: projectDir, provisionedWorktree: false },
     );
 
     expect(resolved.role.name).toBe('reviewer');
@@ -106,22 +131,63 @@ describe('resolveRunInvocation', () => {
   it('rejects an empty task as a usage error', async () => {
     await scaffold();
     await expect(
-      resolveRunInvocation(lookup, 'reviewer', '   '),
+      resolveRunInvocation(lookup, 'reviewer', '   ', {
+        workingDirectory: projectDir,
+        provisionedWorktree: false,
+      }),
     ).rejects.toThrow(UsageError);
   });
 
   it('rejects an unresolvable role as a usage error', async () => {
     await scaffold();
     await expect(
-      resolveRunInvocation(lookup, 'ghost', 'assess the diff'),
+      resolveRunInvocation(lookup, 'ghost', 'assess the diff', {
+        workingDirectory: projectDir,
+        provisionedWorktree: false,
+      }),
     ).rejects.toThrow(UsageError);
+  });
+
+  it('rejects a worktree-scoped role outside a provisioned worktree', async () => {
+    await scaffoldConstructor();
+    await expect(
+      resolveRunInvocation(lookup, 'executor', 'implement the plan', {
+        workingDirectory: projectDir,
+        provisionedWorktree: false,
+      }),
+    ).rejects.toThrow(UsageError);
+    await expect(
+      resolveRunInvocation(lookup, 'executor', 'implement the plan', {
+        workingDirectory: projectDir,
+        provisionedWorktree: false,
+      }),
+    ).rejects.toThrow(/executor/);
+  });
+
+  it('resolves a worktree-scoped role inside a provisioned worktree', async () => {
+    await scaffoldConstructor();
+
+    const resolved: ResolvedRunInvocation = await resolveRunInvocation(
+      lookup,
+      'executor',
+      'implement the plan',
+      { workingDirectory: projectDir, provisionedWorktree: true },
+    );
+
+    expect(resolved.role.writeScope).toBe('worktree');
+    expect(resolved.bundle.permissions.allow).toContain(
+      `Write(${projectDir}/**)`,
+    );
   });
 
   it('rejects a role whose declared schema file is missing', async () => {
     await scaffold();
     await rm(join(projectDir, 'review.schema.json'), { force: true });
     await expect(
-      resolveRunInvocation(lookup, 'reviewer', 'assess the diff'),
+      resolveRunInvocation(lookup, 'reviewer', 'assess the diff', {
+        workingDirectory: projectDir,
+        provisionedWorktree: false,
+      }),
     ).rejects.toThrow(UsageError);
   });
 });

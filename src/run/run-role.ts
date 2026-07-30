@@ -43,6 +43,10 @@ export async function runRole(options: RunRoleOptions): Promise<RunReport> {
         lookup,
         options.roleName,
         options.task,
+        {
+          workingDirectory: options.workingDirectory,
+          provisionedWorktree: options.provisionedWorktree ?? false,
+        },
       );
     } catch (error: unknown) {
       recorder?.close();
@@ -171,6 +175,7 @@ export async function runRole(options: RunRoleOptions): Promise<RunReport> {
       maxTurns: role.maxTurns,
       wallTimeMs: budget.elapsedMs,
       artifactPath: role.outputArtifact,
+      writeScope: role.writeScope,
       artifactValid: validation.valid,
       validationErrors: validation.errors,
       denyRule,

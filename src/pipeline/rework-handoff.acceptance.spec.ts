@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import type { RoleWriteScopes } from '../catalog/role-write-scopes';
 import type { HandoffArtifactName } from '../handoff/handoff-artifact-name';
 import type { PipelineStage } from '../handoff/pipeline-stage';
 import type { RunReport } from '../outcome/run-report';
+import type { WriteScope } from '../role/write-scope';
 import { parseTeamDefinition } from '../team/parse-team-definition';
 import type { TeamDefinition } from '../team/team-definition';
 import { composeStagePrompt } from './compose-stage-prompt';
@@ -10,7 +12,11 @@ import { runPipeline } from './run-pipeline';
 import type { StageRequest } from './stage-request';
 import type { StageResult } from './stage-result';
 
-const KNOWN_ROLES: readonly string[] = ['architect', 'executor', 'reviewer'];
+const KNOWN_ROLES: RoleWriteScopes = new Map<string, WriteScope>([
+  ['architect', 'artifact'],
+  ['executor', 'worktree'],
+  ['reviewer', 'artifact'],
+]);
 
 const REWORK_TEAM: string = [
   'name: feature-team',
@@ -82,6 +88,7 @@ function report(stage: PipelineStage): RunReport {
     maxTurns: 8,
     wallTimeMs: 0,
     artifactPath: `${stage}.json`,
+    writeScope: 'artifact',
     artifactValid: true,
     validationErrors: [],
     denyRule: null,

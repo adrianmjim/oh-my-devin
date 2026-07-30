@@ -18,4 +18,5 @@ export interface RunRoleOptions {
   readonly recorder?: RunObserver;
   readonly resolved?: ResolvedRunInvocation;
   readonly lookup?: LayerLookup;
+  readonly provisionedWorktree?: boolean;
 }

@@ -14,6 +14,7 @@ import type { StageRunnerDeps } from './stage-runner-deps';
 class FakeWorktrees implements WorktreeProvisioner {
   public readonly created: string[] = [];
   public readonly removed: string[] = [];
+  public readonly excluded: string[] = [];
   public captureCalls: number = 0;
 
   public create(instanceId: string): Promise<Worktree> {
@@ -21,8 +22,12 @@ class FakeWorktrees implements WorktreeProvisioner {
     return Promise.resolve({ instanceId, path: `/wt/${instanceId}` });
   }
 
-  public captureDiff(worktree: Worktree): Promise<string> {
+  public captureDiff(
+    worktree: Worktree,
+    excludedArtifact: string,
+  ): Promise<string> {
     this.captureCalls += 1;
+    this.excluded.push(excludedArtifact);
     return Promise.resolve(`DIFF(${worktree.instanceId})`);
   }
 
@@ -53,6 +58,7 @@ function reportFor(
     wallTimeMs: 0,
     artifactPath: `${stage}-out.json`,
     artifactValid: true,
+    writeScope: 'artifact',
     validationErrors: [],
     denyRule: null,
     repairAttempted: false,
@@ -120,7 +126,10 @@ describe('createStageRunner', () => {
       makeDeps(
         (): Promise<RunReport> =>
           Promise.resolve(
-            reportFor('executor', { artifactPath: 'evidence.json' }),
+            reportFor('executor', {
+              artifactPath: 'evidence.json',
+              writeScope: 'worktree',
+            }),
           ),
         worktrees,
       ),
@@ -138,6 +147,87 @@ describe('createStageRunner', () => {
     expect([...result.produced.keys()]).toEqual(['evidence.json', 'diff']);
     expect(result.produced.get('diff')).toBe('DIFF(executor)');
     expect(worktrees.captureCalls).toBe(1);
+    expect(worktrees.excluded).toEqual(['evidence.json']);
+  });
+
+  it('designates the diff producer by declared write scope, not by stage name', async () => {
+    const worktrees = new FakeWorktrees();
+    const runStage: StageRunner = createStageRunner(
+      makeDeps(
+        (): Promise<RunReport> =>
+          Promise.resolve(
+            reportFor('architect', {
+              artifactPath: 'architecture.json',
+              writeScope: 'worktree',
+            }),
+          ),
+        worktrees,
+      ),
+    );
+
+    const result: StageResult = await runStage({
+      stage: 'architect',
+      reworkFrom: null,
+      inputs: inputs([['requirements', 'r']]),
+    });
+
+    expect([...result.produced.keys()]).toEqual(['architecture.json', 'diff']);
+    expect(worktrees.excluded).toEqual(['architecture.json']);
+  });
+
+  it('captures no diff for an artifact-scoped stage named executor', async () => {
+    const worktrees = new FakeWorktrees();
+    const runStage: StageRunner = createStageRunner(
+      makeDeps(
+        (): Promise<RunReport> =>
+          Promise.resolve(
+            reportFor('executor', {
+              artifactPath: 'evidence.json',
+              writeScope: 'artifact',
+            }),
+          ),
+        worktrees,
+      ),
+    );
+
+    const result: StageResult = await runStage({
+      stage: 'executor',
+      reworkFrom: null,
+      inputs: inputs([
+        ['requirements', 'r'],
+        ['architecture.json', 'A'],
+      ]),
+    });
+
+    expect([...result.produced.keys()]).toEqual(['evidence.json']);
+    expect(worktrees.captureCalls).toBe(0);
+  });
+
+  it('tells the role run it executes in an omd-provisioned worktree', async () => {
+    const worktrees = new FakeWorktrees();
+    const seen: RunRoleOptions[] = [];
+    const runStage: StageRunner = createStageRunner(
+      makeDeps((options: RunRoleOptions): Promise<RunReport> => {
+        seen.push(options);
+        return Promise.resolve(
+          reportFor('executor', {
+            artifactPath: 'evidence.json',
+            writeScope: 'worktree',
+          }),
+        );
+      }, worktrees),
+    );
+
+    await runStage({
+      stage: 'executor',
+      reworkFrom: null,
+      inputs: inputs([
+        ['requirements', 'r'],
+        ['architecture.json', 'A'],
+      ]),
+    });
+
+    expect(seen[0]?.provisionedWorktree).toBe(true);
   });
 
   it('produces only review.json for the reviewer and captures no diff', async () => {

@@ -1,6 +1,7 @@
 import type { ContextPolicy } from './context-policy';
 import type { EngineKind } from './engine-kind';
 import type { RolePermissions } from './role-permissions';
+import type { WriteScope } from './write-scope';
 
 export interface RoleDefinition {
   readonly name: string;
@@ -14,5 +15,6 @@ export interface RoleDefinition {
   readonly maxTurns: number;
   readonly contextPolicy: ContextPolicy;
   readonly wallTimeMs: number | null;
+  readonly writeScope: WriteScope;
   readonly promptBody: string;
 }

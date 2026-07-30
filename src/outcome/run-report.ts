@@ -1,4 +1,5 @@
 import type { RunId } from '../observability/run-id';
+import type { WriteScope } from '../role/write-scope';
 import type { FailureTier } from './failure-tier';
 
 export interface RunReport {
@@ -12,6 +13,7 @@ export interface RunReport {
   readonly maxTurns: number;
   readonly wallTimeMs: number | null;
   readonly artifactPath: string;
+  readonly writeScope: WriteScope;
   readonly artifactValid: boolean;
   readonly validationErrors: readonly string[];
   readonly denyRule: string | null;

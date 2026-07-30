@@ -15,6 +15,7 @@ export function renderRoleShowJson(role: RoleDefinition): RoleContractJson {
     maxTurns: role.maxTurns,
     context: role.contextPolicy,
     wallTimeMs: role.wallTimeMs,
+    writeScope: role.writeScope,
     promptSummary: summarizePromptBody(role.promptBody),
   };
 }

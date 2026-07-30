@@ -17,8 +17,11 @@ export async function launchDetached(
   roleName: string,
   task: string,
 ): Promise<RunId> {
-  await validateRunInvocation(lookup, roleName, task);
   const baseDir: string = lookup.projectDir;
+  await validateRunInvocation(lookup, roleName, task, {
+    workingDirectory: baseDir,
+    provisionedWorktree: false,
+  });
   const runId: RunId = generateRunId();
   const paths: RunRecordPaths = new RunRecordPaths(baseDir, runId);
   await mkdir(paths.dir, { recursive: true });

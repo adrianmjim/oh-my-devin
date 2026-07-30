@@ -114,6 +114,7 @@ export async function dispatchCliCommand(
         lookup,
         command.role,
         command.task,
+        { workingDirectory: cwd, provisionedWorktree: false },
       );
       const runId: RunId = resolveRunId(process.env[RUN_ID_ENV]);
       const clock = (): number => Date.now();

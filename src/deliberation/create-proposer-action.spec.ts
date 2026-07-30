@@ -57,6 +57,7 @@ function report(overrides: Partial<RunReport> = {}): RunReport {
     maxTurns: 6,
     wallTimeMs: 0,
     artifactPath: 'proposal.json',
+    writeScope: 'artifact',
     artifactValid: true,
     validationErrors: [],
     denyRule: null,

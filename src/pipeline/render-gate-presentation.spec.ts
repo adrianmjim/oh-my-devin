@@ -17,6 +17,7 @@ function presentation(overrides: Partial<RunReport>): GatePresentation {
       maxTurns: 6,
       wallTimeMs: 0,
       artifactPath: 'review.json',
+      writeScope: 'artifact',
       artifactValid: true,
       validationErrors: [],
       denyRule: null,

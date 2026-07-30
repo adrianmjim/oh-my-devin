@@ -7,9 +7,12 @@ import { FRONTMATTER_PATTERN } from './frontmatter-pattern';
 import { isContextPolicy } from './is-context-policy';
 import type { EngineKind } from './engine-kind';
 import { isEngineKind } from './is-engine-kind';
+import { isRepoRelativePath } from './is-repo-relative-path';
+import { isWriteScope } from './is-write-scope';
 import type { RoleDefinition } from './role-definition';
 import { RoleDefinitionError } from './role-definition-error';
 import type { RolePermissions } from './role-permissions';
+import type { WriteScope } from './write-scope';
 
 export function parseRoleDefinition(
   agentMarkdown: string,
@@ -142,7 +145,27 @@ export function parseRoleDefinition(
         ? contextValue
         : fail(`unsupported "omd-context": ${JSON.stringify(contextValue)}`);
 
+  const writeScopeValue: unknown = fields['omd-write-scope'];
+  const writeScope: WriteScope =
+    writeScopeValue === undefined || writeScopeValue === null
+      ? 'artifact'
+      : isWriteScope(writeScopeValue)
+        ? writeScopeValue
+        : fail(
+            `unsupported "omd-write-scope": ${JSON.stringify(writeScopeValue)}`,
+          );
+
   const toolsValue: unknown = fields['allowed-tools'] ?? fields['tools'];
+
+  const outputArtifact: string = requireString(
+    fields['omd-output'],
+    'omd-output',
+  );
+  if (!isRepoRelativePath(outputArtifact)) {
+    fail(
+      `"omd-output" must be a relative path inside the working directory: "${outputArtifact}"`,
+    );
+  }
 
   return {
     name: roleName,
@@ -151,11 +174,12 @@ export function parseRoleDefinition(
     model: optionalString(fields['model'], 'model'),
     tools: optionalStringArray(toolsValue, 'allowed-tools'),
     permissions: parsePermissions(fields['permissions']),
-    outputArtifact: requireString(fields['omd-output'], 'omd-output'),
+    outputArtifact,
     outputSchema: requireString(fields['omd-schema'], 'omd-schema'),
     maxTurns: requirePositiveInt(fields['omd-max-turns'], 'omd-max-turns'),
     contextPolicy,
     wallTimeMs: parseWallTimeMs(fields['omd-wall-time']),
+    writeScope,
     promptBody: withoutRegionMarkers(body, 'markdown').trim(),
   };
 }

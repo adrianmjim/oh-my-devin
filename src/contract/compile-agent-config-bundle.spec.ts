@@ -22,14 +22,20 @@ function role(overrides: Partial<RoleDefinition>): RoleDefinition {
     maxTurns: 8,
     contextPolicy: 'isolated',
     wallTimeMs: null,
+    writeScope: 'artifact',
     promptBody: 'You are the reviewer.',
     ...overrides,
   };
 }
 
+const WORKTREE: string = '/tmp/omd/worktrees/executor';
+
 describe('compileAgentConfigBundle', () => {
   it('emits only contract fields — no omd extension keys, no model', () => {
-    const bundle: AgentConfigBundle = compileAgentConfigBundle(role({}));
+    const bundle: AgentConfigBundle = compileAgentConfigBundle(
+      role({}),
+      WORKTREE,
+    );
 
     expect(Object.keys(bundle).sort()).toEqual([
       'allowed_tools',
@@ -42,7 +48,10 @@ describe('compileAgentConfigBundle', () => {
   });
 
   it('carries tool visibility and wraps the prompt body in the preamble', () => {
-    const bundle: AgentConfigBundle = compileAgentConfigBundle(role({}));
+    const bundle: AgentConfigBundle = compileAgentConfigBundle(
+      role({}),
+      WORKTREE,
+    );
 
     expect(bundle.allowed_tools).toEqual(['read', 'grep']);
     expect(bundle.system_instructions).toHaveLength(2);
@@ -53,6 +62,7 @@ describe('compileAgentConfigBundle', () => {
   it('guarantees the declared artifact is the writable allow path', () => {
     const bundle: AgentConfigBundle = compileAgentConfigBundle(
       role({ permissions: { allow: ['Read(**)'], deny: [], ask: [] } }),
+      WORKTREE,
     );
 
     expect(bundle.permissions.allow).toContain('Write(review.json)');
@@ -60,7 +70,10 @@ describe('compileAgentConfigBundle', () => {
   });
 
   it('does not duplicate an already-declared artifact write allow', () => {
-    const bundle: AgentConfigBundle = compileAgentConfigBundle(role({}));
+    const bundle: AgentConfigBundle = compileAgentConfigBundle(
+      role({}),
+      WORKTREE,
+    );
 
     const writeAllows: readonly string[] = bundle.permissions.allow.filter(
       (rule: string): boolean => rule === 'Write(review.json)',
@@ -78,6 +91,7 @@ describe('compileAgentConfigBundle', () => {
             ask: [],
           },
         }),
+        WORKTREE,
       ),
     ).toThrow(ContractCompilationError);
   });
@@ -88,6 +102,7 @@ describe('compileAgentConfigBundle', () => {
         role({
           permissions: { allow: [], deny: ['Write(**)'], ask: [] },
         }),
+        WORKTREE,
       ),
     ).toThrow(ContractCompilationError);
   });
@@ -101,6 +116,7 @@ describe('compileAgentConfigBundle', () => {
           ask: [],
         },
       }),
+      WORKTREE,
     );
 
     expect(bundle.permissions.deny).toEqual(['Write(src/**)']);
@@ -117,6 +133,7 @@ describe('compileAgentConfigBundle', () => {
   it('preserves red-line deny rules that do not touch the artifact', () => {
     const bundle: AgentConfigBundle = compileAgentConfigBundle(
       role({ permissions: { allow: [], deny: ['Bash(rm*)'], ask: [] } }),
+      WORKTREE,
     );
 
     expect(bundle.permissions.deny).toEqual(['Bash(rm*)']);
@@ -140,12 +157,69 @@ describe('compileAgentConfigBundle', () => {
       'reviewer',
     );
 
-    const bundle: AgentConfigBundle = compileAgentConfigBundle(installed);
+    const bundle: AgentConfigBundle = compileAgentConfigBundle(
+      installed,
+      WORKTREE,
+    );
 
     expect(bundle.system_instructions[1]).toBe(
       ['## Mission', '', 'You are the reviewer.'].join('\n'),
     );
     expect(JSON.stringify(bundle)).not.toContain('omd:begin');
     expect(JSON.stringify(bundle)).not.toContain('omd:end');
+  });
+
+  it('grants an artifact-scoped role nothing beyond its artifact', () => {
+    const bundle: AgentConfigBundle = compileAgentConfigBundle(
+      role({ writeScope: 'artifact' }),
+      WORKTREE,
+    );
+
+    const writable: readonly string[] = bundle.permissions.allow.filter(
+      (rule: string): boolean => rule.startsWith('Write('),
+    );
+    expect(writable).toEqual(['Write(review.json)']);
+    expect(JSON.stringify(bundle)).not.toContain(WORKTREE);
+  });
+
+  it('grants a worktree-scoped role the working directory and its artifact', () => {
+    const bundle: AgentConfigBundle = compileAgentConfigBundle(
+      role({
+        name: 'executor',
+        outputArtifact: 'evidence.json',
+        permissions: { allow: [], deny: [], ask: [] },
+        writeScope: 'worktree',
+      }),
+      WORKTREE,
+    );
+
+    const writable: readonly string[] = bundle.permissions.allow.filter(
+      (rule: string): boolean => rule.startsWith('Write('),
+    );
+    expect(writable).toEqual(['Write(evidence.json)', `Write(${WORKTREE}/**)`]);
+  });
+
+  it('adds no deny rule for the worktree boundary', () => {
+    const bundle: AgentConfigBundle = compileAgentConfigBundle(
+      role({
+        permissions: { allow: [], deny: [], ask: [] },
+        writeScope: 'worktree',
+      }),
+      WORKTREE,
+    );
+
+    expect(bundle.permissions.deny).toEqual([]);
+  });
+
+  it('rejects an authored write beyond the artifact under worktree scope', () => {
+    expect(() =>
+      compileAgentConfigBundle(
+        role({
+          permissions: { allow: ['Write(src/**)'], deny: [], ask: [] },
+          writeScope: 'worktree',
+        }),
+        WORKTREE,
+      ),
+    ).toThrow(ContractCompilationError);
   });
 });

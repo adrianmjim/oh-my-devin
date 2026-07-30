@@ -8,10 +8,11 @@ import { parseAuthority } from './parse-authority';
 import { parseDeliberationTunables } from './parse-deliberation-tunables';
 import { parseSeats } from './parse-seats';
 import { requireCouncilString } from './require-council-string';
+import type { RoleWriteScopes } from '../catalog/role-write-scopes';
 
 export function parseCouncilDeclaration(
   yaml: string,
-  knownRoles: readonly string[],
+  roleScopes: RoleWriteScopes,
 ): CouncilDeclaration {
   const parsed: unknown = parseYaml(yaml);
   if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
@@ -20,7 +21,7 @@ export function parseCouncilDeclaration(
   const fields: Record<string, unknown> = parsed as Record<string, unknown>;
 
   const name: string = requireCouncilString(fields['name'], 'name');
-  const seats: readonly CouncilSeat[] = parseSeats(fields['seats'], knownRoles);
+  const seats: readonly CouncilSeat[] = parseSeats(fields['seats'], roleScopes);
   const tunables: DeliberationTunables = parseDeliberationTunables(
     fields['deliberation'],
   );

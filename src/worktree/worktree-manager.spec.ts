@@ -1,7 +1,11 @@
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { CommandInvocation } from '../engine/command-invocation';
 import type { CommandResult } from '../engine/command-result';
 import type { CommandRunner } from '../engine/command-runner';
+import { ProcessCommandRunner } from '../engine/process-command-runner';
 import type { Worktree } from './worktree';
 import { WorktreeError } from './worktree-error';
 import { WorktreeManager } from './worktree-manager';
@@ -154,7 +158,7 @@ describe('WorktreeManager', () => {
       path: '/repo/wt/exec-0',
     };
 
-    const diff: string = await manager.captureDiff(worktree);
+    const diff: string = await manager.captureDiff(worktree, 'evidence.json');
 
     expect(diff).toBe('DIFF-BODY');
     expect(runner.invocations[0]?.args).toEqual([
@@ -168,7 +172,134 @@ describe('WorktreeManager', () => {
       '/repo/wt/exec-0',
       'diff',
       '--cached',
+      '--',
+      '.',
+      ':(exclude,literal)evidence.json',
     ]);
+  });
+
+  it('propagates a git add failure instead of capturing a stale diff', async () => {
+    const runner = new GitRunner((inv: CommandInvocation): CommandResult =>
+      inv.args.includes('add')
+        ? { stdout: '', stderr: 'fatal: unable to write index', exitCode: 128 }
+        : { stdout: 'DIFF-BODY', stderr: '', exitCode: 0 },
+    );
+    const manager = new WorktreeManager(runner, BASE);
+    const worktree: Worktree = {
+      instanceId: 'exec-0',
+      path: '/repo/wt/exec-0',
+    };
+
+    await expect(
+      manager.captureDiff(worktree, 'evidence.json'),
+    ).rejects.toThrow(WorktreeError);
+    await expect(
+      manager.captureDiff(worktree, 'evidence.json'),
+    ).rejects.toThrow(
+      /git add failed for "exec-0": fatal: unable to write index/,
+    );
+  });
+
+  it('propagates a git diff failure instead of publishing an empty diff', async () => {
+    const runner = new GitRunner((inv: CommandInvocation): CommandResult =>
+      inv.args.includes('diff')
+        ? {
+            stdout: '',
+            stderr: "fatal: '../evidence.json' is outside repository",
+            exitCode: 128,
+          }
+        : { stdout: '', stderr: '', exitCode: 0 },
+    );
+    const manager = new WorktreeManager(runner, BASE);
+    const worktree: Worktree = {
+      instanceId: 'exec-0',
+      path: '/repo/wt/exec-0',
+    };
+
+    await expect(
+      manager.captureDiff(worktree, '../evidence.json'),
+    ).rejects.toThrow(WorktreeError);
+    await expect(
+      manager.captureDiff(worktree, '../evidence.json'),
+    ).rejects.toThrow(/git diff failed for "exec-0": .*outside repository/);
+  });
+
+  it('excludes only the artifact itself when its name carries glob characters', async () => {
+    const repo: string = await mkdtemp(join(tmpdir(), 'omd-capture-glob-'));
+    const runner: ProcessCommandRunner = new ProcessCommandRunner(repo);
+    try {
+      await runner.run({ command: 'git', args: ['-C', repo, 'init', '-q'] });
+      await runner.run({
+        command: 'git',
+        args: ['-C', repo, 'config', 'user.email', 'omd@example.com'],
+      });
+      await runner.run({
+        command: 'git',
+        args: ['-C', repo, 'config', 'user.name', 'omd'],
+      });
+      await writeFile(join(repo, 'evidence1.json'), 'source\n', 'utf8');
+      await runner.run({ command: 'git', args: ['-C', repo, 'add', '-A'] });
+      await runner.run({
+        command: 'git',
+        args: ['-C', repo, 'commit', '-qm', 'base'],
+      });
+
+      await writeFile(join(repo, 'evidence1.json'), 'changed\n', 'utf8');
+      await writeFile(join(repo, 'evidence[1].json'), '{}\n', 'utf8');
+
+      const manager = new WorktreeManager(runner, repo);
+      const diff: string = await manager.captureDiff(
+        { instanceId: 'exec-0', path: repo },
+        'evidence[1].json',
+      );
+
+      expect(diff).toContain('evidence1.json');
+      expect(diff).toContain('changed');
+      expect(diff).not.toContain('evidence[1].json');
+    } finally {
+      await rm(repo, { recursive: true, force: true });
+    }
+  });
+
+  it('excludes the declared artifact from a real git diff', async () => {
+    const repo: string = await mkdtemp(join(tmpdir(), 'omd-capture-'));
+    const runner: ProcessCommandRunner = new ProcessCommandRunner(repo);
+    try {
+      await runner.run({ command: 'git', args: ['-C', repo, 'init', '-q'] });
+      await runner.run({
+        command: 'git',
+        args: ['-C', repo, 'config', 'user.email', 'omd@example.com'],
+      });
+      await runner.run({
+        command: 'git',
+        args: ['-C', repo, 'config', 'user.name', 'omd'],
+      });
+      await writeFile(join(repo, 'add.ts'), 'export const a = 1;\n', 'utf8');
+      await runner.run({ command: 'git', args: ['-C', repo, 'add', '-A'] });
+      await runner.run({
+        command: 'git',
+        args: ['-C', repo, 'commit', '-qm', 'base'],
+      });
+
+      await writeFile(join(repo, 'add.ts'), 'export const a = 2;\n', 'utf8');
+      await writeFile(
+        join(repo, 'evidence.json'),
+        '{"tests":"pass"}\n',
+        'utf8',
+      );
+
+      const manager = new WorktreeManager(runner, repo);
+      const diff: string = await manager.captureDiff(
+        { instanceId: 'exec-0', path: repo },
+        'evidence.json',
+      );
+
+      expect(diff).toContain('add.ts');
+      expect(diff).toContain('export const a = 2;');
+      expect(diff).not.toContain('evidence.json');
+    } finally {
+      await rm(repo, { recursive: true, force: true });
+    }
   });
 
   it('removes the worktree at teardown', async () => {

@@ -1,8 +1,12 @@
 import { describe, expect, it } from 'vitest';
+import type { WriteScope } from '../role/write-scope';
 import { CouncilDeclarationError } from './council-declaration-error';
 import { parseSeats } from './parse-seats';
+import type { RoleWriteScopes } from '../catalog/role-write-scopes';
 
-const KNOWN: readonly string[] = ['reviewer'];
+const KNOWN: RoleWriteScopes = new Map<string, WriteScope>([
+  ['reviewer', 'artifact'],
+]);
 
 describe('parseSeats', () => {
   it('parses a list of seats and assigns their ids', () => {

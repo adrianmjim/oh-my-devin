@@ -1,9 +1,16 @@
 import { describe, expect, it } from 'vitest';
+import type { RoleWriteScopes } from '../catalog/role-write-scopes';
+import type { WriteScope } from '../role/write-scope';
 import type { TeamDefinition } from './team-definition';
 import { TeamDefinitionError } from './team-definition-error';
 import { parseTeamDefinition } from './parse-team-definition';
 
-const KNOWN: readonly string[] = ['architect', 'executor', 'reviewer'];
+const KNOWN: RoleWriteScopes = new Map<string, WriteScope>([
+  ['architect', 'artifact'],
+  ['executor', 'worktree'],
+  ['builder', 'worktree'],
+  ['reviewer', 'artifact'],
+]);
 
 const VALID: string = [
   'name: feature-team',
@@ -98,6 +105,27 @@ describe('parseTeamDefinition', () => {
       '    then: done',
     ].join('\n');
     expect(() => parseTeamDefinition(yaml, KNOWN)).toThrow(/ghost/);
+  });
+
+  it('rejects a second worktree-scoped member naming both roles', () => {
+    const yaml: string = [
+      'name: t',
+      'members:',
+      '  - role: executor',
+      '    count: 1',
+      '  - role: builder',
+      '    count: 1',
+      'workflow:',
+      '  executor:',
+      '    then: builder',
+      '  builder:',
+      '    then: done',
+    ].join('\n');
+
+    expect(() => parseTeamDefinition(yaml, KNOWN)).toThrow(TeamDefinitionError);
+    expect(() => parseTeamDefinition(yaml, KNOWN)).toThrow(
+      /members\[1\] "builder" declares the "worktree" write scope, but "executor" already holds it/,
+    );
   });
 
   it('accepts every outcome token of the consent vocabulary', () => {

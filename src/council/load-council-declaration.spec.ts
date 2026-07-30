@@ -78,6 +78,42 @@ describe('loadCouncilDeclaration', () => {
     );
   });
 
+  it('raises a usage error when a seat names a worktree-scoped role', async () => {
+    const roleDir: string = join(dir, '.devin', 'agents', 'executor');
+    await mkdir(roleDir, { recursive: true });
+    await writeFile(
+      join(roleDir, 'AGENT.md'),
+      [
+        '---',
+        'omd-output: evidence.json',
+        'omd-schema: evidence.schema.json',
+        'omd-max-turns: 12',
+        'omd-write-scope: worktree',
+        '---',
+        'You are the executor.',
+      ].join('\n'),
+      'utf8',
+    );
+    const yaml: string = [
+      'name: build-council',
+      'seats:',
+      '  - role: architect',
+      '    lens: system-boundaries',
+      '  - role: executor',
+      '    lens: implementation',
+      'deliberation:',
+      '  rounds_cap: 2',
+    ].join('\n');
+    await writeCouncil('build-council', yaml);
+
+    await expect(
+      loadCouncilDeclaration(lookup, 'build-council'),
+    ).rejects.toThrow(UsageError);
+    await expect(
+      loadCouncilDeclaration(lookup, 'build-council'),
+    ).rejects.toThrow(/executor/);
+  });
+
   it('raises a usage error when a seat names an undefined role', async () => {
     const yaml: string = [
       'name: broken',

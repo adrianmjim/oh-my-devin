@@ -12,26 +12,26 @@ import { tryRunDevin } from './try-run-devin';
 export async function agentConfigCheck(
   runner: CommandRunner,
 ): Promise<CheckResult> {
-  const bundle: AgentConfigBundle = compileAgentConfigBundle(PROBE_ROLE);
-  const expectedFields: readonly string[] = [
-    'system_instructions',
-    'allowed_tools',
-    'permissions',
-  ];
-  const missing: string | undefined = expectedFields.find(
-    (field: string): boolean => !(field in bundle),
-  );
-  if (missing !== undefined) {
-    return {
-      name: 'agent-config',
-      outcome: 'fail',
-      message: `compiled bundle is missing the ${missing} field`,
-    };
-  }
-
   const dir: string = await mkdtemp(join(tmpdir(), 'omd-doctor-'));
   const bundlePath: string = join(dir, 'agent-config.json');
   try {
+    const bundle: AgentConfigBundle = compileAgentConfigBundle(PROBE_ROLE, dir);
+    const expectedFields: readonly string[] = [
+      'system_instructions',
+      'allowed_tools',
+      'permissions',
+    ];
+    const missing: string | undefined = expectedFields.find(
+      (field: string): boolean => !(field in bundle),
+    );
+    if (missing !== undefined) {
+      return {
+        name: 'agent-config',
+        outcome: 'fail',
+        message: `compiled bundle is missing the ${missing} field`,
+      };
+    }
+
     await writeFile(bundlePath, JSON.stringify(bundle), 'utf8');
     const result: CommandResult | null = await tryRunDevin(runner, [
       '--agent-config',

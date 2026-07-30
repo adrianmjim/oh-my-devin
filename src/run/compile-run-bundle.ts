@@ -3,9 +3,12 @@ import { compileAgentConfigBundle } from '../contract/compile-agent-config-bundl
 import type { RoleDefinition } from '../role/role-definition';
 import { UsageError } from './usage-error';
 
-export function compileRunBundle(role: RoleDefinition): AgentConfigBundle {
+export function compileRunBundle(
+  role: RoleDefinition,
+  workingDirectory: string,
+): AgentConfigBundle {
   try {
-    return compileAgentConfigBundle(role);
+    return compileAgentConfigBundle(role, workingDirectory);
   } catch (error: unknown) {
     throw new UsageError(
       error instanceof Error ? error.message : 'contract compilation failed',
