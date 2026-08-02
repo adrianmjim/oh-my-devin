@@ -166,6 +166,28 @@ describe('omd status (e2e)', () => {
       now - 900000,
     );
     await seed(
+      'run-gated',
+      [
+        {
+          type: 'runLaunched',
+          timestamp: now - 3000,
+          runId: 'run-gated',
+          runKind: 'pipeline',
+          subject: 'feature-team',
+          maxTurns: 0,
+          artifactPath: null,
+        },
+        {
+          type: 'stageStarted',
+          timestamp: now - 2500,
+          stage: 'architect',
+          stageIndex: 0,
+        },
+        { type: 'gateWaitEntered', timestamp: now - 2200, stage: 'architect' },
+      ],
+      now,
+    );
+    await seed(
       'run-ancient',
       [
         { ...singleRoleLaunched('run-ancient'), timestamp: now - 172800000 },
@@ -186,6 +208,9 @@ describe('omd status (e2e)', () => {
     expect(result.stdout).toContain('running');
     expect(result.stdout).toContain('run-stalled');
     expect(result.stdout).toContain('stalled');
+    expect(result.stdout).toContain('run-gated');
+    expect(result.stdout).toContain('awaiting-gate');
+    expect(result.stdout).toContain('gate architect');
     expect(result.stdout).not.toContain('run-ancient');
   });
 
