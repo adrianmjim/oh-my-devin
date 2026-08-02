@@ -53,11 +53,16 @@ describe('enumerateRunRecords', () => {
     expect(found).toEqual(['run-warm']);
   });
 
-  it('prefilters on directory mtime alone, without reading any journal', async () => {
+  it('prefilters on record mtimes alone, without reading any journal', async () => {
     await seedRecord('run-no-journal', now);
     await seedRecord('run-cold', now - WINDOW_MS * 2);
     const cold: RunRecordPaths = new RunRecordPaths(baseDir, 'run-cold');
     await writeFile(cold.journal, 'not json at all', 'utf8');
+    await utimes(
+      cold.journal,
+      new Date(now - WINDOW_MS * 2),
+      new Date(now - WINDOW_MS * 2),
+    );
     await utimes(
       cold.dir,
       new Date(now - WINDOW_MS * 2),
@@ -71,6 +76,25 @@ describe('enumerateRunRecords', () => {
     );
 
     expect(found).toEqual(['run-no-journal']);
+  });
+
+  it('keeps a record whose directory aged out while its files stayed active', async () => {
+    const cold: number = now - WINDOW_MS * 2;
+    await seedRecord('run-longlived', cold);
+    const paths: RunRecordPaths = new RunRecordPaths(baseDir, 'run-longlived');
+    await writeFile(paths.journal, '{}\n', 'utf8');
+    await writeFile(paths.liveness, '{}\n', 'utf8');
+    await utimes(paths.journal, new Date(cold), new Date(cold));
+    await utimes(paths.liveness, new Date(now), new Date(now));
+    await utimes(paths.dir, new Date(cold), new Date(cold));
+
+    const found: readonly RunId[] = await enumerateRunRecords(
+      baseDir,
+      now,
+      WINDOW_MS,
+    );
+
+    expect(found).toEqual(['run-longlived']);
   });
 
   it('ignores entries under .omd/runs that are not directories', async () => {

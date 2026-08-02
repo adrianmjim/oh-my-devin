@@ -2,7 +2,7 @@ import type { Dirent } from 'node:fs';
 import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { isValidRunId } from './is-valid-run-id';
-import { recordDirMtime } from './record-dir-mtime';
+import { recordActivityAt } from './record-activity-at';
 import type { RunId } from './run-id';
 import { RunRecordPaths } from './run-record-paths';
 
@@ -22,10 +22,10 @@ export async function enumerateRunRecords(
   const found: RunId[] = [];
   for (const entry of entries) {
     if (entry.isDirectory() && isValidRunId(entry.name)) {
-      const mtime: number | null = await recordDirMtime(
-        new RunRecordPaths(baseDir, entry.name).dir,
+      const activityAt: number | null = await recordActivityAt(
+        new RunRecordPaths(baseDir, entry.name),
       );
-      if (mtime !== null && now - mtime <= windowMs) {
+      if (activityAt !== null && now - activityAt <= windowMs) {
         found.push(entry.name);
       }
     }
