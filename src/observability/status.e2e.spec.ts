@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import type { CommandResult } from '../engine/command-result';
 import { createE2eProject } from '../testing/create-e2e-project';
 import type { E2eProject } from '../testing/e2e-project';
+import type { JsonRunListing } from './json-run-listing';
 import type { JsonRunSnapshot } from './json-run-snapshot';
 import { JournalWriter } from './journal-writer';
 import type { ProgressEvent } from './progress-event';
@@ -141,6 +142,121 @@ describe('omd status (e2e)', () => {
     expect(result.exitCode).toBe(64);
     expect(result.stderr).toContain('usage error');
     expect(result.stdout).toBe('');
+  });
+
+  it('lists the project runs with their states for the bare form', async () => {
+    project = await createE2eProject();
+    const now: number = Date.now();
+    await seed(
+      'run-live',
+      [
+        { ...singleRoleLaunched('run-live'), timestamp: now - 2000 },
+        {
+          type: 'turnCompleted',
+          timestamp: now - 1000,
+          turnIndex: 0,
+          boundary: 'launch',
+        },
+      ],
+      now,
+    );
+    await seed(
+      'run-stalled',
+      [{ ...singleRoleLaunched('run-stalled'), timestamp: now - 900000 }],
+      now - 900000,
+    );
+    await seed(
+      'run-gated',
+      [
+        {
+          type: 'runLaunched',
+          timestamp: now - 3000,
+          runId: 'run-gated',
+          runKind: 'pipeline',
+          subject: 'feature-team',
+          maxTurns: 0,
+          artifactPath: null,
+        },
+        {
+          type: 'stageStarted',
+          timestamp: now - 2500,
+          stage: 'architect',
+          stageIndex: 0,
+        },
+        { type: 'gateWaitEntered', timestamp: now - 2200, stage: 'architect' },
+      ],
+      now,
+    );
+    await seed(
+      'run-ancient',
+      [
+        { ...singleRoleLaunched('run-ancient'), timestamp: now - 172800000 },
+        {
+          type: 'terminalOutcome',
+          timestamp: now - 172800000,
+          succeeded: true,
+          failureTier: null,
+        },
+      ],
+      now - 172800000,
+    );
+
+    const result: CommandResult = await project.run(['status']);
+
+    expect(result.exitCode, result.stderr).toBe(0);
+    expect(result.stdout).toContain('run-live');
+    expect(result.stdout).toContain('running');
+    expect(result.stdout).toContain('run-stalled');
+    expect(result.stdout).toContain('stalled');
+    expect(result.stdout).toContain('run-gated');
+    expect(result.stdout).toContain('awaiting-gate');
+    expect(result.stdout).toContain('gate architect');
+    expect(result.stdout).not.toContain('run-ancient');
+  });
+
+  it('emits the bare-form listing as JSON under --json', async () => {
+    project = await createE2eProject();
+    const now: number = Date.now();
+    await seed(
+      'run-gate',
+      [
+        {
+          type: 'runLaunched',
+          timestamp: now - 3000,
+          runId: 'run-gate',
+          runKind: 'pipeline',
+          subject: 'feature-team',
+          maxTurns: 0,
+          artifactPath: null,
+        },
+        {
+          type: 'stageStarted',
+          timestamp: now - 2000,
+          stage: 'architect',
+          stageIndex: 0,
+        },
+        { type: 'gateWaitEntered', timestamp: now - 1000, stage: 'architect' },
+      ],
+      now,
+    );
+
+    const result: CommandResult = await project.run(['status', '--json']);
+
+    expect(result.exitCode, result.stderr).toBe(0);
+    const listing: JsonRunListing = JSON.parse(result.stdout) as JsonRunListing;
+    expect(listing.runs).toHaveLength(1);
+    expect(listing.runs[0]?.runId).toBe('run-gate');
+    expect(listing.runs[0]?.state).toBe('awaiting-gate');
+    expect(listing.runs[0]?.pendingGate).toBe('architect');
+  });
+
+  it('renders an empty listing and exits 0 in a project with no runs', async () => {
+    project = await createE2eProject();
+
+    const result: CommandResult = await project.run(['status']);
+
+    expect(result.exitCode, result.stderr).toBe(0);
+    expect(result.stdout).toContain('no active or recent runs');
   });
 
   it('emits machine-readable JSON under --json', async () => {

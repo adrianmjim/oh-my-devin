@@ -5,6 +5,7 @@ export const CLI_USAGE: string = [
   '',
   'Usage:',
   '  omd run <role> "<task>" [--json] [--detach]   Run a role against a task end to end',
+  '  omd status [--json]                           List active and recently terminated project runs',
   '  omd status <run-id> [--json]                  Show a bounded snapshot of a run',
   '  omd doctor                                    Check the local runtime contract',
   '  omd roles list [--json]                       List the project’s roles',

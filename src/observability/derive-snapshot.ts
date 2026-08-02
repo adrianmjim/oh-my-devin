@@ -22,6 +22,10 @@ export function deriveSnapshot(
     now,
     thresholdMs,
   );
+  const stateEnteredAt: number =
+    state === 'stalled'
+      ? (stampedAt ?? accumulator.lastEventAt) + thresholdMs
+      : accumulator.stateEnteredAt;
   return {
     runId: accumulator.runId,
     runKind: accumulator.runKind,
@@ -35,5 +39,6 @@ export function deriveSnapshot(
     pendingGate: accumulator.pendingGate,
     failureTier: accumulator.failureTier,
     lastEventAt: accumulator.lastEventAt,
+    stateEnteredAt,
   };
 }

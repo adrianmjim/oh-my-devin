@@ -21,6 +21,18 @@ describe('RULES_BODY', () => {
     expect(RULES_BODY.join('\n')).toContain('omd-delegate');
   });
 
+  it('instructs surfacing the attention-worthy states of the ambient summary', () => {
+    const body: string = RULES_BODY.join('\n');
+
+    expect(body).toContain('pending gate');
+    expect(body).toContain('stalled');
+    expect(body).toContain('terminal outcome');
+  });
+
+  it('instructs staying silent about unremarkable progress', () => {
+    expect(RULES_BODY.join('\n')).toContain('unremarkable progress');
+  });
+
   it('is a list of lines carrying no line separators of its own', () => {
     for (const line of RULES_BODY) {
       expect(line).not.toContain('\n');

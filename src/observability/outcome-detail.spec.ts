@@ -17,6 +17,7 @@ function snapshot(overrides: Partial<RunSnapshot>): RunSnapshot {
     pendingGate: null,
     failureTier: null,
     lastEventAt: 0,
+    stateEnteredAt: 0,
     ...overrides,
   };
 }

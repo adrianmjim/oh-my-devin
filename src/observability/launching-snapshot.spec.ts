@@ -10,10 +10,14 @@ describe('launchingSnapshot', () => {
     expect(snapshot.state).toBe('running');
     expect(snapshot.turnsUsed).toBe(0);
     expect(snapshot.lastEventAt).toBe(100);
+    expect(snapshot.stateEnteredAt).toBe(100);
   });
 
   it('reads as stalled once the record ages past the threshold', () => {
-    expect(launchingSnapshot('run-1', 0, 5000, 1000).state).toBe('stalled');
+    const snapshot: RunSnapshot = launchingSnapshot('run-1', 0, 5000, 1000);
+
+    expect(snapshot.state).toBe('stalled');
+    expect(snapshot.stateEnteredAt).toBe(1000);
   });
 
   it('carries no stage, artifact, gate, or failure yet', () => {

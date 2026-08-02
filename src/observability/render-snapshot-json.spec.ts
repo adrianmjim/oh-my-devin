@@ -16,13 +16,29 @@ const SNAPSHOT: RunSnapshot = {
   pendingGate: 'architect',
   failureTier: null,
   lastEventAt: 2200,
+  stateEnteredAt: 2100,
+};
+
+const JSON_VIEW: JsonRunSnapshot = {
+  runId: 'run-1',
+  runKind: 'pipeline',
+  state: 'awaiting-gate',
+  subject: 'feature-team',
+  currentStage: 'architect',
+  turnsUsed: 0,
+  maxTurns: 0,
+  artifactPath: null,
+  artifactValid: null,
+  pendingGate: 'architect',
+  failureTier: null,
+  lastEventAt: 2200,
 };
 
 describe('renderSnapshotJson', () => {
-  it('maps every snapshot field into the machine-readable view unchanged', () => {
+  it('maps the single-run field set into the machine-readable view unchanged', () => {
     const json: JsonRunSnapshot = renderSnapshotJson(SNAPSHOT);
 
-    expect(json).toEqual(SNAPSHOT);
+    expect(json).toEqual(JSON_VIEW);
   });
 
   it('produces camelCase keys that survive a JSON round-trip', () => {
@@ -31,7 +47,7 @@ describe('renderSnapshotJson', () => {
       JSON.stringify(json),
     ) as JsonRunSnapshot;
 
-    expect(roundTripped).toEqual(SNAPSHOT);
+    expect(roundTripped).toEqual(JSON_VIEW);
     expect(Object.keys(json)).toContain('runId');
     expect(Object.keys(json)).toContain('pendingGate');
   });

@@ -1,0 +1,1 @@
+export const TERMINATED_TAIL_WINDOW_MS: number = 86400000;
