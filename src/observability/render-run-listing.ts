@@ -25,7 +25,7 @@ export function renderRunListing(listing: RunListing): string {
       `updated ${entry.lastEventAt}`,
     ].join('  ');
   }
-  let rendered: string = 'omd status — no runs recorded';
+  let rendered: string = 'omd status — no active or recent runs';
   if (listing.runs.length > 0) {
     const noun: string = listing.runs.length === 1 ? 'run' : 'runs';
     rendered = [

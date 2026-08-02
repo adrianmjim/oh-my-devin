@@ -103,6 +103,17 @@ describe('selectListingRuns', () => {
     expect(selectListingRuns(history, NOW, WINDOW_MS, CAP)).toHaveLength(CAP);
   });
 
+  it('excludes a terminated run whose record is dated in the future', () => {
+    const entries: readonly RunListingEntry[] = [
+      entry('run-now', 'succeeded', NOW - 1000),
+      entry('run-skewed', 'succeeded', NOW + WINDOW_MS),
+    ];
+
+    expect(identities(selectListingRuns(entries, NOW, WINDOW_MS, CAP))).toEqual(
+      ['run-now'],
+    );
+  });
+
   it('yields nothing when given nothing', () => {
     expect(selectListingRuns([], NOW, WINDOW_MS, CAP)).toEqual([]);
   });

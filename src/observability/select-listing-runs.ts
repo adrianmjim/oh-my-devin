@@ -20,7 +20,7 @@ export function selectListingRuns(
     .filter(isTerminated)
     .filter(
       (candidate: RunListingEntry): boolean =>
-        now - candidate.lastEventAt <= windowMs,
+        candidate.lastEventAt <= now && now - candidate.lastEventAt <= windowMs,
     )
     .slice(0, cap);
   return [...active, ...terminated].sort(byRecency);

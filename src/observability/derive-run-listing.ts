@@ -18,11 +18,10 @@ export async function deriveRunListing(
     now,
     RUN_RECORD_SCAN_WINDOW_MS,
   );
-  const entries: readonly RunListingEntry[] = await Promise.all(
-    runIds.map((runId: RunId): Promise<RunListingEntry> =>
-      deriveListingEntry(baseDir, runId, now, thresholdMs),
-    ),
-  );
+  const entries: RunListingEntry[] = [];
+  for (const runId of runIds) {
+    entries.push(await deriveListingEntry(baseDir, runId, now, thresholdMs));
+  }
   return {
     runs: selectListingRuns(
       entries,

@@ -107,7 +107,7 @@ describe('renderRunListing', () => {
 
   it('says plainly when the project has no runs to report', () => {
     expect(renderRunListing({ runs: [] })).toBe(
-      'omd status — no runs recorded',
+      'omd status — no active or recent runs',
     );
   });
 });

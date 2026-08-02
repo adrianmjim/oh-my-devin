@@ -46,7 +46,7 @@ export const HOOK_SCRIPT: string = [
   "    parsed = JSON.parse(execFileSync('omd', ['status', '--json'], {",
   "      encoding: 'utf8',",
   "      stdio: ['ignore', 'pipe', 'ignore'],",
-  '      timeout: 5000,',
+  '      timeout: 1500,',
   '    }));',
   '  } catch {',
   '    return [];',

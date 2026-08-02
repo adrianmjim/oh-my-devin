@@ -235,6 +235,6 @@ describe('dispatchCliCommand', () => {
     );
 
     expect(code).toBe(0);
-    expect(written.join('')).toContain('no runs recorded');
+    expect(written.join('')).toContain('no active or recent runs');
   });
 });

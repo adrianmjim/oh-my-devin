@@ -231,7 +231,7 @@ describe('omd status (e2e)', () => {
     const result: CommandResult = await project.run(['status']);
 
     expect(result.exitCode, result.stderr).toBe(0);
-    expect(result.stdout).toContain('no runs recorded');
+    expect(result.stdout).toContain('no active or recent runs');
   });
 
   it('emits machine-readable JSON under --json', async () => {
