@@ -15,4 +15,5 @@ export interface SnapshotAccumulator {
   succeeded: boolean | null;
   failureTier: FailureTier | null;
   lastEventAt: number;
+  stateEnteredAt: number;
 }

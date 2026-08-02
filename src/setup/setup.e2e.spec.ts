@@ -1,8 +1,23 @@
-import { access, readFile, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { spawn } from 'node:child_process';
+import type { ChildProcessWithoutNullStreams } from 'node:child_process';
+import {
+  access,
+  chmod,
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  writeFile,
+} from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { delimiter, join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { CommandResult } from '../engine/command-result';
+import { JournalWriter } from '../observability/journal-writer';
+import { RunRecordPaths } from '../observability/run-record-paths';
+import { writeLivenessStamp } from '../observability/write-liveness-stamp';
 import { createE2eProject } from '../testing/create-e2e-project';
+import { CLI_PATH } from '../testing/cli-path';
 import type { E2eProject } from '../testing/e2e-project';
 
 async function exists(path: string): Promise<boolean> {
@@ -246,5 +261,90 @@ describe('omd setup (e2e)', () => {
     expect(result.stdout).toContain('Refused:');
     expect(result.stdout).toContain('teams —');
     expect(await exists(join(xdg, 'devin', 'teams'))).toBe(false);
+  });
+  it('deploys a hook script that injects ambient run status end to end', async () => {
+    project = await createE2eProject();
+    await project.run(['setup']);
+    const now: number = Date.now();
+    const paths: RunRecordPaths = new RunRecordPaths(project.dir, 'run-gate');
+    await mkdir(paths.dir, { recursive: true });
+    const writer: JournalWriter = new JournalWriter(paths.journal);
+    await writer.append({
+      type: 'runLaunched',
+      timestamp: now - 3000,
+      runId: 'run-gate',
+      runKind: 'pipeline',
+      subject: 'feature-team',
+      maxTurns: 0,
+      artifactPath: null,
+    });
+    await writer.append({
+      type: 'gateWaitEntered',
+      timestamp: now - 1000,
+      stage: 'architect',
+    });
+    await writeLivenessStamp(paths.liveness, now);
+    const shimDir: string = await mkdtemp(join(tmpdir(), 'omd-shim-'));
+    try {
+      const shim: string = join(shimDir, 'omd');
+      await writeFile(
+        shim,
+        `#!/bin/sh\nexec ${JSON.stringify(process.execPath)} ${JSON.stringify(CLI_PATH)} "$@"\n`,
+        'utf8',
+      );
+      await chmod(shim, 0o755);
+
+      const injected: string = await new Promise<string>(
+        (
+          resolvePromise: (stdout: string) => void,
+          reject: (error: Error) => void,
+        ): void => {
+          const child: ChildProcessWithoutNullStreams = spawn(
+            process.execPath,
+            [
+              join(project?.dir ?? '', '.devin', 'hooks', 'omd-mode.mjs'),
+              'session-start',
+            ],
+            {
+              cwd: project?.dir ?? '',
+              env: {
+                ...process.env,
+                PATH: `${shimDir}${delimiter}${process.env['PATH'] ?? ''}`,
+              },
+            },
+          );
+          let stdout: string = '';
+          child.stdout.on('data', (chunk: Buffer): void => {
+            stdout += chunk.toString();
+          });
+          child.on('error', reject);
+          child.on('close', (): void => {
+            resolvePromise(stdout);
+          });
+          child.stdin.end();
+        },
+      );
+
+      expect(injected).toContain('run-gate');
+      expect(injected).toContain('awaiting-gate');
+      expect(injected).toContain('architect');
+    } finally {
+      await rm(shimDir, { recursive: true, force: true });
+    }
+  });
+
+  it('claims the same hook events as before the ambient step', async () => {
+    project = await createE2eProject();
+
+    await project.run(['setup']);
+
+    const registry: Record<string, unknown> = JSON.parse(
+      await readFile(join(project.dir, '.devin', 'hooks.v1.json'), 'utf8'),
+    ) as Record<string, unknown>;
+    expect(Object.keys(registry).sort()).toEqual([
+      'SessionStart',
+      'Stop',
+      'UserPromptSubmit',
+    ]);
   });
 });

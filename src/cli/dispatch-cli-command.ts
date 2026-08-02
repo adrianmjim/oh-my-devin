@@ -31,14 +31,18 @@ import type { LayerLookup } from '../layer/layer-lookup';
 import { ModeStateStore } from '../modes/mode-state-store';
 import { resolveModeState } from '../modes/resolve-mode-state';
 import { createRunRecorder } from '../observability/create-run-recorder';
+import { deriveRunListing } from '../observability/derive-run-listing';
 import { generateRunId } from '../observability/generate-run-id';
 import { LIVENESS_STALL_THRESHOLD_MS } from '../observability/liveness-stall-threshold-ms';
 import { loadRunSnapshot } from '../observability/load-run-snapshot';
+import { renderRunListing } from '../observability/render-run-listing';
+import { renderRunListingJson } from '../observability/render-run-listing-json';
 import { renderSnapshotHuman } from '../observability/render-snapshot-human';
 import { renderSnapshotJson } from '../observability/render-snapshot-json';
 import { resolveRunId } from '../observability/resolve-run-id';
 import type { RunId } from '../observability/run-id';
 import { RUN_ID_ENV } from '../observability/run-id-env';
+import type { RunListing } from '../observability/run-listing';
 import type { RunObserver } from '../observability/run-observer';
 import { RunRecordPaths } from '../observability/run-record-paths';
 import type { RunSnapshot } from '../observability/run-snapshot';
@@ -152,6 +156,20 @@ export async function dispatchCliCommand(
         command.json
           ? JSON.stringify(renderSnapshotJson(snapshot))
           : renderSnapshotHuman(snapshot),
+      );
+      return 0;
+    }
+    case 'status-list': {
+      const listing: RunListing = await deriveRunListing(
+        cwd,
+        Date.now(),
+        LIVENESS_STALL_THRESHOLD_MS,
+      );
+      writeStreamLine(
+        process.stdout,
+        command.json
+          ? JSON.stringify(renderRunListingJson(listing))
+          : renderRunListing(listing),
       );
       return 0;
     }

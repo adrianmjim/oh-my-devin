@@ -1,10 +1,14 @@
+import { eventStateOf } from './event-state-of';
 import type { ProgressEvent } from './progress-event';
+import type { RunState } from './run-state';
 import type { SnapshotAccumulator } from './snapshot-accumulator';
 
 export function applyProgressEvent(
   accumulator: SnapshotAccumulator,
   event: ProgressEvent,
 ): void {
+  const firstEvent: boolean = accumulator.lastEventAt === 0;
+  const stateBefore: RunState = eventStateOf(accumulator);
   accumulator.lastEventAt = event.timestamp;
   switch (event.type) {
     case 'runLaunched':
@@ -39,5 +43,8 @@ export function applyProgressEvent(
       accumulator.succeeded = event.succeeded;
       accumulator.failureTier = event.failureTier;
       break;
+  }
+  if (firstEvent || eventStateOf(accumulator) !== stateBefore) {
+    accumulator.stateEnteredAt = event.timestamp;
   }
 }

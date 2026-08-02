@@ -4,6 +4,10 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProcessCommandRunner } from '../engine/process-command-runner';
+import type { JsonRunListing } from '../observability/json-run-listing';
+import { JournalWriter } from '../observability/journal-writer';
+import { RunRecordPaths } from '../observability/run-record-paths';
+import { writeLivenessStamp } from '../observability/write-liveness-stamp';
 import { UsageError } from '../run/usage-error';
 import { CLI_USAGE } from './cli-usage';
 import { dispatchCliCommand } from './dispatch-cli-command';
@@ -163,5 +167,74 @@ describe('dispatchCliCommand', () => {
     expect(rejection).toBeInstanceOf(UsageError);
     expect(renderCliError(rejection, false).exitCode).toBe(64);
     expect(written.join('')).toBe('');
+  });
+  it('renders the cross-run listing and succeeds for status-list', async () => {
+    const paths: RunRecordPaths = new RunRecordPaths(cwd, 'run-live');
+    await mkdir(paths.dir, { recursive: true });
+    const writer: JournalWriter = new JournalWriter(paths.journal);
+    await writer.append({
+      type: 'runLaunched',
+      timestamp: Date.now(),
+      runId: 'run-live',
+      runKind: 'single-role',
+      subject: 'reviewer',
+      maxTurns: 8,
+      artifactPath: 'review.json',
+    });
+    await writeLivenessStamp(paths.liveness, Date.now());
+
+    const code: number = await dispatchCliCommand(
+      { kind: 'status-list', json: false },
+      cwd,
+      userConfigDir,
+      runner,
+    );
+
+    expect(code).toBe(0);
+    expect(written.join('')).toContain('omd status — 1 run');
+    expect(written.join('')).toContain('run-live');
+  });
+
+  it('emits the listing as JSON for status-list under --json', async () => {
+    const paths: RunRecordPaths = new RunRecordPaths(cwd, 'run-live');
+    await mkdir(paths.dir, { recursive: true });
+    const writer: JournalWriter = new JournalWriter(paths.journal);
+    await writer.append({
+      type: 'runLaunched',
+      timestamp: Date.now(),
+      runId: 'run-live',
+      runKind: 'single-role',
+      subject: 'reviewer',
+      maxTurns: 8,
+      artifactPath: 'review.json',
+    });
+    await writeLivenessStamp(paths.liveness, Date.now());
+
+    const code: number = await dispatchCliCommand(
+      { kind: 'status-list', json: true },
+      cwd,
+      userConfigDir,
+      runner,
+    );
+
+    expect(code).toBe(0);
+    const listing: JsonRunListing = JSON.parse(
+      written.join('').trim(),
+    ) as JsonRunListing;
+    expect(listing.runs).toHaveLength(1);
+    expect(listing.runs[0]?.runId).toBe('run-live');
+    expect(listing.runs[0]?.state).toBe('running');
+  });
+
+  it('renders an empty listing and succeeds in a project with no runs', async () => {
+    const code: number = await dispatchCliCommand(
+      { kind: 'status-list', json: false },
+      cwd,
+      userConfigDir,
+      runner,
+    );
+
+    expect(code).toBe(0);
+    expect(written.join('')).toContain('no active or recent runs');
   });
 });

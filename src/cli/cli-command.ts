@@ -9,12 +9,14 @@ import type { RolesShowCommand } from './roles-show-command';
 import type { RunCommand } from './run-command';
 import type { SetupCommand } from './setup-command';
 import type { StatusCommand } from './status-command';
+import type { StatusListCommand } from './status-list-command';
 import type { TeamRunCommand } from './team-run-command';
 import type { VersionCommand } from './version-command';
 
 export type CliCommand =
   | RunCommand
   | StatusCommand
+  | StatusListCommand
   | DoctorCommand
   | RolesListCommand
   | RolesShowCommand

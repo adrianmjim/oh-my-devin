@@ -9,6 +9,8 @@ describe('initialSnapshotAccumulator', () => {
     expect(accumulator.runKind).toBe('single-role');
     expect(accumulator.turnsUsed).toBe(0);
     expect(accumulator.maxTurns).toBe(0);
+    expect(accumulator.lastEventAt).toBe(0);
+    expect(accumulator.stateEnteredAt).toBe(0);
   });
 
   it('leaves every derived field unknown', () => {

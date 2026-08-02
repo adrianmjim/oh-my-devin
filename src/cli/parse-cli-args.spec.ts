@@ -8,6 +8,7 @@ import type { RolesShowCommand } from './roles-show-command';
 import type { RunCommand } from './run-command';
 import type { SetupCommand } from './setup-command';
 import type { StatusCommand } from './status-command';
+import type { StatusListCommand } from './status-list-command';
 import type { TeamRunCommand } from './team-run-command';
 import { parseCliArgs } from './parse-cli-args';
 
@@ -73,8 +74,16 @@ describe('parseCliArgs', () => {
     expect((command as StatusCommand).json).toBe(true);
   });
 
-  it('rejects `status` without a run id as a usage error', () => {
-    expect(() => parseCliArgs(['status'])).toThrow(UsageError);
+  it('parses bare `status` as the cross-run listing', () => {
+    const command = parseCliArgs(['status']);
+    expect(command.kind).toBe('status-list');
+    expect((command as StatusListCommand).json).toBe(false);
+  });
+
+  it('parses the --json flag on the bare status listing', () => {
+    const command = parseCliArgs(['status', '--json']);
+    expect(command.kind).toBe('status-list');
+    expect((command as StatusListCommand).json).toBe(true);
   });
 
   it('parses the doctor command', () => {

@@ -67,6 +67,7 @@ describe('deriveSnapshot', () => {
     expect(snapshot.artifactValid).toBe(true);
     expect(snapshot.failureTier).toBeNull();
     expect(snapshot.lastEventAt).toBe(2100);
+    expect(snapshot.stateEnteredAt).toBe(1000);
   });
 
   it('reads stalled when there is no terminal outcome and the stamp is old', () => {
@@ -80,6 +81,7 @@ describe('deriveSnapshot', () => {
     );
 
     expect(snapshot.state).toBe('stalled');
+    expect(snapshot.stateEnteredAt).toBe(1000 + THRESHOLD);
   });
 
   it('reads stalled when no liveness stamp exists yet', () => {
@@ -93,6 +95,7 @@ describe('deriveSnapshot', () => {
     );
 
     expect(snapshot.state).toBe('stalled');
+    expect(snapshot.stateEnteredAt).toBe(1000 + THRESHOLD);
   });
 
   it('reports succeeded with a null tier for a terminated successful run', () => {
@@ -121,6 +124,7 @@ describe('deriveSnapshot', () => {
 
     expect(snapshot.state).toBe('succeeded');
     expect(snapshot.failureTier).toBeNull();
+    expect(snapshot.stateEnteredAt).toBe(3000);
   });
 
   it('reports failed with the run-failure-semantics tier for a failed run', () => {
@@ -199,6 +203,7 @@ describe('deriveSnapshot', () => {
     expect(snapshot.state).toBe('awaiting-gate');
     expect(snapshot.pendingGate).toBe('architect');
     expect(snapshot.currentStage).toBe('architect');
+    expect(snapshot.stateEnteredAt).toBe(2200);
   });
 
   it('reads stalled, not awaiting-gate, for a run that died while parked at a gate', () => {
@@ -251,6 +256,7 @@ describe('deriveSnapshot', () => {
 
     expect(snapshot.pendingGate).toBeNull();
     expect(snapshot.state).toBe('running');
+    expect(snapshot.stateEnteredAt).toBe(2300);
   });
 
   it('keeps snapshot size independent of the number of turns consumed', () => {
@@ -339,6 +345,7 @@ describe('deriveSnapshot', () => {
         'runId',
         'runKind',
         'state',
+        'stateEnteredAt',
         'subject',
         'turnsUsed',
       ].sort(),
