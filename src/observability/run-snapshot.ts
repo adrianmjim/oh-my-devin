@@ -16,4 +16,5 @@ export interface RunSnapshot {
   readonly pendingGate: string | null;
   readonly failureTier: FailureTier | null;
   readonly lastEventAt: number;
+  readonly stateEnteredAt: number;
 }

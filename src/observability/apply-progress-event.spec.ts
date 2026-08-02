@@ -110,4 +110,101 @@ describe('applyProgressEvent', () => {
     expect(accumulator.succeeded).toBe(false);
     expect(accumulator.failureTier).toBe('budget');
   });
+
+  it('dates the entered state from the first event', () => {
+    const accumulator: SnapshotAccumulator = initialSnapshotAccumulator();
+
+    applyProgressEvent(accumulator, {
+      type: 'runLaunched',
+      timestamp: 1000,
+      runId: 'run-1',
+      runKind: 'single-role',
+      subject: 'reviewer',
+      maxTurns: 8,
+      artifactPath: null,
+    });
+
+    expect(accumulator.stateEnteredAt).toBe(1000);
+  });
+
+  it('keeps the entered-state date through progress within the same state', () => {
+    const accumulator: SnapshotAccumulator = initialSnapshotAccumulator();
+
+    applyProgressEvent(accumulator, {
+      type: 'runLaunched',
+      timestamp: 1000,
+      runId: 'run-1',
+      runKind: 'single-role',
+      subject: 'reviewer',
+      maxTurns: 8,
+      artifactPath: null,
+    });
+    applyProgressEvent(accumulator, {
+      type: 'turnCompleted',
+      timestamp: 2000,
+      turnIndex: 0,
+      boundary: 'launch',
+    });
+
+    expect(accumulator.stateEnteredAt).toBe(1000);
+  });
+
+  it('re-dates the state when a gate wait begins and when it resolves', () => {
+    const accumulator: SnapshotAccumulator = initialSnapshotAccumulator();
+
+    applyProgressEvent(accumulator, {
+      type: 'gateWaitEntered',
+      timestamp: 2000,
+      stage: 'architect',
+    });
+    expect(accumulator.stateEnteredAt).toBe(2000);
+
+    applyProgressEvent(accumulator, {
+      type: 'gateWaitResolved',
+      timestamp: 3000,
+      stage: 'architect',
+      decision: 'approve',
+    });
+    expect(accumulator.stateEnteredAt).toBe(3000);
+  });
+
+  it('re-dates the state when a stage start clears a pending gate', () => {
+    const accumulator: SnapshotAccumulator = initialSnapshotAccumulator();
+
+    applyProgressEvent(accumulator, {
+      type: 'gateWaitEntered',
+      timestamp: 2000,
+      stage: 'architect',
+    });
+    applyProgressEvent(accumulator, {
+      type: 'stageStarted',
+      timestamp: 3000,
+      stage: 'executor',
+      stageIndex: 1,
+    });
+
+    expect(accumulator.stateEnteredAt).toBe(3000);
+  });
+
+  it('re-dates the state at the terminal outcome', () => {
+    const accumulator: SnapshotAccumulator = initialSnapshotAccumulator();
+
+    applyProgressEvent(accumulator, {
+      type: 'runLaunched',
+      timestamp: 1000,
+      runId: 'run-1',
+      runKind: 'single-role',
+      subject: 'reviewer',
+      maxTurns: 8,
+      artifactPath: null,
+    });
+    applyProgressEvent(accumulator, {
+      type: 'terminalOutcome',
+      timestamp: 5000,
+      succeeded: true,
+      failureTier: null,
+    });
+
+    expect(accumulator.stateEnteredAt).toBe(5000);
+  });
 });

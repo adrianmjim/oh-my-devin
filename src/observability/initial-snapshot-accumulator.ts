@@ -14,5 +14,6 @@ export function initialSnapshotAccumulator(): SnapshotAccumulator {
     succeeded: null,
     failureTier: null,
     lastEventAt: 0,
+    stateEnteredAt: 0,
   };
 }

@@ -81,10 +81,10 @@ describe('deriveListingEntry', () => {
     expect(entry.turnsUsed).toBe(2);
     expect(entry.maxTurns).toBe(8);
     expect(entry.lastEventAt).toBe(2000);
-    expect(entry.stateEnteredAt).toBe(2000);
+    expect(entry.stateEnteredAt).toBe(1000);
   });
 
-  it('applies the stalled derivation and dates the state from the liveness signal', async () => {
+  it('applies the stalled derivation and dates the stall from the moment the threshold elapsed', async () => {
     const stampedAt: number = NOW - THRESHOLD_MS * 2;
     await seed('run-cold', [launched('run-cold')], stampedAt);
 
@@ -96,10 +96,10 @@ describe('deriveListingEntry', () => {
     );
 
     expect(entry.state).toBe('stalled');
-    expect(entry.stateEnteredAt).toBe(stampedAt);
+    expect(entry.stateEnteredAt).toBe(stampedAt + THRESHOLD_MS);
   });
 
-  it('falls back to the last event when a stalled run left no liveness signal', async () => {
+  it('dates the stall from the last event when a stalled run left no liveness signal', async () => {
     await seed('run-quiet', [launched('run-quiet')], null);
 
     const entry: RunListingEntry = await deriveListingEntry(
@@ -110,7 +110,7 @@ describe('deriveListingEntry', () => {
     );
 
     expect(entry.state).toBe('stalled');
-    expect(entry.stateEnteredAt).toBe(1000);
+    expect(entry.stateEnteredAt).toBe(1000 + THRESHOLD_MS);
   });
 
   it('carries the pending gate of a run awaiting a human decision', async () => {

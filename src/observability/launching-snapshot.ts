@@ -10,10 +10,11 @@ export function launchingSnapshot(
   thresholdMs: number,
 ): RunSnapshot {
   const liveness: Liveness = deriveLiveness(recordedAt, now, thresholdMs);
+  const stalled: boolean = liveness === 'stalled';
   return {
     runId,
     runKind: 'single-role',
-    state: liveness === 'stalled' ? 'stalled' : 'running',
+    state: stalled ? 'stalled' : 'running',
     subject: '',
     currentStage: null,
     turnsUsed: 0,
@@ -23,5 +24,6 @@ export function launchingSnapshot(
     pendingGate: null,
     failureTier: null,
     lastEventAt: recordedAt,
+    stateEnteredAt: stalled ? recordedAt + thresholdMs : recordedAt,
   };
 }
