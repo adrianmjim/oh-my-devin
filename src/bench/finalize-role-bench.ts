@@ -14,6 +14,7 @@ export async function finalizeRoleBench(
   const resultsPath: string = await writeBenchResults(
     options.score,
     options.resultsDir,
+    options.mode,
   );
   const requested: boolean =
     options.mode === 'real' && options.env[BENCH_SAVE_ENV] === '1';

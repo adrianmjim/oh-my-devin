@@ -18,6 +18,8 @@ function scoreOf(fixtureId: string, composite: number): FixtureScore {
     dimensions: [{ dimension: 'detection', score: composite }],
     composite,
     artifactValid: true,
+    failureTier: null,
+    validationErrors: [],
   };
 }
 

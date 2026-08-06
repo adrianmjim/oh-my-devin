@@ -1,4 +1,5 @@
 import { join } from 'node:path';
+import type { FailureTier } from '../outcome/failure-tier';
 import type { RunReport } from '../outcome/run-report';
 import type { DimensionScore } from './dimension-score';
 import type { DimensionWeight } from './dimension-weight';
@@ -18,8 +19,12 @@ export async function runFixture(
   );
 
   let artifactText: string | null;
+  let failureTier: FailureTier | null;
+  let validationErrors: readonly string[];
   if (options.mode === 'dry') {
     artifactText = options.fixture.sampleArtifact;
+    failureTier = null;
+    validationErrors = [];
   } else {
     const report: RunReport = await options.run({
       roleName: options.fixture.role,
@@ -33,6 +38,8 @@ export async function runFixture(
     artifactText = report.artifactValid
       ? await readBenchFile(join(options.scratch.dir, report.artifactPath))
       : null;
+    failureTier = report.failureTier;
+    validationErrors = report.validationErrors;
   }
 
   const dimensions: readonly DimensionScore[] =
@@ -57,5 +64,7 @@ export async function runFixture(
     dimensions,
     composite: weightedComposite(dimensions, weights),
     artifactValid: artifactText !== null,
+    failureTier,
+    validationErrors,
   };
 }

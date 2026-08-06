@@ -20,6 +20,8 @@ const SCORE: RoleBenchScore = {
       dimensions: [{ dimension: 'detection', score: 1 }],
       composite: 1,
       artifactValid: true,
+      failureTier: null,
+      validationErrors: [],
     },
   ],
   composite: 1,
@@ -49,7 +51,7 @@ describe('finalizeRoleBench', () => {
       baselinesDir,
     });
 
-    expect(path).toBe(join(resultsDir, 'reviewer.json'));
+    expect(path).toBe(join(resultsDir, 'reviewer.dry.json'));
     await expect(readFile(path, 'utf8')).resolves.toContain('reviewer');
   });
 

@@ -1,13 +1,17 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { BenchBaseline } from './bench-baseline';
+import type { FixtureScore } from './fixture-score';
 import type { SaveBaselineOptions } from './save-baseline-options';
 
 export async function saveBaseline(
   options: SaveBaselineOptions,
 ): Promise<string | null> {
+  const scored: boolean = options.score.fixtures.some(
+    (fixture: FixtureScore): boolean => fixture.artifactValid,
+  );
   let path: string | null = null;
-  if (options.requested && options.score.fixtures.length > 0) {
+  if (options.requested && scored) {
     const baseline: BenchBaseline = {
       role: options.score.role,
       promptDigest: options.promptDigest,

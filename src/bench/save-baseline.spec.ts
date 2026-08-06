@@ -18,6 +18,8 @@ const SCORE: RoleBenchScore = {
       dimensions: [{ dimension: 'detection', score: 1 }],
       composite: 1,
       artifactValid: true,
+      failureTier: null,
+      validationErrors: [],
     },
   ],
   composite: 1,
@@ -76,6 +78,35 @@ describe('saveBaseline', () => {
   it('writes nothing when the run scored no fixtures', async () => {
     const path: string | null = await saveBaseline({
       score: { ...SCORE, fixtures: [], composite: 0 },
+      promptDigest: 'abc123',
+      omdVersion: '0.1.0',
+      engineVersion: '3000.3.27',
+      baselinesDir,
+      requested: true,
+    });
+
+    expect(path).toBeNull();
+    await expect(readdir(baselinesDir)).resolves.toEqual([]);
+  });
+
+  it('writes nothing when no fixture produced a valid artifact', async () => {
+    const path: string | null = await saveBaseline({
+      score: {
+        ...SCORE,
+        fixtures: [
+          {
+            fixtureId: 'unbounded-loop',
+            role: 'reviewer',
+            model: 'claude-sonnet-5-medium',
+            dimensions: [{ dimension: 'detection', score: 0 }],
+            composite: 0,
+            artifactValid: false,
+            failureTier: 'invalid_artifact',
+            validationErrors: ['findings must be an array'],
+          },
+        ],
+        composite: 0,
+      },
       promptDigest: 'abc123',
       omdVersion: '0.1.0',
       engineVersion: '3000.3.27',

@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { CommandInvocation } from '../engine/command-invocation';
 import type { CommandResult } from '../engine/command-result';
 import type { CommandRunner } from '../engine/command-runner';
+import type { FailureTier } from '../outcome/failure-tier';
 import type { RunReport } from '../outcome/run-report';
 import type { RunRoleOptions } from '../run/run-role-options';
 import type { BenchFixture } from './bench-fixture';
@@ -23,21 +24,26 @@ class CountingRunner implements CommandRunner {
   }
 }
 
-function reportOf(artifactPath: string, artifactValid: boolean): RunReport {
+function reportOf(
+  artifactPath: string,
+  artifactValid: boolean,
+  failureTier: FailureTier | null = null,
+  validationErrors: readonly string[] = [],
+): RunReport {
   return {
     runId: 'run-1',
     role: 'reviewer',
     task: 'review',
     engine: 'devin',
     sessionId: 's1',
-    failureTier: null,
+    failureTier,
     turnsUsed: 1,
     maxTurns: 6,
     wallTimeMs: 10,
     artifactPath,
     writeScope: 'artifact',
     artifactValid,
-    validationErrors: [],
+    validationErrors,
     denyRule: null,
     repairAttempted: false,
   };
@@ -262,6 +268,43 @@ describe('runFixture', () => {
 
     expect(score.composite).toBe(0);
     expect(score.dimensions.every((entry) => entry.score === 0)).toBe(true);
+  });
+
+  it('records why a real run produced no valid artifact', async () => {
+    const score: FixtureScore = await runFixture({
+      fixture: reviewerFixture,
+      mode: 'real',
+      model: MODEL,
+      scratch,
+      run: (): Promise<RunReport> =>
+        Promise.resolve(
+          reportOf('review.json', false, 'invalid_artifact', [
+            'findings must be an array',
+          ]),
+        ),
+      runner,
+      clock: (): number => 0,
+    });
+
+    expect(score.failureTier).toBe('invalid_artifact');
+    expect(score.validationErrors).toEqual(['findings must be an array']);
+  });
+
+  it('carries no failure detail on the dry path', async () => {
+    const score: FixtureScore = await runFixture({
+      fixture: reviewerFixture,
+      mode: 'dry',
+      model: MODEL,
+      scratch,
+      run: (): Promise<RunReport> => {
+        throw new Error('unused');
+      },
+      runner,
+      clock: (): number => 0,
+    });
+
+    expect(score.failureTier).toBeNull();
+    expect(score.validationErrors).toEqual([]);
   });
 
   it('separates a zero earned by scoring from one caused by a missing artifact', async () => {

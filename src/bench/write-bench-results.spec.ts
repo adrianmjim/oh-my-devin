@@ -17,6 +17,8 @@ const SCORE: RoleBenchScore = {
       dimensions: [{ dimension: 'detection', score: 1 }],
       composite: 1,
       artifactValid: true,
+      failureTier: null,
+      validationErrors: [],
     },
     {
       fixtureId: 'clean-refactor',
@@ -25,6 +27,8 @@ const SCORE: RoleBenchScore = {
       dimensions: [{ dimension: 'detection', score: 0.5 }],
       composite: 0.5,
       artifactValid: true,
+      failureTier: null,
+      validationErrors: [],
     },
   ],
   composite: 0.75,
@@ -42,14 +46,29 @@ describe('writeBenchResults', () => {
   });
 
   it('writes the per-role result under the results directory', async () => {
-    const path: string = await writeBenchResults(SCORE, resultsDir);
+    const path: string = await writeBenchResults(SCORE, resultsDir, 'real');
 
     expect(path).toBe(join(resultsDir, 'reviewer.json'));
     expect(JSON.parse(await readFile(path, 'utf8'))).toEqual(SCORE);
   });
 
+  it('writes dry-run results beside the real results rather than over them', async () => {
+    const realPath: string = await writeBenchResults(SCORE, resultsDir, 'real');
+    const dryPath: string = await writeBenchResults(
+      { ...SCORE, composite: 0.5 },
+      resultsDir,
+      'dry',
+    );
+
+    expect(dryPath).toBe(join(resultsDir, 'reviewer.dry.json'));
+    const real: RoleBenchScore = JSON.parse(
+      await readFile(realPath, 'utf8'),
+    ) as RoleBenchScore;
+    expect(real.composite).toBe(0.75);
+  });
+
   it('records the model used on the role and on every fixture', async () => {
-    const path: string = await writeBenchResults(SCORE, resultsDir);
+    const path: string = await writeBenchResults(SCORE, resultsDir, 'real');
     const written: RoleBenchScore = JSON.parse(
       await readFile(path, 'utf8'),
     ) as RoleBenchScore;
@@ -65,14 +84,14 @@ describe('writeBenchResults', () => {
   it('creates the results directory when it does not exist yet', async () => {
     const nested: string = join(resultsDir, 'deep', 'nested');
 
-    const path: string = await writeBenchResults(SCORE, nested);
+    const path: string = await writeBenchResults(SCORE, nested, 'real');
 
     expect(path).toBe(join(nested, 'reviewer.json'));
     await expect(readFile(path, 'utf8')).resolves.toContain('reviewer');
   });
 
   it('writes newline-terminated JSON', async () => {
-    const path: string = await writeBenchResults(SCORE, resultsDir);
+    const path: string = await writeBenchResults(SCORE, resultsDir, 'real');
 
     expect(await readFile(path, 'utf8')).toMatch(/\n$/);
   });
