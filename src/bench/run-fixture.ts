@@ -55,6 +55,7 @@ export async function runFixture(
           artifactText,
           options.scratch.dir,
           KEYWORD_MATCH_THRESHOLD,
+          options.runner,
         );
 
   return {

@@ -4,15 +4,38 @@
   "criteria": [
     {
       "id": "slugify-exported",
-      "keywords": ["slugify", "implement", "export"],
+      "keywords": [
+        "slugify",
+        "implement",
+        "export"
+      ],
       "path": "src/slugify.js",
-      "contains": ["export", "slugify"]
+      "contains": [
+        "export",
+        "slugify"
+      ]
     },
     {
       "id": "tests-left-intact",
-      "keywords": ["test", "node", "run"],
+      "keywords": [
+        "test",
+        "node",
+        "run"
+      ],
       "path": "test/slugify.test.js",
-      "contains": ["'hello-world'", "slugify('!!!')"]
+      "contains": [
+        "'hello-world'",
+        "slugify('!!!')"
+      ]
     }
+  ],
+  "verification": {
+    "command": "node",
+    "args": [
+      "--test"
+    ]
+  },
+  "protectedPaths": [
+    "test/slugify.test.js"
   ]
 }

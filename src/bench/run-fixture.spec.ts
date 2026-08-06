@@ -236,6 +236,8 @@ describe('runFixture', () => {
               contains: ['input == null'],
             },
           ],
+          verification: { command: 'node', args: ['--test'] },
+          protectedPaths: [],
         },
         sampleArtifact: '{}',
       },

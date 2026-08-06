@@ -4,12 +4,17 @@ import type { DimensionWeight } from './dimension-weight';
 import { EXECUTOR_DIMENSION_WEIGHTS } from './executor-dimension-weights';
 
 describe('EXECUTOR_DIMENSION_WEIGHTS', () => {
-  it('weights criteria satisfaction and evidence accuracy', () => {
+  it('weights criteria, observed verification, test integrity and evidence', () => {
     expect(
       EXECUTOR_DIMENSION_WEIGHTS.map(
         (weight: DimensionWeight): BenchDimension => weight.dimension,
       ),
-    ).toEqual(['criteria-satisfaction', 'evidence-accuracy']);
+    ).toEqual([
+      'criteria-satisfaction',
+      'verification-outcome',
+      'test-integrity',
+      'evidence-accuracy',
+    ]);
   });
 
   it('sums to one so the composite stays in the unit interval', () => {
@@ -21,7 +26,9 @@ describe('EXECUTOR_DIMENSION_WEIGHTS', () => {
   });
 
   it('weights what the tree shows above what the artifact claims', () => {
-    expect(EXECUTOR_DIMENSION_WEIGHTS[0]?.weight).toBe(0.7);
+    expect(EXECUTOR_DIMENSION_WEIGHTS[0]?.weight).toBe(0.3);
     expect(EXECUTOR_DIMENSION_WEIGHTS[1]?.weight).toBe(0.3);
+    expect(EXECUTOR_DIMENSION_WEIGHTS[2]?.weight).toBe(0.2);
+    expect(EXECUTOR_DIMENSION_WEIGHTS[3]?.weight).toBe(0.2);
   });
 });

@@ -33,6 +33,8 @@ const EXECUTOR_TRUTH = {
       contains: ['if (input == null)'],
     },
   ],
+  verification: { command: 'node', args: ['--test'] },
+  protectedPaths: ['test/parse.test.js'],
 };
 
 describe('validateTruthDocument', () => {

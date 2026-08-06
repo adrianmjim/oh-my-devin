@@ -1,3 +1,4 @@
+import type { CommandRunner } from '../engine/command-runner';
 import type { BenchFixture } from './bench-fixture';
 import type { DimensionScore } from './dimension-score';
 import { parseArchitectArtifact } from './parse-architect-artifact';
@@ -14,6 +15,7 @@ export async function scoreFixture(
   artifactText: string,
   treeDir: string,
   threshold: number,
+  runner: CommandRunner,
 ): Promise<readonly DimensionScore[]> {
   const source: string = `${fixture.role}/${fixture.id} artifact`;
   const parsed: unknown = parseBenchJson(artifactText, source);
@@ -36,7 +38,9 @@ export async function scoreFixture(
       parseExecutorArtifact(parsed, source),
       truth,
       treeDir,
+      fixture.treeDir,
       threshold,
+      runner,
     );
   }
   return scores;

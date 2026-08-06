@@ -1,10 +1,12 @@
 import { BenchFixtureError } from './bench-fixture-error';
 import type { ExecutorTruthDocument } from './executor-truth-document';
 import type { ExecutorTruthCriterion } from './executor-truth-criterion';
+import type { ExecutorVerification } from './executor-verification';
 import { isExecutorTestsClaim } from './is-executor-tests-claim';
 import { requireBenchFields } from './require-bench-fields';
 import { requireBenchKeywords } from './require-bench-keywords';
 import { requireBenchString } from './require-bench-string';
+import { requireBenchStrings } from './require-bench-strings';
 
 export function parseExecutorTruth(
   fields: Record<string, unknown>,
@@ -22,6 +24,20 @@ export function parseExecutorTruth(
       `"${source}#criteria" must be a non-empty array`,
     );
   }
+  const verificationFields: Record<string, unknown> = requireBenchFields(
+    fields['verification'],
+    `${source}#verification`,
+  );
+  const verification: ExecutorVerification = {
+    command: requireBenchString(
+      verificationFields['command'],
+      `${source}#verification.command`,
+    ),
+    args: requireBenchStrings(
+      verificationFields['args'],
+      `${source}#verification.args`,
+    ),
+  };
   return {
     role: 'executor',
     expectedTests,
@@ -36,6 +52,11 @@ export function parseExecutorTruth(
           contains: requireBenchKeywords(item['contains'], `${at}.contains`),
         };
       },
+    ),
+    verification,
+    protectedPaths: requireBenchStrings(
+      fields['protectedPaths'],
+      `${source}#protectedPaths`,
     ),
   };
 }

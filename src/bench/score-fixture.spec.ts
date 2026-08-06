@@ -2,6 +2,8 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import type { CommandResult } from '../engine/command-result';
+import type { CommandRunner } from '../engine/command-runner';
 import type { BenchFixture } from './bench-fixture';
 import { BenchFixtureError } from './bench-fixture-error';
 import type { BenchDimension } from './bench-dimension';
@@ -22,6 +24,11 @@ function fixtureOf(fixture: Partial<BenchFixture>): BenchFixture {
     ...fixture,
   };
 }
+
+const RUNNER: CommandRunner = {
+  run: (): Promise<CommandResult> =>
+    Promise.resolve({ stdout: '', stderr: '', exitCode: 0 }),
+};
 
 describe('scoreFixture', () => {
   let treeDir: string;
@@ -58,6 +65,7 @@ describe('scoreFixture', () => {
       }),
       treeDir,
       KEYWORD_MATCH_THRESHOLD,
+      RUNNER,
     );
 
     expect(
@@ -86,6 +94,7 @@ describe('scoreFixture', () => {
       }),
       treeDir,
       KEYWORD_MATCH_THRESHOLD,
+      RUNNER,
     );
 
     expect(
@@ -111,6 +120,8 @@ describe('scoreFixture', () => {
               contains: ['input == null'],
             },
           ],
+          verification: { command: 'node', args: ['--test'] },
+          protectedPaths: [],
         },
       }),
       JSON.stringify({
@@ -119,10 +130,13 @@ describe('scoreFixture', () => {
       }),
       treeDir,
       KEYWORD_MATCH_THRESHOLD,
+      RUNNER,
     );
 
     expect(scores).toEqual([
       { dimension: 'criteria-satisfaction', score: 1 },
+      { dimension: 'verification-outcome', score: 1 },
+      { dimension: 'test-integrity', score: 1 },
       { dimension: 'evidence-accuracy', score: 1 },
     ]);
   });
@@ -134,6 +148,7 @@ describe('scoreFixture', () => {
         JSON.stringify({ approach: 'wrong artifact' }),
         treeDir,
         KEYWORD_MATCH_THRESHOLD,
+        RUNNER,
       ),
     ).rejects.toThrow(BenchFixtureError);
   });

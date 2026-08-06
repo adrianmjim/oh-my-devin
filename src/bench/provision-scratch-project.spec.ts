@@ -33,7 +33,13 @@ describe('provisionScratchProject', () => {
       dir: fixtureDir,
       treeDir,
       task: 'Bound the loop.',
-      truth: { role: 'executor', expectedTests: 'passed', criteria: [] },
+      truth: {
+        role: 'executor',
+        expectedTests: 'passed',
+        criteria: [],
+        verification: { command: 'node', args: ['--test'] },
+        protectedPaths: [],
+      },
       sampleArtifact: '{}',
     };
   });

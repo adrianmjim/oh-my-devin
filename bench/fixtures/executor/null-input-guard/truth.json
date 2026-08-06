@@ -4,21 +4,50 @@
   "criteria": [
     {
       "id": "guard-added-to-source",
-      "keywords": ["normalize", "null", "guard"],
+      "keywords": [
+        "normalize",
+        "null",
+        "guard"
+      ],
       "path": "src/normalize.js",
-      "contains": ["null"]
+      "contains": [
+        "null"
+      ]
     },
     {
       "id": "trimming-behaviour-kept",
-      "keywords": ["trim", "lowercase", "normalize"],
+      "keywords": [
+        "trim",
+        "lowercase",
+        "normalize"
+      ],
       "path": "src/normalize.js",
-      "contains": ["trim", "toLowerCase"]
+      "contains": [
+        "trim",
+        "toLowerCase"
+      ]
     },
     {
       "id": "tests-left-intact",
-      "keywords": ["test", "node", "run"],
+      "keywords": [
+        "test",
+        "node",
+        "run"
+      ],
       "path": "test/normalize.test.js",
-      "contains": ["normalize(null)", "normalize('  Hello ')"]
+      "contains": [
+        "normalize(null)",
+        "normalize('  Hello ')"
+      ]
     }
+  ],
+  "verification": {
+    "command": "node",
+    "args": [
+      "--test"
+    ]
+  },
+  "protectedPaths": [
+    "test/normalize.test.js"
   ]
 }

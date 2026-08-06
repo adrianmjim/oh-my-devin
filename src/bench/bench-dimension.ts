@@ -6,4 +6,6 @@ export type BenchDimension =
   | 'gap-coverage'
   | 'spurious-step-resistance'
   | 'criteria-satisfaction'
+  | 'verification-outcome'
+  | 'test-integrity'
   | 'evidence-accuracy';
