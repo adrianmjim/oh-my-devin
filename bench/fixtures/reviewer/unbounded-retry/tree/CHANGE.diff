@@ -1,0 +1,19 @@
+diff --git a/src/upload.js b/src/upload.js
+--- a/src/upload.js
++++ b/src/upload.js
+@@ -1,5 +1,13 @@
+ import { putObject } from './storage.js';
+
+-export async function uploadWithRetry(key, body) {
+-  return await putObject(key, body);
++export async function uploadWithRetry(key, body) {
++  let delayMs = 100;
++  while (true) {
++    try {
++      return await putObject(key, body);
++    } catch {
++      await new Promise((resolve) => setTimeout(resolve, delayMs));
++      delayMs *= 2;
++    }
++  }
+ }

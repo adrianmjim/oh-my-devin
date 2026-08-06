@@ -1,0 +1,18 @@
+{
+  "role": "executor",
+  "expectedTests": "passed",
+  "criteria": [
+    {
+      "id": "slugify-exported",
+      "keywords": ["slugify", "implement", "export"],
+      "path": "src/slugify.js",
+      "contains": ["export", "slugify"]
+    },
+    {
+      "id": "tests-left-intact",
+      "keywords": ["test", "node", "run"],
+      "path": "test/slugify.test.js",
+      "contains": ["'hello-world'", "slugify('!!!')"]
+    }
+  ]
+}

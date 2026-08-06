@@ -1,0 +1,18 @@
+{
+  "approach": "Add one route that runs a trivial query against the existing pool and reports the outcome as the response status, so a load balancer can read health without interpreting a body.",
+  "steps": [
+    {
+      "description": "Register a GET /health route beside the existing search route.",
+      "files": ["src/routes.js"]
+    },
+    {
+      "description": "Check the database from the handler with a trivial query through the existing pool, bounded by a short timeout.",
+      "files": ["src/health.js", "src/db.js"]
+    },
+    {
+      "description": "Return 200 when the query succeeds and status 503 for an unhealthy service when it does not.",
+      "files": ["src/health.js"]
+    }
+  ],
+  "risks": ["A health check without a timeout hangs behind the same outage it is meant to report."]
+}

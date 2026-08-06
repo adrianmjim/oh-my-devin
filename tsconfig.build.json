@@ -8,5 +8,10 @@
     "sourceMap": false
   },
   "include": ["src"],
-  "exclude": ["src/**/*.spec.ts", "src/testing/**", "src/smoke/**"]
+  "exclude": [
+    "src/**/*.spec.ts",
+    "src/testing/**",
+    "src/smoke/**",
+    "src/bench/**"
+  ]
 }
