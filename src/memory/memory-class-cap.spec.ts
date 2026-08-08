@@ -24,4 +24,9 @@ describe('MEMORY_CLASS_CAP', () => {
   it('bounds the notepad well below a preamble-flooding size', () => {
     expect(MEMORY_CLASS_CAP.notepad).toBe(50);
   });
+
+  it('bounds the classes detection grows the store by', () => {
+    expect(MEMORY_CLASS_CAP.knowledge).toBeGreaterThan(0);
+    expect(MEMORY_CLASS_CAP.rules).toBeGreaterThan(0);
+  });
 });

@@ -1,1 +1,1 @@
-export type MemoryClass = 'profile' | 'notepad';
+export type MemoryClass = 'profile' | 'notepad' | 'knowledge' | 'rules';

@@ -9,6 +9,11 @@ describe('isMemoryClass', () => {
     }
   });
 
+  it('recognizes the classes detection grows the store by', () => {
+    expect(isMemoryClass('knowledge')).toBe(true);
+    expect(isMemoryClass('rules')).toBe(true);
+  });
+
   it('rejects a value outside the vocabulary', () => {
     expect(isMemoryClass('transcripts')).toBe(false);
     expect(isMemoryClass(undefined)).toBe(false);
