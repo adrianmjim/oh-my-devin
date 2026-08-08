@@ -21,6 +21,7 @@ describe('CLI_USAGE', () => {
       'omd team run',
       'omd council run',
       'omd mode',
+      'omd memory remember',
       'omd --version',
     ]) {
       expect(CLI_USAGE).toContain(command);

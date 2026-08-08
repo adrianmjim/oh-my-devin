@@ -1,11 +1,19 @@
 import { spawn } from 'node:child_process';
 import type { ChildProcessWithoutNullStreams } from 'node:child_process';
-import { access, mkdtemp, rm } from 'node:fs/promises';
+import {
+  access,
+  mkdtemp,
+  mkdir,
+  readFile,
+  rm,
+  writeFile,
+} from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { CommandResult } from '../engine/command-result';
+import { MemoryStorePaths } from '../memory/memory-store-paths';
 
 const smokeEnabled: boolean = process.env['OMD_SMOKE'] === '1';
 
@@ -25,6 +33,55 @@ interface JsonReport {
   readonly outcome: string;
   readonly exitCode: number;
   readonly turnsUsed: number;
+}
+
+const REMEMBERED: string = 'omd smoke marker: the staging gate is manual';
+
+const PRIORITY_NOTE: string = 'omd smoke marker: reviewers read the diff first';
+
+function runHook(cwd: string, phase: string): Promise<CommandResult> {
+  return new Promise<CommandResult>(
+    (
+      resolvePromise: (result: CommandResult) => void,
+      reject: (error: Error) => void,
+    ): void => {
+      const child: ChildProcessWithoutNullStreams = spawn(
+        process.execPath,
+        [join(cwd, '.devin', 'hooks', 'omd-mode.mjs'), phase],
+        { cwd },
+      );
+      let stdout: string = '';
+      let stderr: string = '';
+      child.stdout.on('data', (chunk: Buffer): void => {
+        stdout += chunk.toString();
+      });
+      child.stderr.on('data', (chunk: Buffer): void => {
+        stderr += chunk.toString();
+      });
+      child.on('error', reject);
+      child.on('close', (code: number | null): void => {
+        resolvePromise({ stdout, stderr, exitCode: code ?? 1 });
+      });
+      child.stdin.end();
+    },
+  );
+}
+
+async function declareNotepadMemory(cwd: string): Promise<void> {
+  const agentPath: string = join(
+    cwd,
+    '.devin',
+    'agents',
+    'reviewer',
+    'AGENT.md',
+  );
+  const source: string = await readFile(agentPath, 'utf8');
+  const closing: number = source.indexOf('\n---', 4);
+  await writeFile(
+    agentPath,
+    `${source.slice(0, closing)}\nomd-memory:\n  - notepad${source.slice(closing)}`,
+    'utf8',
+  );
 }
 
 async function exists(path: string): Promise<boolean> {
@@ -114,6 +171,63 @@ describe("omd's own flows smoke suite", () => {
         expect(report.turnsUsed).toBeGreaterThanOrEqual(1);
       },
       RUN_TIMEOUT_MS,
+    );
+
+    it(
+      'delivers a remembered note into a declaring role’s real session',
+      async () => {
+        await declareNotepadMemory(scratchDir);
+        const remembered: CommandResult = await runOmd(scratchDir, [
+          'memory',
+          'remember',
+          REMEMBERED,
+        ]);
+        expect(remembered.exitCode, remembered.stderr).toBe(0);
+
+        const result: CommandResult = await runOmd(scratchDir, [
+          'run',
+          'reviewer',
+          'Your project memory holds exactly one note. Write {"verdict":"approve","findings":[{"severity":"low","message":"<that note verbatim>"}]} to review.json, replacing the placeholder with the note.',
+          '--json',
+        ]);
+
+        const report: JsonReport = JSON.parse(result.stdout) as JsonReport;
+        expect(report.role).toBe('reviewer');
+        expect(
+          await readFile(join(scratchDir, 'review.json'), 'utf8'),
+        ).toContain('staging gate is manual');
+      },
+      RUN_TIMEOUT_MS,
+    );
+
+    it(
+      'injects the priority note through the installed session hook',
+      async () => {
+        const paths: MemoryStorePaths = new MemoryStorePaths(scratchDir);
+        await mkdir(paths.dir, { recursive: true });
+        await writeFile(
+          paths.notepad,
+          JSON.stringify([
+            {
+              kind: 'priority',
+              text: PRIORITY_NOTE,
+              hash: 'smoke',
+              recordedAt: 1,
+            },
+          ]),
+          'utf8',
+        );
+
+        const injected: CommandResult = await runHook(
+          scratchDir,
+          'session-start',
+        );
+
+        expect(injected.exitCode, injected.stderr).toBe(0);
+        expect(injected.stdout).toContain('Project memory');
+        expect(injected.stdout).toContain(PRIORITY_NOTE);
+      },
+      SETUP_TIMEOUT_MS,
     );
 
     it(

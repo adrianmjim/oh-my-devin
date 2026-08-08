@@ -16,9 +16,37 @@ import type { CommandResult } from '../engine/command-result';
 import { JournalWriter } from '../observability/journal-writer';
 import { RunRecordPaths } from '../observability/run-record-paths';
 import { writeLivenessStamp } from '../observability/write-liveness-stamp';
+import { MemoryStorePaths } from '../memory/memory-store-paths';
+import { NOTEPAD_RELATIVE_PATH } from '../memory/notepad-relative-path';
 import { createE2eProject } from '../testing/create-e2e-project';
 import { CLI_PATH } from '../testing/cli-path';
 import type { E2eProject } from '../testing/e2e-project';
+import { SESSION_START_PHASE } from './session-start-phase';
+import { USER_PROMPT_PHASE } from './user-prompt-phase';
+
+function runDeployedHook(projectDir: string, phase: string): Promise<string> {
+  return new Promise<string>(
+    (
+      resolvePromise: (stdout: string) => void,
+      reject: (error: Error) => void,
+    ): void => {
+      const child: ChildProcessWithoutNullStreams = spawn(
+        process.execPath,
+        [join(projectDir, '.devin', 'hooks', 'omd-mode.mjs'), phase],
+        { cwd: projectDir },
+      );
+      let stdout: string = '';
+      child.stdout.on('data', (chunk: Buffer): void => {
+        stdout += chunk.toString();
+      });
+      child.on('error', reject);
+      child.on('close', (): void => {
+        resolvePromise(stdout);
+      });
+      child.stdin.end();
+    },
+  );
+}
 
 async function exists(path: string): Promise<boolean> {
   try {
@@ -330,6 +358,40 @@ describe('omd setup (e2e)', () => {
       expect(injected).toContain('architect');
     } finally {
       await rm(shimDir, { recursive: true, force: true });
+    }
+  });
+
+  it('deploys a hook script that covers ambient memory for both injection phases', async () => {
+    project = await createE2eProject();
+
+    await project.run(['setup']);
+    await project.run(['memory', 'remember', 'the gate runs on staging']);
+    const paths: MemoryStorePaths = new MemoryStorePaths(project.dir);
+    await mkdir(paths.dir, { recursive: true });
+    await writeFile(
+      paths.notepad,
+      JSON.stringify([
+        {
+          kind: 'priority',
+          text: 'deploys need the staging gate',
+          hash: 'abc',
+          recordedAt: 1,
+        },
+      ]),
+      'utf8',
+    );
+
+    const deployed: string = await readFile(
+      join(project.dir, '.devin', 'hooks', 'omd-mode.mjs'),
+      'utf8',
+    );
+    expect(deployed).toContain(NOTEPAD_RELATIVE_PATH);
+    expect(deployed).toContain("entry.kind === 'priority'");
+    for (const phase of [SESSION_START_PHASE, USER_PROMPT_PHASE]) {
+      const injected: string = await runDeployedHook(project.dir, phase);
+      expect(injected).toContain('Project memory');
+      expect(injected).toContain('deploys need the staging gate');
+      expect(injected).not.toContain('the gate runs on staging');
     }
   });
 

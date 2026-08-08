@@ -27,6 +27,7 @@ export function createStageRunner(deps: StageRunnerDeps): StageRunner {
         clock: deps.clock,
         lookup,
         provisionedWorktree: true,
+        memoryBaseDir: deps.memoryBaseDir,
       });
 
       if (report.failureTier !== null || !report.artifactValid) {

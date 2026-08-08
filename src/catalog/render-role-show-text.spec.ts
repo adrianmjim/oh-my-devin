@@ -16,6 +16,7 @@ function role(overrides: Partial<RoleDefinition>): RoleDefinition {
     contextPolicy: 'isolated',
     wallTimeMs: null,
     writeScope: 'artifact',
+    memorySelection: [],
     promptBody: '## Mission\n\nAssess the diff.',
     ...overrides,
   };
@@ -31,6 +32,16 @@ describe('renderRoleShowText', () => {
     expect(text).toContain('omd-max-turns:   6');
     expect(text).toContain('omd-context:     isolated');
     expect(text).toContain('omd-write-scope: artifact');
+  });
+
+  it('reads an empty memory selection as none', () => {
+    expect(renderRoleShowText(role({}))).toContain('omd-memory:      (none)');
+  });
+
+  it('lists the declared memory classes', () => {
+    expect(
+      renderRoleShowText(role({ memorySelection: ['notepad', 'profile'] })),
+    ).toContain('omd-memory:      notepad, profile');
   });
 
   it('states a declared worktree write scope', () => {

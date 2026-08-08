@@ -16,6 +16,7 @@ const BASE: RoleDefinition = {
   contextPolicy: 'isolated',
   wallTimeMs: null,
   writeScope: 'artifact',
+  memorySelection: [],
   promptBody: 'Study the diff with `read` and `grep`.',
 };
 

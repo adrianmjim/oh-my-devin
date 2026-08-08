@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { LayerLookup } from '../layer/layer-lookup';
+import { appendNotepadEntry } from '../memory/append-notepad-entry';
 import { resolveRunInvocation } from './resolve-run-invocation';
 import type { ResolvedRunInvocation } from './resolved-run-invocation';
 import { UsageError } from './usage-error';
@@ -15,6 +16,19 @@ function agentMd(schemaRef: string): string {
     'omd-output: review.json',
     `omd-schema: ${schemaRef}`,
     'omd-max-turns: 8',
+    '---',
+    'You are the reviewer.',
+  ].join('\n');
+}
+
+function rememberingAgentMd(): string {
+  return [
+    '---',
+    'omd-output: review.json',
+    'omd-schema: review.schema.json',
+    'omd-max-turns: 8',
+    'omd-memory:',
+    '  - notepad',
     '---',
     'You are the reviewer.',
   ].join('\n');
@@ -189,5 +203,100 @@ describe('resolveRunInvocation', () => {
         provisionedWorktree: false,
       }),
     ).rejects.toThrow(UsageError);
+  });
+
+  it('composes no memory into the bundle of a role that declares none', async () => {
+    await scaffold();
+    await appendNotepadEntry(projectDir, 'manual', 'the gate is manual', 5);
+
+    const resolved: ResolvedRunInvocation = await resolveRunInvocation(
+      lookup,
+      'reviewer',
+      'assess the diff',
+      { workingDirectory: projectDir, provisionedWorktree: false },
+    );
+
+    expect(JSON.stringify(resolved.bundle)).not.toContain('the gate is manual');
+    expect(JSON.stringify(resolved.bundle)).not.toContain('Project memory');
+  });
+
+  it('composes the declared class into the preamble of a declaring role', async () => {
+    await scaffold();
+    await writeFile(
+      join(projectDir, '.devin', 'agents', 'reviewer', 'AGENT.md'),
+      rememberingAgentMd(),
+      'utf8',
+    );
+    await appendNotepadEntry(projectDir, 'manual', 'the gate is manual', 5);
+
+    const resolved: ResolvedRunInvocation = await resolveRunInvocation(
+      lookup,
+      'reviewer',
+      'assess the diff',
+      { workingDirectory: projectDir, provisionedWorktree: false },
+    );
+
+    expect(resolved.bundle.system_instructions[0]).toContain(
+      'the gate is manual',
+    );
+  });
+
+  it('composes memory from the memory base directory, not the worktree', async () => {
+    await scaffold();
+    await writeFile(
+      join(projectDir, '.devin', 'agents', 'reviewer', 'AGENT.md'),
+      rememberingAgentMd(),
+      'utf8',
+    );
+    await appendNotepadEntry(projectDir, 'manual', 'the gate is manual', 5);
+    const worktreeDir: string = join(projectDir, '.omd', 'worktrees', 'seat-a');
+    await mkdir(worktreeDir, { recursive: true });
+
+    const resolved: ResolvedRunInvocation = await resolveRunInvocation(
+      lookup,
+      'reviewer',
+      'assess the diff',
+      {
+        workingDirectory: worktreeDir,
+        provisionedWorktree: true,
+        memoryBaseDir: projectDir,
+      },
+    );
+
+    expect(resolved.bundle.system_instructions[0]).toContain(
+      'the gate is manual',
+    );
+  });
+
+  it('composes nothing that originates in another role instance’s session', async () => {
+    await scaffold();
+    await writeFile(
+      join(projectDir, '.devin', 'agents', 'reviewer', 'AGENT.md'),
+      rememberingAgentMd(),
+      'utf8',
+    );
+    await appendNotepadEntry(projectDir, 'manual', 'the gate is manual', 5);
+    const otherRunDir: string = join(projectDir, '.omd', 'runs', 'run-other');
+    await mkdir(otherRunDir, { recursive: true });
+    await writeFile(
+      join(otherRunDir, 'events.jsonl'),
+      JSON.stringify({ type: 'turnCompleted', secret: 'other-session-leak' }),
+      'utf8',
+    );
+    await writeFile(
+      join(otherRunDir, 'stdout.log'),
+      'other-session-leak',
+      'utf8',
+    );
+
+    const resolved: ResolvedRunInvocation = await resolveRunInvocation(
+      lookup,
+      'reviewer',
+      'assess the diff',
+      { workingDirectory: projectDir, provisionedWorktree: false },
+    );
+
+    expect(JSON.stringify(resolved.bundle)).not.toContain('other-session-leak');
+    expect(JSON.stringify(resolved.bundle)).not.toContain('run-other');
   });
 });

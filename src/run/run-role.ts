@@ -46,6 +46,7 @@ export async function runRole(options: RunRoleOptions): Promise<RunReport> {
         {
           workingDirectory: options.workingDirectory,
           provisionedWorktree: options.provisionedWorktree ?? false,
+          memoryBaseDir: options.memoryBaseDir ?? options.workingDirectory,
         },
       );
     } catch (error: unknown) {

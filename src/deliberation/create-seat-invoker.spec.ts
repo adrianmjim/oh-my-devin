@@ -149,6 +149,7 @@ function makeDeps(
     readArtifact: read,
     clock: (): number => 0,
     userConfigDir,
+    memoryBaseDir: '/project',
   };
 }
 
@@ -362,6 +363,7 @@ describe('createSeatInvoker', () => {
         readArtifact: (): Promise<string> => Promise.resolve(POSITION_JSON),
         clock: (): number => 0,
         userConfigDir: null,
+        memoryBaseDir: base,
       },
       new WorktreePool(worktrees),
     );

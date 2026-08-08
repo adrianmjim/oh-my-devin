@@ -16,6 +16,7 @@ export function renderRoleShowText(role: RoleDefinition): string {
     `omd-context:     ${role.contextPolicy}`,
     `omd-wall-time:   ${role.wallTimeMs === null ? '(unset)' : `${role.wallTimeMs}ms`}`,
     `omd-write-scope: ${role.writeScope}`,
+    `omd-memory:      ${orNone(role.memorySelection)}`,
     `summary:         ${summarizePromptBody(role.promptBody)}`,
   ].join('\n');
 }

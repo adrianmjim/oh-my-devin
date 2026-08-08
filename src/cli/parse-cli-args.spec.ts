@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ALL_LAYER_COMPONENTS } from '../layer/all-layer-components';
 import { UsageError } from '../run/usage-error';
 import type { CouncilRunCommand } from './council-run-command';
+import type { MemoryRememberCommand } from './memory-remember-command';
 import type { ModeSetCommand } from './mode-set-command';
 import type { PluginBuildCommand } from './plugin-build-command';
 import type { RolesShowCommand } from './roles-show-command';
@@ -390,5 +391,20 @@ describe('parseCliArgs', () => {
       UsageError,
     );
     expect(() => parseCliArgs(['mode', 'clear', 'extra'])).toThrow(UsageError);
+  });
+
+  it('parses `memory remember "<text>"`', () => {
+    const command = parseCliArgs(['memory', 'remember', 'the gate is manual']);
+    expect(command.kind).toBe('memory-remember');
+    expect((command as MemoryRememberCommand).text).toBe('the gate is manual');
+  });
+
+  it('rejects `memory remember` without text', () => {
+    expect(() => parseCliArgs(['memory', 'remember'])).toThrow(UsageError);
+  });
+
+  it('rejects an unknown memory subcommand', () => {
+    expect(() => parseCliArgs(['memory'])).toThrow(UsageError);
+    expect(() => parseCliArgs(['memory', 'forget'])).toThrow(UsageError);
   });
 });

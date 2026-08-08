@@ -1,3 +1,4 @@
+import { EMPTY_MEMORY_DELIVERY } from '../memory/empty-memory-delivery';
 import { describe, expect, it } from 'vitest';
 import { compileAgentConfigBundle } from '../contract/compile-agent-config-bundle';
 import { PROBE_ROLE } from './probe-role';
@@ -11,7 +12,11 @@ describe('PROBE_ROLE', () => {
 
   it('compiles into an agent config bundle', () => {
     expect(
-      compileAgentConfigBundle(PROBE_ROLE, '/tmp/omd-doctor').allowed_tools,
+      compileAgentConfigBundle(
+        PROBE_ROLE,
+        '/tmp/omd-doctor',
+        EMPTY_MEMORY_DELIVERY,
+      ).allowed_tools,
     ).toEqual([]);
   });
 });

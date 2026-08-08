@@ -74,6 +74,7 @@ function deps(
     readArtifact: (): Promise<string> => Promise.resolve(artifact),
     clock: (): number => 0,
     userConfigDir: null,
+    memoryBaseDir: '/project',
   };
 }
 
@@ -144,5 +145,49 @@ describe('invokeSeat', () => {
         WORKTREE,
       ),
     ).rejects.toThrow(/did not produce a valid position/);
+  });
+
+  it('reads the seat’s memory from the project store, never from its worktree', async () => {
+    const seen: RunRoleOptions[] = [];
+
+    await invokeSeat(
+      deps((options: RunRoleOptions): Promise<RunReport> => {
+        seen.push(options);
+        return Promise.resolve(report());
+      }, POSITION),
+      INVOCATION,
+      WORKTREE,
+    );
+
+    expect(seen[0]?.memoryBaseDir).toBe('/project');
+    expect(seen[0]?.memoryBaseDir).not.toBe(WORKTREE.path);
+  });
+
+  it('hands every seat of a deliberation the same memory source', async () => {
+    const seen: RunRoleOptions[] = [];
+    const seatDeps: SeatSessionDeps = deps(
+      (options: RunRoleOptions): Promise<RunReport> => {
+        seen.push(options);
+        return Promise.resolve(report());
+      },
+      POSITION,
+    );
+
+    for (const seatId of ['security', 'performance', 'ux']) {
+      await invokeSeat(
+        seatDeps,
+        { ...INVOCATION, seat: { ...SEAT, id: seatId, role: seatId } },
+        { instanceId: `seat-${seatId}`, path: `/wt/${seatId}` },
+      );
+    }
+
+    expect(
+      new Set(
+        seen.map(
+          (options: RunRoleOptions): string | undefined =>
+            options.memoryBaseDir,
+        ),
+      ).size,
+    ).toBe(1);
   });
 });

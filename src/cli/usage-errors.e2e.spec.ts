@@ -1,3 +1,5 @@
+import { mkdir, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { CommandResult } from '../engine/command-result';
 import { ALL_LAYER_COMPONENTS } from '../layer/all-layer-components';
@@ -76,6 +78,41 @@ describe('omd usage and error rendering (e2e)', () => {
 
     expect(result.exitCode).toBe(USAGE_ERROR_EXIT_CODE);
     expect(result.stderr).toContain('usage: omd setup');
+  });
+
+  it('rejects a role declaring an unknown memory class before launching a session', async () => {
+    project = await createE2eProject();
+    const roleDir: string = join(project.dir, '.devin', 'agents', 'oracle');
+    await mkdir(roleDir, { recursive: true });
+    await writeFile(
+      join(roleDir, 'AGENT.md'),
+      [
+        '---',
+        'omd-output: oracle.json',
+        'omd-schema: oracle.schema.json',
+        'omd-max-turns: 3',
+        'omd-memory:',
+        '  - transcripts',
+        '---',
+        'You are the oracle.',
+      ].join('\n'),
+      'utf8',
+    );
+    await writeFile(
+      join(project.dir, 'oracle.schema.json'),
+      JSON.stringify({ type: 'object' }),
+      'utf8',
+    );
+
+    const result: CommandResult = await project.run([
+      'run',
+      'oracle',
+      'foresee',
+    ]);
+
+    expect(result.exitCode).toBe(USAGE_ERROR_EXIT_CODE);
+    expect(result.stderr).toContain('omd-memory');
+    expect(await project.readInvocations()).toEqual([]);
   });
 
   it('prints the usage text for --help with a zero exit code', async () => {

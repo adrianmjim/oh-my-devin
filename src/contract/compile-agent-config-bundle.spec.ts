@@ -1,9 +1,14 @@
 import { describe, expect, it } from 'vitest';
+import { EMPTY_MEMORY_DELIVERY } from '../memory/empty-memory-delivery';
+import { MemoryStorePaths } from '../memory/memory-store-paths';
 import { parseRoleDefinition } from '../role/parse-role-definition';
 import type { RoleDefinition } from '../role/role-definition';
 import type { AgentConfigBundle } from './agent-config-bundle';
 import { ContractCompilationError } from './contract-compilation-error';
 import { compileAgentConfigBundle } from './compile-agent-config-bundle';
+import { parsePermissionRule } from './parse-permission-rule';
+import { permissionRuleMatchesPath } from './permission-rule-matches-path';
+import { WRITE_VERB } from './write-verb';
 
 function role(overrides: Partial<RoleDefinition>): RoleDefinition {
   return {
@@ -23,18 +28,27 @@ function role(overrides: Partial<RoleDefinition>): RoleDefinition {
     contextPolicy: 'isolated',
     wallTimeMs: null,
     writeScope: 'artifact',
+    memorySelection: [],
     promptBody: 'You are the reviewer.',
     ...overrides,
   };
 }
 
-const WORKTREE: string = '/tmp/omd/worktrees/executor';
+const PROJECT: string = '/tmp/omd';
+const WORKTREE: string = '/tmp/omd/.omd/worktrees/executor';
+
+function admitsWriteTo(bundle: AgentConfigBundle, path: string): boolean {
+  return bundle.permissions.allow.some((raw: string): boolean =>
+    permissionRuleMatchesPath(parsePermissionRule(raw), WRITE_VERB, path),
+  );
+}
 
 describe('compileAgentConfigBundle', () => {
   it('emits only contract fields — no omd extension keys, no model', () => {
     const bundle: AgentConfigBundle = compileAgentConfigBundle(
       role({}),
       WORKTREE,
+      EMPTY_MEMORY_DELIVERY,
     );
 
     expect(Object.keys(bundle).sort()).toEqual([
@@ -51,6 +65,7 @@ describe('compileAgentConfigBundle', () => {
     const bundle: AgentConfigBundle = compileAgentConfigBundle(
       role({}),
       WORKTREE,
+      EMPTY_MEMORY_DELIVERY,
     );
 
     expect(bundle.allowed_tools).toEqual(['read', 'grep']);
@@ -63,6 +78,7 @@ describe('compileAgentConfigBundle', () => {
     const bundle: AgentConfigBundle = compileAgentConfigBundle(
       role({ permissions: { allow: ['Read(**)'], deny: [], ask: [] } }),
       WORKTREE,
+      EMPTY_MEMORY_DELIVERY,
     );
 
     expect(bundle.permissions.allow).toContain('Write(review.json)');
@@ -73,6 +89,7 @@ describe('compileAgentConfigBundle', () => {
     const bundle: AgentConfigBundle = compileAgentConfigBundle(
       role({}),
       WORKTREE,
+      EMPTY_MEMORY_DELIVERY,
     );
 
     const writeAllows: readonly string[] = bundle.permissions.allow.filter(
@@ -92,6 +109,7 @@ describe('compileAgentConfigBundle', () => {
           },
         }),
         WORKTREE,
+        EMPTY_MEMORY_DELIVERY,
       ),
     ).toThrow(ContractCompilationError);
   });
@@ -103,6 +121,7 @@ describe('compileAgentConfigBundle', () => {
           permissions: { allow: [], deny: ['Write(**)'], ask: [] },
         }),
         WORKTREE,
+        EMPTY_MEMORY_DELIVERY,
       ),
     ).toThrow(ContractCompilationError);
   });
@@ -117,6 +136,7 @@ describe('compileAgentConfigBundle', () => {
         },
       }),
       WORKTREE,
+      EMPTY_MEMORY_DELIVERY,
     );
 
     expect(bundle.permissions.deny).toEqual(['Write(src/**)']);
@@ -134,6 +154,7 @@ describe('compileAgentConfigBundle', () => {
     const bundle: AgentConfigBundle = compileAgentConfigBundle(
       role({ permissions: { allow: [], deny: ['Bash(rm*)'], ask: [] } }),
       WORKTREE,
+      EMPTY_MEMORY_DELIVERY,
     );
 
     expect(bundle.permissions.deny).toEqual(['Bash(rm*)']);
@@ -160,6 +181,7 @@ describe('compileAgentConfigBundle', () => {
     const bundle: AgentConfigBundle = compileAgentConfigBundle(
       installed,
       WORKTREE,
+      EMPTY_MEMORY_DELIVERY,
     );
 
     expect(bundle.system_instructions[1]).toBe(
@@ -173,6 +195,7 @@ describe('compileAgentConfigBundle', () => {
     const bundle: AgentConfigBundle = compileAgentConfigBundle(
       role({ writeScope: 'artifact' }),
       WORKTREE,
+      EMPTY_MEMORY_DELIVERY,
     );
 
     const writable: readonly string[] = bundle.permissions.allow.filter(
@@ -191,6 +214,7 @@ describe('compileAgentConfigBundle', () => {
         writeScope: 'worktree',
       }),
       WORKTREE,
+      EMPTY_MEMORY_DELIVERY,
     );
 
     const writable: readonly string[] = bundle.permissions.allow.filter(
@@ -206,6 +230,7 @@ describe('compileAgentConfigBundle', () => {
         writeScope: 'worktree',
       }),
       WORKTREE,
+      EMPTY_MEMORY_DELIVERY,
     );
 
     expect(bundle.permissions.deny).toEqual([]);
@@ -219,6 +244,69 @@ describe('compileAgentConfigBundle', () => {
           writeScope: 'worktree',
         }),
         WORKTREE,
+        EMPTY_MEMORY_DELIVERY,
+      ),
+    ).toThrow(ContractCompilationError);
+  });
+
+  it('admits no write under the memory subtree for an artifact-scoped role', () => {
+    const bundle: AgentConfigBundle = compileAgentConfigBundle(
+      role({}),
+      WORKTREE,
+      EMPTY_MEMORY_DELIVERY,
+    );
+
+    expect(admitsWriteTo(bundle, '.omd/memory/notepad.json')).toBe(false);
+    expect(admitsWriteTo(bundle, '.omd/memory/profile.json')).toBe(false);
+    expect(admitsWriteTo(bundle, new MemoryStorePaths(PROJECT).notepad)).toBe(
+      false,
+    );
+  });
+
+  it('admits no write under the project memory subtree for a worktree-scoped role', () => {
+    const bundle: AgentConfigBundle = compileAgentConfigBundle(
+      role({
+        writeScope: 'worktree',
+        outputArtifact: 'evidence.json',
+        permissions: { allow: [], deny: [], ask: [] },
+      }),
+      WORKTREE,
+      EMPTY_MEMORY_DELIVERY,
+    );
+
+    expect(admitsWriteTo(bundle, new MemoryStorePaths(PROJECT).notepad)).toBe(
+      false,
+    );
+    expect(admitsWriteTo(bundle, new MemoryStorePaths(PROJECT).profile)).toBe(
+      false,
+    );
+  });
+
+  it('rejects a role whose artifact would land in the memory subtree', () => {
+    expect(() =>
+      compileAgentConfigBundle(
+        role({
+          outputArtifact: '.omd/memory/notepad.json',
+          permissions: { allow: [], deny: [], ask: [] },
+        }),
+        WORKTREE,
+        EMPTY_MEMORY_DELIVERY,
+      ),
+    ).toThrow(ContractCompilationError);
+  });
+
+  it('rejects an authored allow rule that reaches into the memory subtree', () => {
+    expect(() =>
+      compileAgentConfigBundle(
+        role({
+          permissions: {
+            allow: ['Write(.omd/memory/**)'],
+            deny: [],
+            ask: [],
+          },
+        }),
+        WORKTREE,
+        EMPTY_MEMORY_DELIVERY,
       ),
     ).toThrow(ContractCompilationError);
   });

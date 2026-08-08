@@ -1,3 +1,5 @@
+import { isUnderMemorySubtree } from '../memory/is-under-memory-subtree';
+import type { MemoryDelivery } from '../memory/memory-delivery';
 import type { RoleDefinition } from '../role/role-definition';
 import type { AgentConfigBundle } from './agent-config-bundle';
 import { buildContractualPreamble } from './build-contractual-preamble';
@@ -11,8 +13,15 @@ import { WRITE_VERB } from './write-verb';
 export function compileAgentConfigBundle(
   role: RoleDefinition,
   workingDirectory: string,
+  memory: MemoryDelivery,
 ): AgentConfigBundle {
   const artifact: string = role.outputArtifact;
+
+  if (isUnderMemorySubtree(artifact)) {
+    throw new ContractCompilationError(
+      `role "${role.name}": artifact "${artifact}" lies in the memory store, which no role session may write`,
+    );
+  }
 
   for (const denyRaw of role.permissions.deny) {
     const rule: PermissionRule = parsePermissionRule(denyRaw);
@@ -45,7 +54,10 @@ export function compileAgentConfigBundle(
   }
 
   return {
-    system_instructions: [buildContractualPreamble(role), role.promptBody],
+    system_instructions: [
+      buildContractualPreamble(role, memory),
+      role.promptBody,
+    ],
     allowed_tools: role.tools,
     permissions: {
       allow,

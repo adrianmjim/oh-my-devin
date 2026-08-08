@@ -81,6 +81,7 @@ function makeDeps(
     readArtifact,
     clock: (): number => 0,
     userConfigDir,
+    memoryBaseDir: '/project',
   };
 }
 

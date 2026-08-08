@@ -16,6 +16,7 @@ export function renderRoleShowJson(role: RoleDefinition): RoleContractJson {
     context: role.contextPolicy,
     wallTimeMs: role.wallTimeMs,
     writeScope: role.writeScope,
+    memorySelection: role.memorySelection,
     promptSummary: summarizePromptBody(role.promptBody),
   };
 }

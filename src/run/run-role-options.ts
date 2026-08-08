@@ -19,4 +19,5 @@ export interface RunRoleOptions {
   readonly resolved?: ResolvedRunInvocation;
   readonly lookup?: LayerLookup;
   readonly provisionedWorktree?: boolean;
+  readonly memoryBaseDir?: string;
 }

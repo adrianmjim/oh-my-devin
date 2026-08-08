@@ -1,3 +1,4 @@
+import type { AgentConfigBundle } from '../contract/agent-config-bundle';
 import type { CommandInvocation } from '../engine/command-invocation';
 import type { CommandResult } from '../engine/command-result';
 import type { DevinStubScript } from './devin-stub-script';
@@ -9,5 +10,6 @@ export interface E2eProject {
   writeScript(script: DevinStubScript): Promise<void>;
   run(argv: readonly string[], options?: E2eRunOptions): Promise<CommandResult>;
   readInvocations(): Promise<readonly CommandInvocation[]>;
+  readHandedBundles(): Promise<readonly AgentConfigBundle[]>;
   cleanup(): Promise<void>;
 }

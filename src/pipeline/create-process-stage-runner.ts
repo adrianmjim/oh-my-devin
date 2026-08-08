@@ -24,5 +24,6 @@ export function createProcessStageRunner(
       readFile(absolutePath, 'utf8'),
     clock: (): number => Date.now(),
     userConfigDir,
+    memoryBaseDir: baseDir,
   });
 }

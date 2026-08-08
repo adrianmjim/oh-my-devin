@@ -16,6 +16,7 @@ const ROLE: RoleDefinition = {
   contextPolicy: 'isolated',
   wallTimeMs: null,
   writeScope: 'artifact',
+  memorySelection: [],
   promptBody: '## Mission\n\nAssess the diff.\nThen write the verdict.',
 };
 
@@ -34,6 +35,7 @@ describe('renderRoleShowJson', () => {
       context: 'isolated',
       wallTimeMs: null,
       writeScope: 'artifact',
+      memorySelection: [],
       promptSummary: 'Assess the diff.',
     });
   });
@@ -53,6 +55,13 @@ describe('renderRoleShowJson', () => {
         promptBody: '## Mission\n\n## Boundaries',
       }).promptSummary,
     ).toBe('');
+  });
+
+  it('carries a declared memory selection', () => {
+    expect(
+      renderRoleShowJson({ ...ROLE, memorySelection: ['notepad'] })
+        .memorySelection,
+    ).toEqual(['notepad']);
   });
 
   it('carries a declared worktree write scope', () => {

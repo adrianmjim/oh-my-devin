@@ -15,6 +15,7 @@ export const CLI_USAGE: string = [
   '  omd team run [<team>] "<task>"                Run a team pipeline (architect → executor → reviewer); omits <team> to launch the default',
   '  omd council run <c> "<question>"              Run a deliberation council [--proposal <path>] [--then <team>] [--sign] [--json]',
   '  omd mode <set|clear> [<mode>]                 Set or clear the persistent mode state read by the session hooks',
+  '  omd memory remember "<text>"                  Record a manual note in the project’s durable memory notepad',
   '  omd --version                                 Print the installed omd version',
   '',
 ].join('\n');

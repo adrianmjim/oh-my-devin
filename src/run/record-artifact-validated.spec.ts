@@ -17,6 +17,7 @@ const ROLE: RoleDefinition = {
   contextPolicy: 'isolated',
   wallTimeMs: null,
   writeScope: 'artifact',
+  memorySelection: [],
   promptBody: 'Do the work.',
 };
 

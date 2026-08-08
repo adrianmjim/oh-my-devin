@@ -28,6 +28,7 @@ import { runDoctor } from '../doctor/run-doctor';
 import { ProcessCommandRunner } from '../engine/process-command-runner';
 import { readRequirements } from '../handoff/read-requirements';
 import type { LayerLookup } from '../layer/layer-lookup';
+import { appendNotepadEntry } from '../memory/append-notepad-entry';
 import { ModeStateStore } from '../modes/mode-state-store';
 import { resolveModeState } from '../modes/resolve-mode-state';
 import { createRunRecorder } from '../observability/create-run-recorder';
@@ -339,6 +340,11 @@ export async function dispatchCliCommand(
     case 'mode-clear': {
       await new ModeStateStore(cwd).clear();
       writeStreamLine(process.stdout, 'mode cleared');
+      return 0;
+    }
+    case 'memory-remember': {
+      await appendNotepadEntry(cwd, 'manual', command.text, Date.now());
+      writeStreamLine(process.stdout, `remembered: ${command.text}`);
       return 0;
     }
   }
