@@ -13,7 +13,7 @@ const VERIFICATION: ExecutorVerification = {
 class ExitCodeRunner implements CommandRunner {
   public readonly invocations: CommandInvocation[] = [];
 
-  public constructor(private readonly exitCode: number) {}
+  public constructor(private readonly exitCode: number | null) {}
 
   public run(invocation: CommandInvocation): Promise<CommandResult> {
     this.invocations.push(invocation);
@@ -32,6 +32,14 @@ describe('observeVerification', () => {
 
   it('observes a failing verification from a non-zero exit code', async () => {
     const runner: ExitCodeRunner = new ExitCodeRunner(1);
+
+    await expect(observeVerification(VERIFICATION, runner)).resolves.toBe(
+      'failed',
+    );
+  });
+
+  it('observes a signal-terminated verification as failed', async () => {
+    const runner: ExitCodeRunner = new ExitCodeRunner(null);
 
     await expect(observeVerification(VERIFICATION, runner)).resolves.toBe(
       'failed',

@@ -23,6 +23,15 @@ describe('ProcessCommandRunner', () => {
     expect(result.stderr).toBe('boom');
   });
 
+  it('preserves a signal termination as a non-success result', async () => {
+    const result: CommandResult = await new ProcessCommandRunner('/').run({
+      command: process.execPath,
+      args: ['-e', 'process.kill(process.pid, "SIGKILL")'],
+    });
+
+    expect(result.exitCode).toBeNull();
+  });
+
   it('rejects when the command cannot be spawned', async () => {
     await expect(
       new ProcessCommandRunner('/').run({
