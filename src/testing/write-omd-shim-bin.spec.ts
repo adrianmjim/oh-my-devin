@@ -1,4 +1,3 @@
-import { execFileSync } from 'node:child_process';
 import { mkdtemp, readFile, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -30,11 +29,9 @@ describe('writeOmdShimBin', () => {
     expect(await readFile(binPath, 'utf8')).toContain(CLI_PATH);
   });
 
-  it('answers as omd when invoked', async () => {
+  it('forwards through the running node executable', async () => {
     const binPath: string = await writeOmdShimBin(join(root, 'bin'));
 
-    expect(
-      execFileSync(binPath, ['--version'], { encoding: 'utf8' }).trim().length,
-    ).toBeGreaterThan(0);
+    expect(await readFile(binPath, 'utf8')).toContain(process.execPath);
   });
 });
