@@ -1,5 +1,8 @@
 import type { AgentConfigBundle } from '../contract/agent-config-bundle';
 import type { LayerLookup } from '../layer/layer-lookup';
+import { createMemoryComposer } from '../memory/create-memory-composer';
+import type { MemoryComposer } from '../memory/memory-composer';
+import type { MemoryDelivery } from '../memory/memory-delivery';
 import type { ResolvedRoleDefinition } from '../role/resolved-role-definition';
 import type { RoleDefinition } from '../role/role-definition';
 import { roleSchemaPath } from '../role/role-schema-path';
@@ -34,9 +37,14 @@ export async function resolveRunInvocation(
     role.outputSchema,
   );
   const schemaText: string = await readSchemaText(schemaPath, roleName);
+  const composeMemory: MemoryComposer =
+    context.composeMemory ??
+    createMemoryComposer(context.workingDirectory, Date.now());
+  const memory: MemoryDelivery = await composeMemory(role.memorySelection);
   const bundle: AgentConfigBundle = compileRunBundle(
     role,
     context.workingDirectory,
+    memory,
   );
   return { role, schemaText, schemaPath, bundle };
 }

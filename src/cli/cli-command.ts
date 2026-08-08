@@ -1,6 +1,7 @@
 import type { CouncilRunCommand } from './council-run-command';
 import type { DoctorCommand } from './doctor-command';
 import type { HelpCommand } from './help-command';
+import type { MemoryRememberCommand } from './memory-remember-command';
 import type { ModeClearCommand } from './mode-clear-command';
 import type { ModeSetCommand } from './mode-set-command';
 import type { PluginBuildCommand } from './plugin-build-command';
@@ -27,4 +28,5 @@ export type CliCommand =
   | TeamRunCommand
   | CouncilRunCommand
   | ModeSetCommand
-  | ModeClearCommand;
+  | ModeClearCommand
+  | MemoryRememberCommand;

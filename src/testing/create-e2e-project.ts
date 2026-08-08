@@ -3,7 +3,9 @@ import type { ChildProcessWithoutNullStreams } from 'node:child_process';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { delimiter, join } from 'node:path';
+import type { AgentConfigBundle } from '../contract/agent-config-bundle';
 import type { CommandInvocation } from '../engine/command-invocation';
+import { AGENT_CONFIG_LOG_SUFFIX } from './agent-config-log-suffix';
 import type { CommandResult } from '../engine/command-result';
 import { CLI_PATH } from './cli-path';
 import type { DevinStubScript } from './devin-stub-script';
@@ -96,9 +98,33 @@ export async function createE2eProject(): Promise<E2eProject> {
       );
   }
 
+  async function readHandedBundles(): Promise<readonly AgentConfigBundle[]> {
+    let raw: string;
+    try {
+      raw = await readFile(`${logPath}${AGENT_CONFIG_LOG_SUFFIX}`, 'utf8');
+    } catch {
+      return [];
+    }
+    return raw
+      .split('\n')
+      .filter((line: string): boolean => line.trim() !== '')
+      .map(
+        (line: string): AgentConfigBundle =>
+          JSON.parse(line) as AgentConfigBundle,
+      );
+  }
+
   async function cleanup(): Promise<void> {
     await rm(root, { recursive: true, force: true });
   }
 
-  return { dir, logPath, writeScript, run, readInvocations, cleanup };
+  return {
+    dir,
+    logPath,
+    writeScript,
+    run,
+    readInvocations,
+    readHandedBundles,
+    cleanup,
+  };
 }

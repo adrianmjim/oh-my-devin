@@ -12,4 +12,5 @@ export interface StageRunnerDeps {
   readonly readArtifact: ArtifactReader;
   readonly clock: Clock;
   readonly userConfigDir: LayerLookup['userConfigDir'];
+  readonly memoryBaseDir: string;
 }

@@ -17,6 +17,7 @@ function role(name: string, promptBody: string): RoleDefinition {
     contextPolicy: 'isolated',
     wallTimeMs: null,
     writeScope: 'artifact',
+    memorySelection: [],
     promptBody,
   };
 }

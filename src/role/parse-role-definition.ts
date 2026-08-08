@@ -1,4 +1,6 @@
 import { parse as parseYaml } from 'yaml';
+import { isMemoryClass } from '../memory/is-memory-class';
+import type { MemoryClass } from '../memory/memory-class';
 import { withoutRegionMarkers } from '../ownership/without-region-markers';
 import type { ContextPolicy } from './context-policy';
 import { DURATION_PATTERN } from './duration-pattern';
@@ -155,6 +157,23 @@ export function parseRoleDefinition(
             `unsupported "omd-write-scope": ${JSON.stringify(writeScopeValue)}`,
           );
 
+  const parseMemorySelection = (value: unknown): readonly MemoryClass[] => {
+    if (value === undefined || value === null) {
+      return [];
+    }
+    if (!Array.isArray(value)) {
+      return fail(`"omd-memory" must be a list of memory classes`);
+    }
+    return value.map((item: unknown, index: number): MemoryClass => {
+      if (!isMemoryClass(item)) {
+        return fail(
+          `"omd-memory[${index}]" is not a memory class: ${JSON.stringify(item)}`,
+        );
+      }
+      return item;
+    });
+  };
+
   const toolsValue: unknown = fields['allowed-tools'] ?? fields['tools'];
 
   const outputArtifact: string = requireString(
@@ -180,6 +199,7 @@ export function parseRoleDefinition(
     contextPolicy,
     wallTimeMs: parseWallTimeMs(fields['omd-wall-time']),
     writeScope,
+    memorySelection: parseMemorySelection(fields['omd-memory']),
     promptBody: withoutRegionMarkers(body, 'markdown').trim(),
   };
 }

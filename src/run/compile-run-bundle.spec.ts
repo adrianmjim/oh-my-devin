@@ -1,3 +1,4 @@
+import { EMPTY_MEMORY_DELIVERY } from '../memory/empty-memory-delivery';
 import { describe, expect, it } from 'vitest';
 import type { RoleDefinition } from '../role/role-definition';
 import { compileRunBundle } from './compile-run-bundle';
@@ -17,6 +18,7 @@ function role(overrides: Partial<RoleDefinition>): RoleDefinition {
     contextPolicy: 'isolated',
     wallTimeMs: null,
     writeScope: 'artifact',
+    memorySelection: [],
     promptBody: 'Do the work.',
     ...overrides,
   };
@@ -24,9 +26,10 @@ function role(overrides: Partial<RoleDefinition>): RoleDefinition {
 
 describe('compileRunBundle', () => {
   it('compiles the agent config bundle of a role', () => {
-    expect(compileRunBundle(role({}), '/tmp/omd-run').allowed_tools).toEqual([
-      'read',
-    ]);
+    expect(
+      compileRunBundle(role({}), '/tmp/omd-run', EMPTY_MEMORY_DELIVERY)
+        .allowed_tools,
+    ).toEqual(['read']);
   });
 
   it('reports a deny rule over its own artifact as a usage error', () => {
@@ -36,6 +39,7 @@ describe('compileRunBundle', () => {
           permissions: { allow: [], deny: ['Write(out.json)'], ask: [] },
         }),
         '/tmp/omd-run',
+        EMPTY_MEMORY_DELIVERY,
       ),
     ).toThrow(UsageError);
   });

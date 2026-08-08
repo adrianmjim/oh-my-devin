@@ -1,0 +1,1 @@
+export const PROFILE_STALENESS_WINDOW_MS: number = 86400000;

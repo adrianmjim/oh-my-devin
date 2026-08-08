@@ -16,6 +16,7 @@ const ROLE: RoleDefinition = {
   contextPolicy: 'isolated',
   wallTimeMs: null,
   writeScope: 'artifact',
+  memorySelection: [],
   promptBody: 'You are the reviewer.',
 };
 

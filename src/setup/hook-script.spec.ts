@@ -11,6 +11,10 @@ import {
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { AMBIENT_PRIORITY_ENTRY_CAP } from '../memory/ambient-priority-entry-cap';
+import { MemoryStorePaths } from '../memory/memory-store-paths';
+import type { NotepadEntry } from '../memory/notepad-entry';
+import type { NotepadEntryKind } from '../memory/notepad-entry-kind';
 import { HOOK_SCRIPT } from './hook-script';
 import { SESSION_START_PHASE } from './session-start-phase';
 import { STOP_PHASE } from './stop-phase';
@@ -178,6 +182,110 @@ describe('HOOK_SCRIPT', () => {
       await installStubOmd(JSON.stringify({ unexpected: true }));
 
       expect(await runPhase(SESSION_START_PHASE)).toBe(TODAYS_INJECTION);
+    });
+
+    async function writeNotepad(
+      entries: readonly NotepadEntry[],
+    ): Promise<void> {
+      const paths: MemoryStorePaths = new MemoryStorePaths(projectDir);
+      await mkdir(paths.dir, { recursive: true });
+      await writeFile(paths.notepad, JSON.stringify(entries), 'utf8');
+    }
+
+    function note(text: string, kind: NotepadEntryKind): NotepadEntry {
+      return { kind, text, hash: text, recordedAt: 1 };
+    }
+
+    it('injects the priority notes at session start', async () => {
+      await installStubOmd(JSON.stringify({ runs: [] }));
+      await writeNotepad([note('deploys need the staging gate', 'priority')]);
+
+      const output: string = await runPhase(SESSION_START_PHASE);
+
+      expect(output).toContain('deploys need the staging gate');
+    });
+
+    it('injects the priority notes on each user prompt', async () => {
+      await installStubOmd(JSON.stringify({ runs: [] }));
+      await writeNotepad([note('deploys need the staging gate', 'priority')]);
+
+      const output: string = await runPhase(USER_PROMPT_PHASE);
+
+      expect(output).toContain('deploys need the staging gate');
+    });
+
+    it('injects only the priority notes, never the working or manual ones', async () => {
+      await installStubOmd(JSON.stringify({ runs: [] }));
+      await writeNotepad([
+        note('deploys need the staging gate', 'priority'),
+        note('mid-task scratch', 'working'),
+        note('a manual aside', 'manual'),
+      ]);
+
+      const output: string = await runPhase(SESSION_START_PHASE);
+
+      expect(output).toContain('deploys need the staging gate');
+      expect(output).not.toContain('mid-task scratch');
+      expect(output).not.toContain('a manual aside');
+    });
+
+    it('bounds how many priority notes it injects', async () => {
+      await installStubOmd(JSON.stringify({ runs: [] }));
+      await writeNotepad(
+        Array.from(
+          { length: AMBIENT_PRIORITY_ENTRY_CAP + 4 },
+          (_unused: unknown, index: number): NotepadEntry =>
+            note(`priority note ${index}`, 'priority'),
+        ),
+      );
+
+      const output: string = await runPhase(SESSION_START_PHASE);
+
+      expect(output.match(/priority note /g) ?? []).toHaveLength(
+        AMBIENT_PRIORITY_ENTRY_CAP,
+      );
+    });
+
+    it('injects no profile content ambiently', async () => {
+      await installStubOmd(JSON.stringify({ runs: [] }));
+      await writeNotepad([note('deploys need the staging gate', 'priority')]);
+      await writeFile(
+        new MemoryStorePaths(projectDir).profile,
+        JSON.stringify({
+          stack: ['unmistakable-stack-marker'],
+          layout: [],
+          entryCommands: [],
+          derivedAt: 1,
+        }),
+        'utf8',
+      );
+
+      const output: string = await runPhase(SESSION_START_PHASE);
+
+      expect(output).not.toContain('unmistakable-stack-marker');
+    });
+
+    it('injects nothing when the notepad holds no priority note', async () => {
+      await installStubOmd(JSON.stringify({ runs: [] }));
+      await writeNotepad([note('mid-task scratch', 'working')]);
+
+      expect(await runPhase(SESSION_START_PHASE)).toBe(TODAYS_INJECTION);
+    });
+
+    it('degrades silently when the memory store cannot be read', async () => {
+      await installStubOmd(JSON.stringify({ runs: [] }));
+      const paths: MemoryStorePaths = new MemoryStorePaths(projectDir);
+      await mkdir(paths.dir, { recursive: true });
+      await writeFile(paths.notepad, 'not json at all', 'utf8');
+
+      expect(await runPhase(SESSION_START_PHASE)).toBe(TODAYS_INJECTION);
+    });
+
+    it('leaves the stop decision free of memory content', async () => {
+      await installStubOmd(GATE_LISTING);
+      await writeNotepad([note('deploys need the staging gate', 'priority')]);
+
+      expect(await runPhase(STOP_PHASE)).toBe(TODAYS_STOP_DECISION);
     });
 
     it('leaves the stop decision untouched and queries no status', async () => {

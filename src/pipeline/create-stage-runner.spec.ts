@@ -1,7 +1,12 @@
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { CommandRunner } from '../engine/command-runner';
 import type { HandoffArtifactName } from '../handoff/handoff-artifact-name';
 import type { PipelineStage } from '../handoff/pipeline-stage';
+import { appendNotepadEntry } from '../memory/append-notepad-entry';
+import type { MemoryDelivery } from '../memory/memory-delivery';
 import type { RunReport } from '../outcome/run-report';
 import type { RunRoleOptions } from '../run/run-role-options';
 import type { Worktree } from '../worktree/worktree';
@@ -81,6 +86,7 @@ function makeDeps(
     readArtifact,
     clock: (): number => 0,
     userConfigDir,
+    memoryBaseDir: '/project',
   };
 }
 
@@ -118,6 +124,39 @@ describe('createStageRunner', () => {
       'READ(/wt/architect/architecture.json)',
     );
     expect(worktrees.removed).toEqual(['architect']);
+  });
+
+  it('hands the stage a memory composer over the project store, not the worktree', async () => {
+    const base: string = await mkdtemp(join(tmpdir(), 'omd-stage-memory-'));
+    try {
+      await appendNotepadEntry(base, 'manual', 'the gate is manual', 5);
+      const worktrees = new FakeWorktrees();
+      const seen: RunRoleOptions[] = [];
+      const runStage: StageRunner = createStageRunner({
+        ...makeDeps((options: RunRoleOptions): Promise<RunReport> => {
+          seen.push(options);
+          return Promise.resolve(
+            reportFor('architect', { artifactPath: 'architecture.json' }),
+          );
+        }, worktrees),
+        memoryBaseDir: base,
+      });
+
+      await runStage({
+        stage: 'architect',
+        reworkFrom: null,
+        inputs: inputs([['requirements', 'build X']]),
+      });
+
+      const handed: RunRoleOptions | undefined = seen[0];
+      if (handed?.composeMemory === undefined) {
+        throw new Error('the stage carried no memory composer');
+      }
+      const delivery: MemoryDelivery = await handed.composeMemory(['notepad']);
+      expect(delivery.notepad[0]?.text).toBe('the gate is manual');
+    } finally {
+      await rm(base, { recursive: true, force: true });
+    }
   });
 
   it('captures the executor diff alongside its evidence artifact', async () => {

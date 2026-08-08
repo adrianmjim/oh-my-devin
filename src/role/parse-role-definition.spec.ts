@@ -248,6 +248,58 @@ describe('parseRoleDefinition', () => {
     expect(() => parseRoleDefinition(md, 'x')).toThrow(/omd-write-scope/);
   });
 
+  it('parses a declared memory selection', () => {
+    const md: string = [
+      '---',
+      'omd-output: o.json',
+      'omd-schema: s.json',
+      'omd-max-turns: 3',
+      'omd-memory:',
+      '  - notepad',
+      '  - profile',
+      '---',
+      'body',
+    ].join('\n');
+
+    const role: RoleDefinition = parseRoleDefinition(md, 'x');
+
+    expect(role.memorySelection).toEqual(['notepad', 'profile']);
+  });
+
+  it('reads an omitted memory selection as none', () => {
+    expect(
+      parseRoleDefinition(MINIMAL_AGENT_MD, 'worker').memorySelection,
+    ).toEqual([]);
+  });
+
+  it('throws on a memory class outside the vocabulary', () => {
+    const md: string = [
+      '---',
+      'omd-output: o.json',
+      'omd-schema: s.json',
+      'omd-max-turns: 3',
+      'omd-memory:',
+      '  - transcripts',
+      '---',
+      'body',
+    ].join('\n');
+    expect(() => parseRoleDefinition(md, 'x')).toThrow(RoleDefinitionError);
+    expect(() => parseRoleDefinition(md, 'x')).toThrow(/omd-memory/);
+  });
+
+  it('throws on a memory selection that is not a list', () => {
+    const md: string = [
+      '---',
+      'omd-output: o.json',
+      'omd-schema: s.json',
+      'omd-max-turns: 3',
+      'omd-memory: notepad',
+      '---',
+      'body',
+    ].join('\n');
+    expect(() => parseRoleDefinition(md, 'x')).toThrow(/omd-memory/);
+  });
+
   it('throws on an unsupported engine value', () => {
     const md: string = [
       '---',

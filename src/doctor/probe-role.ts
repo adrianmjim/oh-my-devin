@@ -13,5 +13,6 @@ export const PROBE_ROLE: RoleDefinition = {
   contextPolicy: 'isolated',
   wallTimeMs: null,
   writeScope: 'artifact',
+  memorySelection: [],
   promptBody: 'probe',
 };

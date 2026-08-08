@@ -1,3 +1,4 @@
+import type { MemoryClass } from '../memory/memory-class';
 import type { ContextPolicy } from './context-policy';
 import type { EngineKind } from './engine-kind';
 import type { RolePermissions } from './role-permissions';
@@ -16,5 +17,6 @@ export interface RoleDefinition {
   readonly contextPolicy: ContextPolicy;
   readonly wallTimeMs: number | null;
   readonly writeScope: WriteScope;
+  readonly memorySelection: readonly MemoryClass[];
   readonly promptBody: string;
 }

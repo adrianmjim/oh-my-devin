@@ -1,3 +1,4 @@
+import type { MemoryClass } from '../memory/memory-class';
 import type { ContextPolicy } from '../role/context-policy';
 import type { EngineKind } from '../role/engine-kind';
 import type { RolePermissions } from '../role/role-permissions';
@@ -16,5 +17,6 @@ export interface RoleContractJson {
   readonly context: ContextPolicy;
   readonly wallTimeMs: number | null;
   readonly writeScope: WriteScope;
+  readonly memorySelection: readonly MemoryClass[];
   readonly promptSummary: string;
 }

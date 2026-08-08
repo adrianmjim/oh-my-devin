@@ -1,3 +1,4 @@
+import { EMPTY_MEMORY_DELIVERY } from '../memory/empty-memory-delivery';
 import { mkdir, mkdtemp, realpath, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -32,6 +33,7 @@ const PROBE_ROLE: RoleDefinition = {
   contextPolicy: 'isolated',
   wallTimeMs: null,
   writeScope: 'artifact',
+  memorySelection: [],
   promptBody: 'You are a smoke probe. Follow the task exactly.',
 };
 
@@ -70,6 +72,7 @@ describe.runIf(smokeEnabled)('real Devin CLI smoke suite', () => {
     const bundle: AgentConfigBundle = compileAgentConfigBundle(
       PROBE_ROLE,
       scratchDir,
+      EMPTY_MEMORY_DELIVERY,
     );
     agentConfigPath = join(scratchDir, 'agent-config.json');
     await writeFile(agentConfigPath, JSON.stringify(bundle), 'utf8');

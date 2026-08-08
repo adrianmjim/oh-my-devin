@@ -4,6 +4,9 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProcessCommandRunner } from '../engine/process-command-runner';
+import { MEMORY_CLASS_CAP } from '../memory/memory-class-cap';
+import type { NotepadEntry } from '../memory/notepad-entry';
+import { readNotepad } from '../memory/read-notepad';
 import type { JsonRunListing } from '../observability/json-run-listing';
 import { JournalWriter } from '../observability/journal-writer';
 import { RunRecordPaths } from '../observability/run-record-paths';
@@ -123,6 +126,48 @@ describe('dispatchCliCommand', () => {
     await expect(
       readFile(join(cwd, '.omd', 'mode.json'), 'utf8'),
     ).rejects.toThrow();
+  });
+
+  it('appends a manual notepad entry for memory-remember', async () => {
+    const code: number = await dispatchCliCommand(
+      { kind: 'memory-remember', text: 'the gate runs on staging' },
+      cwd,
+      userConfigDir,
+      runner,
+    );
+
+    expect(code).toBe(0);
+    expect(written.join('')).toContain('remembered');
+    const entries: readonly NotepadEntry[] = await readNotepad(cwd);
+    expect(entries).toHaveLength(1);
+    expect(entries[0]?.kind).toBe('manual');
+    expect(entries[0]?.text).toBe('the gate runs on staging');
+  });
+
+  it('collapses a repeated memory-remember to one entry', async () => {
+    for (let attempt: number = 0; attempt < 3; attempt++) {
+      await dispatchCliCommand(
+        { kind: 'memory-remember', text: 'the gate runs on staging' },
+        cwd,
+        userConfigDir,
+        runner,
+      );
+    }
+
+    expect(await readNotepad(cwd)).toHaveLength(1);
+  });
+
+  it('holds the notepad within its cap across many memory-remember calls', async () => {
+    for (let index: number = 0; index < MEMORY_CLASS_CAP.notepad + 5; index++) {
+      await dispatchCliCommand(
+        { kind: 'memory-remember', text: `note ${index}` },
+        cwd,
+        userConfigDir,
+        runner,
+      );
+    }
+
+    expect(await readNotepad(cwd)).toHaveLength(MEMORY_CLASS_CAP.notepad);
   });
 
   it('refuses a worktree-scoped role for a blocking run, as a usage error', async () => {

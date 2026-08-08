@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { CouncilSeat } from '../council/council-seat';
 import type { CommandRunner } from '../engine/command-runner';
+import { EMPTY_MEMORY_DELIVERY } from '../memory/empty-memory-delivery';
+import type { MemoryComposer } from '../memory/memory-composer';
+import type { MemoryDelivery } from '../memory/memory-delivery';
 import type { RunReport } from '../outcome/run-report';
 import type { RunRoleOptions } from '../run/run-role-options';
 import type { Worktree } from '../worktree/worktree';
@@ -42,6 +45,9 @@ const NOOP_RUNNER: CommandRunner = {
   run: (): Promise<never> => Promise.reject(new Error('unused')),
 };
 
+const NOOP_COMPOSER: MemoryComposer = (): Promise<MemoryDelivery> =>
+  Promise.resolve(EMPTY_MEMORY_DELIVERY);
+
 function report(overrides: Partial<RunReport> = {}): RunReport {
   return {
     runId: 'run-seat',
@@ -74,6 +80,7 @@ function deps(
     readArtifact: (): Promise<string> => Promise.resolve(artifact),
     clock: (): number => 0,
     userConfigDir: null,
+    composeMemory: NOOP_COMPOSER,
   };
 }
 
@@ -144,5 +151,48 @@ describe('invokeSeat', () => {
         WORKTREE,
       ),
     ).rejects.toThrow(/did not produce a valid position/);
+  });
+
+  it('reads the seat’s memory through the deliberation’s composer, never its own', async () => {
+    const seen: RunRoleOptions[] = [];
+
+    await invokeSeat(
+      deps((options: RunRoleOptions): Promise<RunReport> => {
+        seen.push(options);
+        return Promise.resolve(report());
+      }, POSITION),
+      INVOCATION,
+      WORKTREE,
+    );
+
+    expect(seen[0]?.composeMemory).toBe(NOOP_COMPOSER);
+  });
+
+  it('hands every seat of a deliberation the same memory snapshot', async () => {
+    const seen: RunRoleOptions[] = [];
+    const seatDeps: SeatSessionDeps = deps(
+      (options: RunRoleOptions): Promise<RunReport> => {
+        seen.push(options);
+        return Promise.resolve(report());
+      },
+      POSITION,
+    );
+
+    for (const seatId of ['security', 'performance', 'ux']) {
+      await invokeSeat(
+        seatDeps,
+        { ...INVOCATION, seat: { ...SEAT, id: seatId, role: seatId } },
+        { instanceId: `seat-${seatId}`, path: `/wt/${seatId}` },
+      );
+    }
+
+    expect(
+      new Set(
+        seen.map(
+          (options: RunRoleOptions): MemoryComposer | undefined =>
+            options.composeMemory,
+        ),
+      ).size,
+    ).toBe(1);
   });
 });

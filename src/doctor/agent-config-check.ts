@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { AgentConfigBundle } from '../contract/agent-config-bundle';
 import { compileAgentConfigBundle } from '../contract/compile-agent-config-bundle';
+import { EMPTY_MEMORY_DELIVERY } from '../memory/empty-memory-delivery';
 import type { CommandResult } from '../engine/command-result';
 import type { CommandRunner } from '../engine/command-runner';
 import type { CheckResult } from './check-result';
@@ -15,7 +16,11 @@ export async function agentConfigCheck(
   const dir: string = await mkdtemp(join(tmpdir(), 'omd-doctor-'));
   const bundlePath: string = join(dir, 'agent-config.json');
   try {
-    const bundle: AgentConfigBundle = compileAgentConfigBundle(PROBE_ROLE, dir);
+    const bundle: AgentConfigBundle = compileAgentConfigBundle(
+      PROBE_ROLE,
+      dir,
+      EMPTY_MEMORY_DELIVERY,
+    );
     const expectedFields: readonly string[] = [
       'system_instructions',
       'allowed_tools',
