@@ -102,6 +102,21 @@ describe('finalizeRoleBench', () => {
     expect(baseline.composite).toBe(1);
   });
 
+  it('saves a baseline when the save opt-in carries incidental whitespace', async () => {
+    await finalizeRoleBench({
+      score: SCORE,
+      expectedFixtureIds: ['unbounded-loop'],
+      mode: 'real',
+      env: { OMD_BENCH_SAVE: ' 1 ' },
+      resultsDir,
+      baselinesDir,
+    });
+
+    await expect(
+      readFile(join(baselinesDir, 'reviewer.json'), 'utf8'),
+    ).resolves.toContain('reviewer');
+  });
+
   it('saves no baseline when the run scored only part of the fixture set', async () => {
     await finalizeRoleBench({
       score: SCORE,
