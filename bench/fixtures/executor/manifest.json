@@ -1,0 +1,8 @@
+{
+  "role": "executor",
+  "hypothesis": "The executor prompt produces a change that makes the project's own verification pass without weakening the test that defines it, and evidence recording the commands actually run rather than the outcome hoped for.",
+  "fixtures": [
+    { "id": "null-input-guard", "clean": false },
+    { "id": "slugify", "clean": false }
+  ]
+}

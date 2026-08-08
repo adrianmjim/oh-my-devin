@@ -1,6 +1,5 @@
 import { EMPTY_MEMORY_DELIVERY } from '../memory/empty-memory-delivery';
-import { mkdtemp, realpath, rm, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { mkdir, mkdtemp, realpath, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { AgentConfigBundle } from '../contract/agent-config-bundle';
@@ -12,6 +11,7 @@ import { ProcessCommandRunner } from '../engine/process-command-runner';
 import type { PromptTurn } from '../engine/prompt-turn';
 import type { SessionListing } from '../engine/session-listing';
 import type { RoleDefinition } from '../role/role-definition';
+import { SMOKE_SCRATCH_DIR } from '../testing/smoke-scratch-dir';
 
 const smokeEnabled: boolean = process.env['OMD_SMOKE'] === '1';
 
@@ -51,6 +51,7 @@ describe.runIf(smokeEnabled)('real Devin CLI smoke suite', () => {
       prompt,
       agentConfigPath,
       model: null,
+      posture: 'artifact-write',
       resumeSessionId,
     };
     return engine.turnInvocation(turn);
@@ -63,7 +64,10 @@ describe.runIf(smokeEnabled)('real Devin CLI smoke suite', () => {
   }
 
   beforeAll(async () => {
-    scratchDir = await realpath(await mkdtemp(join(tmpdir(), 'omd-smoke-')));
+    await mkdir(SMOKE_SCRATCH_DIR, { recursive: true });
+    scratchDir = await realpath(
+      await mkdtemp(join(SMOKE_SCRATCH_DIR, 'omd-smoke-')),
+    );
     runner = new ProcessCommandRunner(scratchDir);
     const bundle: AgentConfigBundle = compileAgentConfigBundle(
       PROBE_ROLE,

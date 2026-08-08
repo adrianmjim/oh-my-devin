@@ -1,0 +1,9 @@
+diff --git a/src/page.js b/src/page.js
+new file mode 100644
+--- /dev/null
++++ b/src/page.js
+@@ -0,0 +1,4 @@
++export function page(items, size, index) {
++  const start = index * size;
++  return items.slice(start, start + size - 1);
++}

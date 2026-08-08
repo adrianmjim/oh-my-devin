@@ -1,0 +1,16 @@
+{
+  "role": "reviewer",
+  "expectedVerdict": "request_changes",
+  "defects": [
+    {
+      "id": "off-by-one-slice",
+      "keywords": ["slice", "last", "item"],
+      "severity": "high"
+    },
+    {
+      "id": "unvalidated-size",
+      "keywords": ["size", "reject", "positive"],
+      "severity": "medium"
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "role": "architect",
+  "gaps": [
+    {
+      "id": "shared-counter-store",
+      "keywords": ["shared", "store", "counter"]
+    },
+    {
+      "id": "middleware-on-both-routes",
+      "keywords": ["middleware", "route", "endpoint"]
+    },
+    {
+      "id": "429-response",
+      "keywords": ["429", "response", "retry"]
+    },
+    {
+      "id": "configurable-limit-per-plan",
+      "keywords": ["limit", "plan", "configure"]
+    }
+  ],
+  "spurious": [
+    {
+      "id": "replace-framework",
+      "keywords": ["replace", "framework", "express"]
+    },
+    {
+      "id": "rewrite-authentication",
+      "keywords": ["rewrite", "authentication", "redesign"]
+    }
+  ]
+}

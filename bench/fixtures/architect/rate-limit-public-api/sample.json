@@ -1,0 +1,24 @@
+{
+  "approach": "Count requests per API key in a store every instance shares, and enforce the count in one middleware the public routes both pass through, so the limit holds across the load balancer rather than per instance.",
+  "steps": [
+    {
+      "description": "Add a shared counter store keyed by API key and time window, so every instance reads and increments the same count instead of counting on its own.",
+      "files": ["src/rate-limit-store.js"]
+    },
+    {
+      "description": "Add a rate-limit middleware that runs after authentication and applies to both public endpoints in the route registration.",
+      "files": ["src/rate-limit.js", "src/routes.js"]
+    },
+    {
+      "description": "Reject a request over the limit with a 429 response carrying a Retry-After header, leaving the handler untouched.",
+      "files": ["src/rate-limit.js"]
+    },
+    {
+      "description": "Read the per-plan limit from configuration so each API key plan can carry its own allowance without a code change.",
+      "files": ["src/rate-limit.js", "src/config.js"]
+    }
+  ],
+  "risks": [
+    "A store outage must fail open or closed deliberately; leaving it unspecified turns every request into an error."
+  ]
+}

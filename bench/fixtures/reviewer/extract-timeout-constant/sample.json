@@ -1,0 +1,5 @@
+{
+  "verdict": "approve",
+  "findings": [],
+  "notes": "Both call sites use the extracted constant and the value is unchanged, so the requirement is met with no behavioural difference."
+}

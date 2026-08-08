@@ -1,0 +1,31 @@
+{
+  "role": "architect",
+  "gaps": [
+    {
+      "id": "schema-migration",
+      "keywords": ["migration", "column", "users"]
+    },
+    {
+      "id": "rolling-deploy-compatibility",
+      "keywords": ["deploy", "both", "column"]
+    },
+    {
+      "id": "update-every-reader",
+      "keywords": ["query", "repository", "notifications"]
+    },
+    {
+      "id": "drop-old-column-last",
+      "keywords": ["drop", "old", "column"]
+    }
+  ],
+  "spurious": [
+    {
+      "id": "introduce-orm",
+      "keywords": ["orm", "introduce", "replace"]
+    },
+    {
+      "id": "rewrite-db-layer",
+      "keywords": ["rewrite", "database", "layer"]
+    }
+  ]
+}

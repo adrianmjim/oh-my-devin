@@ -1,0 +1,14 @@
+{
+  "tests": "passed",
+  "commands": [
+    {
+      "command": "node --test",
+      "result": "2 tests passed, 0 failed — normalize returns null for a missing input and still trims and lowercases a string"
+    },
+    {
+      "command": "cat src/normalize.js",
+      "result": "the guard returns null before the trim runs"
+    }
+  ],
+  "notes": "Added the missing-input guard in src/normalize.js; the tests were not touched."
+}

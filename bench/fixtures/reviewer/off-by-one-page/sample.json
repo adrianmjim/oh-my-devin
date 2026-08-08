@@ -1,0 +1,17 @@
+{
+  "verdict": "request_changes",
+  "findings": [
+    {
+      "summary": "The slice end is `start + size - 1`, so every page drops its last item and the final item of the collection is never returned.",
+      "severity": "high",
+      "location": "src/page.js:3",
+      "fix": "Slice to `start + size` so each page carries the requested number of items."
+    },
+    {
+      "summary": "A `size` that is zero or negative is not rejected: the requirement calls it a caller error, but the function returns an empty array as if the page were simply empty.",
+      "severity": "medium",
+      "location": "src/page.js:1",
+      "fix": "Throw a RangeError unless `size` is a positive integer before computing the offset."
+    }
+  ]
+}

@@ -5,6 +5,8 @@ import type { ArtifactValidation } from '../artifact/artifact-validation';
 import { validateArtifact } from '../artifact/validate-artifact';
 import { BudgetEnforcer } from '../budget/budget-enforcer';
 import type { AgentConfigBundle } from '../contract/agent-config-bundle';
+import type { ApprovalPosture } from '../contract/approval-posture';
+import { deriveApprovalPosture } from '../contract/derive-approval-posture';
 import type { Engine } from '../engine/engine';
 import { EngineError } from '../engine/engine-error';
 import { selectEngine } from '../engine/select-engine';
@@ -83,12 +85,14 @@ export async function runRole(options: RunRoleOptions): Promise<RunReport> {
     await writeFile(bundlePath, JSON.stringify(bundle), 'utf8');
 
     const engine: Engine = selectEngine(role.engine);
+    const posture: ApprovalPosture = deriveApprovalPosture(bundle);
     const adapter: HeadlessSessionAdapter = new HeadlessSessionAdapter(
       options.runner,
       engine,
       {
         agentConfigPath: bundlePath,
         model: options.model ?? role.model,
+        posture,
         workingDirectory: options.workingDirectory,
       },
     );

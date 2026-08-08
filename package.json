@@ -24,7 +24,7 @@
     "oh-my-devin"
   ],
   "type": "module",
-  "packageManager": "pnpm@11.17.0",
+  "packageManager": "pnpm@11.18.0",
   "engines": {
     "node": ">=22.14"
   },
@@ -45,6 +45,7 @@
     "test:coverage": "vitest run --coverage",
     "test:e2e": "pnpm build && vitest run --config vitest.e2e.config.ts",
     "test:smoke": "pnpm build && vitest run --config vitest.smoke.config.ts",
+    "test:bench": "vitest run --config vitest.bench.config.ts",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
@@ -59,7 +60,7 @@
     "prettier": "3.9.6",
     "tsc-alias": "1.9.1",
     "typescript": "5.9.3",
-    "typescript-eslint": "8.65.0",
+    "typescript-eslint": "8.66.0",
     "vitest": "4.1.10"
   },
   "dependencies": {
