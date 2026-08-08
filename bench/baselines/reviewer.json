@@ -1,0 +1,91 @@
+{
+  "role": "reviewer",
+  "promptDigest": "a900f7804c89648bdcb9b7fd70c7866a990bc7fc364abe7e5f2dccd7a608730e",
+  "omdVersion": "0.0.0",
+  "engineVersion": "3000.3.27",
+  "model": "gpt-5.6-luna",
+  "fixtures": [
+    {
+      "fixtureId": "unbounded-retry",
+      "role": "reviewer",
+      "model": "gpt-5.6-luna",
+      "dimensions": [
+        {
+          "dimension": "detection",
+          "score": 0.5
+        },
+        {
+          "dimension": "false-positive-resistance",
+          "score": 1
+        },
+        {
+          "dimension": "severity-accuracy",
+          "score": 0.5
+        },
+        {
+          "dimension": "verdict-accuracy",
+          "score": 1
+        }
+      ],
+      "composite": 0.725,
+      "artifactValid": true,
+      "failureTier": null,
+      "validationErrors": []
+    },
+    {
+      "fixtureId": "off-by-one-page",
+      "role": "reviewer",
+      "model": "gpt-5.6-luna",
+      "dimensions": [
+        {
+          "dimension": "detection",
+          "score": 1
+        },
+        {
+          "dimension": "false-positive-resistance",
+          "score": 1
+        },
+        {
+          "dimension": "severity-accuracy",
+          "score": 0.5
+        },
+        {
+          "dimension": "verdict-accuracy",
+          "score": 1
+        }
+      ],
+      "composite": 0.9249999999999999,
+      "artifactValid": true,
+      "failureTier": null,
+      "validationErrors": []
+    },
+    {
+      "fixtureId": "extract-timeout-constant",
+      "role": "reviewer",
+      "model": "gpt-5.6-luna",
+      "dimensions": [
+        {
+          "dimension": "detection",
+          "score": 1
+        },
+        {
+          "dimension": "false-positive-resistance",
+          "score": 1
+        },
+        {
+          "dimension": "severity-accuracy",
+          "score": 1
+        },
+        {
+          "dimension": "verdict-accuracy",
+          "score": 1
+        }
+      ],
+      "composite": 1,
+      "artifactValid": true,
+      "failureTier": null,
+      "validationErrors": []
+    }
+  ],
+  "composite": 0.8833333333333333
+}
