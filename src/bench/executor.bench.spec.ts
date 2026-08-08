@@ -1,6 +1,7 @@
 import { afterAll, describe, expect, it } from 'vitest';
 import { aggregateRoleScore } from './aggregate-role-score';
 import { BENCH_BASELINES_DIR } from './bench-baselines-dir';
+import type { BenchFixture } from './bench-fixture';
 import { BENCH_FIXTURES_DIR } from './bench-fixtures-dir';
 import { BENCH_GUARD_MESSAGE } from './bench-guard-message';
 import { BENCH_RESULTS_DIR } from './bench-results-dir';
@@ -33,6 +34,9 @@ describe('executor bench', () => {
         }
         const path: string = await finalizeRoleBench({
           score: aggregateRoleScore(set, model, scores),
+          expectedFixtureIds: set.fixtures.map(
+            (fixture: BenchFixture): string => fixture.id,
+          ),
           mode,
           env: process.env,
           resultsDir: BENCH_RESULTS_DIR,

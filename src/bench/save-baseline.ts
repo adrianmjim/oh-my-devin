@@ -7,11 +7,21 @@ import type { SaveBaselineOptions } from './save-baseline-options';
 export async function saveBaseline(
   options: SaveBaselineOptions,
 ): Promise<string | null> {
-  const scored: boolean = options.score.fixtures.some(
+  const scoredIds: ReadonlySet<string> = new Set(
+    options.score.fixtures.map(
+      (fixture: FixtureScore): string => fixture.fixtureId,
+    ),
+  );
+  const complete: boolean =
+    options.expectedFixtureIds.length > 0 &&
+    options.expectedFixtureIds.every((id: string): boolean =>
+      scoredIds.has(id),
+    );
+  const allValid: boolean = options.score.fixtures.every(
     (fixture: FixtureScore): boolean => fixture.artifactValid,
   );
   let path: string | null = null;
-  if (options.requested && scored) {
+  if (options.requested && complete && allValid) {
     const baseline: BenchBaseline = {
       role: options.score.role,
       promptDigest: options.promptDigest,

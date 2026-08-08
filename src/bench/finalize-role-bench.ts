@@ -21,6 +21,7 @@ export async function finalizeRoleBench(
   if (requested) {
     await saveBaseline({
       score: options.score,
+      expectedFixtureIds: options.expectedFixtureIds,
       promptDigest: rolePromptDigest(roleAgentMd(options.score.role)),
       omdVersion: await reportVersion(),
       engineVersion: await detectEngineVersion(

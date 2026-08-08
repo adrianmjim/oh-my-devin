@@ -45,6 +45,7 @@ describe('finalizeRoleBench', () => {
   it('always writes the run results', async () => {
     const path: string = await finalizeRoleBench({
       score: SCORE,
+      expectedFixtureIds: ['unbounded-loop'],
       mode: 'dry',
       env: {},
       resultsDir,
@@ -58,6 +59,7 @@ describe('finalizeRoleBench', () => {
   it('writes no baseline without the save opt-in', async () => {
     await finalizeRoleBench({
       score: SCORE,
+      expectedFixtureIds: ['unbounded-loop'],
       mode: 'real',
       env: {},
       resultsDir,
@@ -70,6 +72,7 @@ describe('finalizeRoleBench', () => {
   it('writes no baseline from a dry run even with the save opt-in', async () => {
     await finalizeRoleBench({
       score: SCORE,
+      expectedFixtureIds: ['unbounded-loop'],
       mode: 'dry',
       env: { OMD_BENCH_SAVE: '1' },
       resultsDir,
@@ -82,6 +85,7 @@ describe('finalizeRoleBench', () => {
   it('saves a baseline naming every variable on a real saved run', async () => {
     await finalizeRoleBench({
       score: SCORE,
+      expectedFixtureIds: ['unbounded-loop'],
       mode: 'real',
       env: { OMD_BENCH_SAVE: '1' },
       resultsDir,
@@ -96,5 +100,18 @@ describe('finalizeRoleBench', () => {
     expect(baseline.omdVersion).toMatch(/^\d+\.\d+\.\d+$/);
     expect(baseline.engineVersion).not.toBe('');
     expect(baseline.composite).toBe(1);
+  });
+
+  it('saves no baseline when the run scored only part of the fixture set', async () => {
+    await finalizeRoleBench({
+      score: SCORE,
+      expectedFixtureIds: ['unbounded-loop', 'silent-catch'],
+      mode: 'real',
+      env: { OMD_BENCH_SAVE: '1' },
+      resultsDir,
+      baselinesDir,
+    });
+
+    await expect(readdir(baselinesDir)).rejects.toThrow();
   });
 });

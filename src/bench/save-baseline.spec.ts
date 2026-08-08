@@ -39,6 +39,7 @@ describe('saveBaseline', () => {
   it('writes the scores with every variable that moves them', async () => {
     const path: string | null = await saveBaseline({
       score: SCORE,
+      expectedFixtureIds: ['unbounded-loop'],
       promptDigest: 'abc123',
       omdVersion: '0.1.0',
       engineVersion: '3000.3.27',
@@ -64,6 +65,7 @@ describe('saveBaseline', () => {
   it('writes nothing at all without the save opt-in', async () => {
     const path: string | null = await saveBaseline({
       score: SCORE,
+      expectedFixtureIds: ['unbounded-loop'],
       promptDigest: 'abc123',
       omdVersion: '0.1.0',
       engineVersion: '3000.3.27',
@@ -78,6 +80,7 @@ describe('saveBaseline', () => {
   it('writes nothing when the run scored no fixtures', async () => {
     const path: string | null = await saveBaseline({
       score: { ...SCORE, fixtures: [], composite: 0 },
+      expectedFixtureIds: ['unbounded-loop'],
       promptDigest: 'abc123',
       omdVersion: '0.1.0',
       engineVersion: '3000.3.27',
@@ -107,6 +110,53 @@ describe('saveBaseline', () => {
         ],
         composite: 0,
       },
+      expectedFixtureIds: ['unbounded-loop'],
+      promptDigest: 'abc123',
+      omdVersion: '0.1.0',
+      engineVersion: '3000.3.27',
+      baselinesDir,
+      requested: true,
+    });
+
+    expect(path).toBeNull();
+    await expect(readdir(baselinesDir)).resolves.toEqual([]);
+  });
+
+  it('writes nothing when a filtered run scored only part of the fixture set', async () => {
+    const path: string | null = await saveBaseline({
+      score: SCORE,
+      expectedFixtureIds: ['unbounded-loop', 'silent-catch'],
+      promptDigest: 'abc123',
+      omdVersion: '0.1.0',
+      engineVersion: '3000.3.27',
+      baselinesDir,
+      requested: true,
+    });
+
+    expect(path).toBeNull();
+    await expect(readdir(baselinesDir)).resolves.toEqual([]);
+  });
+
+  it('writes nothing when any scored artifact is invalid', async () => {
+    const path: string | null = await saveBaseline({
+      score: {
+        ...SCORE,
+        fixtures: [
+          ...SCORE.fixtures,
+          {
+            fixtureId: 'silent-catch',
+            role: 'reviewer',
+            model: 'claude-sonnet-5-medium',
+            dimensions: [{ dimension: 'detection', score: 0 }],
+            composite: 0,
+            artifactValid: false,
+            failureTier: 'invalid_artifact',
+            validationErrors: ['findings must be an array'],
+          },
+        ],
+        composite: 0.5,
+      },
+      expectedFixtureIds: ['unbounded-loop', 'silent-catch'],
       promptDigest: 'abc123',
       omdVersion: '0.1.0',
       engineVersion: '3000.3.27',
@@ -123,6 +173,7 @@ describe('saveBaseline', () => {
 
     const path: string | null = await saveBaseline({
       score: SCORE,
+      expectedFixtureIds: ['unbounded-loop'],
       promptDigest: 'abc123',
       omdVersion: '0.1.0',
       engineVersion: '3000.3.27',
