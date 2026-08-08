@@ -1,0 +1,23 @@
+{
+  "evidence": [
+    {
+      "source": "node test.js",
+      "observation": "Exits 0 printing 'ok'; all three assertions pass."
+    },
+    {
+      "source": "node test.js (repeated ten times)",
+      "observation": "Every run exits 0 with the same output; no failure observed."
+    },
+    {
+      "source": "read src/total.js and test.js",
+      "observation": "total is a pure reduce over its argument with no shared state, no clock, and no ordering dependence, so there is no source of run-to-run variation."
+    }
+  ],
+  "notIsolated": {
+    "eliminatedHypotheses": [
+      "A genuine intermittent failure: ten consecutive runs all passed, so the reported failure does not reproduce here.",
+      "Shared mutable state between assertions: total holds no state across calls, and each assertion builds its own input.",
+      "Time or ordering dependence: neither file reads a clock, a random source, nor the filesystem."
+    ]
+  }
+}

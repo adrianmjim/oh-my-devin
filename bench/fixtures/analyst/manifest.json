@@ -1,0 +1,8 @@
+{
+  "role": "analyst",
+  "hypothesis": "The analyst prompt surfaces what decided scope left unsaid in the list it belongs in: a behaviour the scope never pins down becomes a pass/fail criterion, an unanswered decision becomes an open question naming why it matters, and an unstated dependency becomes an assumption with a validation method — while fully specified scope draws criteria and no invented questions.",
+  "fixtures": [
+    { "id": "export-endpoint", "clean": false },
+    { "id": "rename-flag", "clean": true }
+  ]
+}

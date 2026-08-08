@@ -1,0 +1,38 @@
+{
+  "acceptanceCriteria": [
+    {
+      "check": "An account with no records exports successfully",
+      "passesWhen": "The response is a CSV carrying only its header row and no data rows"
+    },
+    {
+      "check": "A caller exporting another account is refused",
+      "passesWhen": "The request from a non-owner for another account returns 403 and no CSV body"
+    },
+    {
+      "check": "The owner exporting their own account receives a CSV download",
+      "passesWhen": "The response carries a CSV content type and a filename disposition"
+    }
+  ],
+  "openQuestions": [
+    {
+      "question": "How large an export may run synchronously before it must be made asynchronous?",
+      "whyItMatters": "A synchronous export of a large account will hit the request timeout, which changes the endpoint's shape"
+    },
+    {
+      "question": "Which records and which columns are included in the export?",
+      "whyItMatters": "The criteria cannot pin the CSV contents until the included set is decided"
+    }
+  ],
+  "assumptions": [
+    {
+      "assumption": "An existing authentication mechanism already identifies the owner of the request",
+      "validationMethod": "Check whether the current router exposes the authenticated account on the request"
+    }
+  ],
+  "scopeRisks": [
+    {
+      "risk": "The export grows into a reporting feature once callers ask for filters",
+      "prevention": "Keep the endpoint parameterless and record filter requests as separate scope"
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "findings": [
+    {
+      "path": "src/send.js",
+      "relevance": "Holds the retry loop: it retries up to MAX_ATTEMPTS, breaks out on any 4xx, and falls through to the dead-letter record when the attempts run out."
+    },
+    {
+      "path": "src/backoff.js",
+      "relevance": "Owns the retry timing: BASE_DELAY_MS, MAX_ATTEMPTS, and delayFor, which doubles the delay each attempt."
+    },
+    {
+      "path": "src/dead-letters.js",
+      "relevance": "Where an event that never succeeded ends up: recordDeadLetter appends it to the store that deadLetters reads back."
+    }
+  ],
+  "relationships": [
+    {
+      "from": "src/send.js",
+      "to": "src/backoff.js",
+      "relationship": "imports delayFor and MAX_ATTEMPTS from, so the backoff schedule and the attempt ceiling both come from there"
+    },
+    {
+      "from": "src/send.js",
+      "to": "src/dead-letters.js",
+      "relationship": "calls recordDeadLetter in, once the retry loop is exhausted or a 4xx breaks it"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "role": "debugger",
+  "causes": [
+    {
+      "id": "wrong-property-read",
+      "keywords": ["resumeid", "undefined"],
+      "location": "src/session.js:2"
+    }
+  ]
+}

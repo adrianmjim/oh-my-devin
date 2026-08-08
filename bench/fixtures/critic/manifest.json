@@ -1,0 +1,8 @@
+{
+  "role": "critic",
+  "hypothesis": "The critic prompt makes the absent element as findable as the written one: a plan missing a step the goal requires draws a `missing_element` finding naming what is absent, a plan whose written step is wrong draws a located `present_flaw`, and a plan that already meets its goal draws an approval with no invented findings.",
+  "fixtures": [
+    { "id": "migration-plan", "clean": false },
+    { "id": "sound-retry-plan", "clean": true }
+  ]
+}
