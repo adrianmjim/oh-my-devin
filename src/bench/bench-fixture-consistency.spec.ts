@@ -155,11 +155,12 @@ describe('committed bench fixtures', () => {
     for (const set of SETS) {
       for (const fixture of set.fixtures) {
         const truth = fixture.truth;
-        const verdictBearing: boolean =
-          truth.role === 'reviewer' ||
-          truth.role === 'critic' ||
-          truth.role === 'security-reviewer';
-        if (!fixture.clean && verdictBearing) {
+        if (
+          !fixture.clean &&
+          (truth.role === 'reviewer' ||
+            truth.role === 'critic' ||
+            truth.role === 'security-reviewer')
+        ) {
           expect(truth.expectedVerdict, `${set.role}/${fixture.id}`).toBe(
             'request_changes',
           );
