@@ -5,6 +5,10 @@ import { describe, expect, it } from 'vitest';
 import type { CommandInvocation } from '../engine/command-invocation';
 import type { CommandResult } from '../engine/command-result';
 import type { CommandRunner } from '../engine/command-runner';
+import { createMemoryComposer } from '../memory/create-memory-composer';
+import { EMPTY_MEMORY_DELIVERY } from '../memory/empty-memory-delivery';
+import type { MemoryComposer } from '../memory/memory-composer';
+import type { MemoryDelivery } from '../memory/memory-delivery';
 import type { RunReport } from '../outcome/run-report';
 import { ParallelError } from '../parallel/parallel-error';
 import { runRole } from '../run/run-role';
@@ -106,6 +110,9 @@ const NOOP_RUNNER: CommandRunner = {
   run: (): Promise<never> => Promise.reject(new Error('unused')),
 };
 
+const NOOP_COMPOSER: MemoryComposer = (): Promise<MemoryDelivery> =>
+  Promise.resolve(EMPTY_MEMORY_DELIVERY);
+
 const SEAT: CouncilSeat = {
   id: 'security',
   role: 'security',
@@ -149,7 +156,7 @@ function makeDeps(
     readArtifact: read,
     clock: (): number => 0,
     userConfigDir,
-    memoryBaseDir: '/project',
+    composeMemory: NOOP_COMPOSER,
   };
 }
 
@@ -363,7 +370,7 @@ describe('createSeatInvoker', () => {
         readArtifact: (): Promise<string> => Promise.resolve(POSITION_JSON),
         clock: (): number => 0,
         userConfigDir: null,
-        memoryBaseDir: base,
+        composeMemory: createMemoryComposer(base, 0),
       },
       new WorktreePool(worktrees),
     );

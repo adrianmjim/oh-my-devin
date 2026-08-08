@@ -203,6 +203,23 @@ describe('omd memory delivery (e2e)', () => {
     expect(await readFile(notepadPath, 'utf8')).toBe(before);
   });
 
+  it('refuses to remember over a corrupted store and preserves it', async () => {
+    project = await createE2eProject();
+    const paths: MemoryStorePaths = new MemoryStorePaths(project.dir);
+    await mkdir(paths.dir, { recursive: true });
+    await writeFile(paths.notepad, 'not json at all', 'utf8');
+
+    const result: CommandResult = await project.run([
+      'memory',
+      'remember',
+      REMEMBERED,
+    ]);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain('refusing');
+    expect(await readFile(paths.notepad, 'utf8')).toBe('not json at all');
+  });
+
   it('hands every council seat byte-identical memory content', async () => {
     project = await createE2eProject();
     await scaffoldReviewer(project, true);

@@ -1,6 +1,7 @@
 import { join } from 'node:path';
 import type { HandoffArtifactName } from '../handoff/handoff-artifact-name';
 import type { LayerLookup } from '../layer/layer-lookup';
+import { createMemoryComposer } from '../memory/create-memory-composer';
 import type { RunReport } from '../outcome/run-report';
 import type { Worktree } from '../worktree/worktree';
 import { composeStagePrompt } from './compose-stage-prompt';
@@ -27,7 +28,7 @@ export function createStageRunner(deps: StageRunnerDeps): StageRunner {
         clock: deps.clock,
         lookup,
         provisionedWorktree: true,
-        memoryBaseDir: deps.memoryBaseDir,
+        composeMemory: createMemoryComposer(deps.memoryBaseDir, deps.clock()),
       });
 
       if (report.failureTier !== null || !report.artifactValid) {

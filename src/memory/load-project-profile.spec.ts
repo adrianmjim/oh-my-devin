@@ -59,6 +59,19 @@ describe('loadProjectProfile', () => {
     expect(await readProfile(projectDir)).toEqual(snapshot);
   });
 
+  it('refreshes a snapshot recorded in the future rather than trusting it', async () => {
+    await writeProfile(projectDir, FABRICATED);
+
+    const snapshot: ProfileSnapshot = await loadProjectProfile(
+      projectDir,
+      FABRICATED.derivedAt - 500,
+    );
+
+    expect(snapshot.layout).toEqual(['src']);
+    expect(snapshot.derivedAt).toBe(FABRICATED.derivedAt - 500);
+    expect(await readProfile(projectDir)).toEqual(snapshot);
+  });
+
   it('refreshes a snapshot the repository has outgrown, not the reverse', async () => {
     await writeProfile(projectDir, FABRICATED);
     await mkdir(join(projectDir, 'docs'), { recursive: true });

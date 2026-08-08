@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { CommandRunner } from '../engine/command-runner';
+import { EMPTY_MEMORY_DELIVERY } from '../memory/empty-memory-delivery';
+import type { MemoryComposer } from '../memory/memory-composer';
+import type { MemoryDelivery } from '../memory/memory-delivery';
 import type { RunReport } from '../outcome/run-report';
 import type { RunRoleOptions } from '../run/run-role-options';
 import type { Worktree } from '../worktree/worktree';
@@ -35,6 +38,9 @@ class FakeWorktrees implements WorktreeProvisioner {
 const NOOP_RUNNER: CommandRunner = {
   run: (): Promise<never> => Promise.reject(new Error('unused')),
 };
+
+const NOOP_COMPOSER: MemoryComposer = (): Promise<MemoryDelivery> =>
+  Promise.resolve(EMPTY_MEMORY_DELIVERY);
 
 const PROPOSER: CouncilSeat = {
   id: 'architect',
@@ -79,7 +85,7 @@ function makeDeps(
     readArtifact: read,
     clock: (): number => 0,
     userConfigDir,
-    memoryBaseDir: '/project',
+    composeMemory: NOOP_COMPOSER,
   };
 }
 

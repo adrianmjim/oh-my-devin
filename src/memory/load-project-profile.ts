@@ -10,7 +10,11 @@ export async function loadProjectProfile(
 ): Promise<ProfileSnapshot> {
   const cached: ProfileSnapshot | null = await readProfile(baseDir);
   let snapshot: ProfileSnapshot;
-  if (cached !== null && now - cached.derivedAt < PROFILE_STALENESS_WINDOW_MS) {
+  if (
+    cached !== null &&
+    cached.derivedAt <= now &&
+    now - cached.derivedAt < PROFILE_STALENESS_WINDOW_MS
+  ) {
     snapshot = cached;
   } else {
     snapshot = await deriveProfileSnapshot(baseDir, now);

@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { appendNotepadEntry } from './append-notepad-entry';
 import { contentHash } from './content-hash';
 import { MEMORY_CLASS_CAP } from './memory-class-cap';
+import { MemoryStoreError } from './memory-store-error';
 import { MemoryStorePaths } from './memory-store-paths';
 import type { NotepadEntry } from './notepad-entry';
 import { readNotepad } from './read-notepad';
@@ -66,6 +67,29 @@ describe('appendNotepadEntry', () => {
     expect(await readNotepad(projectDir)).toHaveLength(
       MEMORY_CLASS_CAP.notepad,
     );
+  });
+
+  it('refuses to append over an unparseable store and leaves it intact', async () => {
+    const paths: MemoryStorePaths = new MemoryStorePaths(projectDir);
+    await mkdir(paths.dir, { recursive: true });
+    await writeFile(paths.notepad, 'not json at all', 'utf8');
+
+    await expect(
+      appendNotepadEntry(projectDir, 'manual', 'a fresh note', 5),
+    ).rejects.toThrow(MemoryStoreError);
+    expect(await readFile(paths.notepad, 'utf8')).toBe('not json at all');
+  });
+
+  it('refuses to append over entries it does not recognize', async () => {
+    const paths: MemoryStorePaths = new MemoryStorePaths(projectDir);
+    await mkdir(paths.dir, { recursive: true });
+    const held: string = JSON.stringify([{ kind: 'shouting', text: 'x' }]);
+    await writeFile(paths.notepad, held, 'utf8');
+
+    await expect(
+      appendNotepadEntry(projectDir, 'manual', 'a fresh note', 5),
+    ).rejects.toThrow(MemoryStoreError);
+    expect(await readFile(paths.notepad, 'utf8')).toBe(held);
   });
 
   it('behaves identically whether or not the subtree is under version control', async () => {

@@ -59,6 +59,40 @@ describe('admitNotepadEntry', () => {
     expect(second).toHaveLength(1);
   });
 
+  it('collapses duplicates the store already holds', () => {
+    const stored: readonly NotepadEntry[] = [
+      entry('deploys need the staging gate', 10),
+      entry('reviewers read the diff', 20),
+      entry('deploys need the staging gate', 30),
+    ];
+
+    const admitted: readonly NotepadEntry[] = admitNotepadEntry(
+      stored,
+      entry('the gate is manual', 40),
+    );
+
+    expect(admitted.map((held: NotepadEntry): string => held.text)).toEqual([
+      'deploys need the staging gate',
+      'reviewers read the diff',
+      'the gate is manual',
+    ]);
+    expect(admitted[0]?.recordedAt).toBe(10);
+  });
+
+  it('collapses a stored duplicate even when the candidate repeats it', () => {
+    const stored: readonly NotepadEntry[] = [
+      entry('deploys need the staging gate', 10),
+      entry('deploys need the staging gate', 30),
+    ];
+
+    const admitted: readonly NotepadEntry[] = admitNotepadEntry(
+      stored,
+      entry('deploys need the staging gate', 40),
+    );
+
+    expect(admitted).toEqual([entry('deploys need the staging gate', 10)]);
+  });
+
   it('holds the notepad within its omd-owned cap', () => {
     const saturated: readonly NotepadEntry[] = fill(MEMORY_CLASS_CAP.notepad);
 

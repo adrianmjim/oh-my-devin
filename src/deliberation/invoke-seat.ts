@@ -26,7 +26,7 @@ export async function invokeSeat(
     runner: deps.runnerFor(worktree.path),
     clock: deps.clock,
     lookup,
-    memoryBaseDir: deps.memoryBaseDir,
+    composeMemory: deps.composeMemory,
   });
   if (report.failureTier !== null || !report.artifactValid) {
     throw new DeliberationError(

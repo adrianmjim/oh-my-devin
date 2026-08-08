@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { CouncilSeat } from '../council/council-seat';
 import type { CommandRunner } from '../engine/command-runner';
+import { EMPTY_MEMORY_DELIVERY } from '../memory/empty-memory-delivery';
+import type { MemoryComposer } from '../memory/memory-composer';
+import type { MemoryDelivery } from '../memory/memory-delivery';
 import type { RunReport } from '../outcome/run-report';
 import type { RunRoleOptions } from '../run/run-role-options';
 import type { Worktree } from '../worktree/worktree';
@@ -42,6 +45,9 @@ const NOOP_RUNNER: CommandRunner = {
   run: (): Promise<never> => Promise.reject(new Error('unused')),
 };
 
+const NOOP_COMPOSER: MemoryComposer = (): Promise<MemoryDelivery> =>
+  Promise.resolve(EMPTY_MEMORY_DELIVERY);
+
 function report(overrides: Partial<RunReport> = {}): RunReport {
   return {
     runId: 'run-seat',
@@ -74,7 +80,7 @@ function deps(
     readArtifact: (): Promise<string> => Promise.resolve(artifact),
     clock: (): number => 0,
     userConfigDir: null,
-    memoryBaseDir: '/project',
+    composeMemory: NOOP_COMPOSER,
   };
 }
 
@@ -147,7 +153,7 @@ describe('invokeSeat', () => {
     ).rejects.toThrow(/did not produce a valid position/);
   });
 
-  it('reads the seat’s memory from the project store, never from its worktree', async () => {
+  it('reads the seat’s memory through the deliberation’s composer, never its own', async () => {
     const seen: RunRoleOptions[] = [];
 
     await invokeSeat(
@@ -159,11 +165,10 @@ describe('invokeSeat', () => {
       WORKTREE,
     );
 
-    expect(seen[0]?.memoryBaseDir).toBe('/project');
-    expect(seen[0]?.memoryBaseDir).not.toBe(WORKTREE.path);
+    expect(seen[0]?.composeMemory).toBe(NOOP_COMPOSER);
   });
 
-  it('hands every seat of a deliberation the same memory source', async () => {
+  it('hands every seat of a deliberation the same memory snapshot', async () => {
     const seen: RunRoleOptions[] = [];
     const seatDeps: SeatSessionDeps = deps(
       (options: RunRoleOptions): Promise<RunReport> => {
@@ -184,8 +189,8 @@ describe('invokeSeat', () => {
     expect(
       new Set(
         seen.map(
-          (options: RunRoleOptions): string | undefined =>
-            options.memoryBaseDir,
+          (options: RunRoleOptions): MemoryComposer | undefined =>
+            options.composeMemory,
         ),
       ).size,
     ).toBe(1);

@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises';
 import type { CommandRunner } from '../engine/command-runner';
 import { ProcessCommandRunner } from '../engine/process-command-runner';
 import type { LayerLookup } from '../layer/layer-lookup';
+import { createMemoryComposer } from '../memory/create-memory-composer';
 import { runRole } from '../run/run-role';
 import { WorktreeManager } from '../worktree/worktree-manager';
 import type { SeatSessionDeps } from './seat-session-deps';
@@ -19,6 +20,6 @@ export function createProcessSeatDeps(
       readFile(absolutePath, 'utf8'),
     clock: (): number => Date.now(),
     userConfigDir,
-    memoryBaseDir: baseDir,
+    composeMemory: createMemoryComposer(baseDir, Date.now()),
   };
 }

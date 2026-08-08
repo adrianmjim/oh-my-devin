@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { LayerLookup } from '../layer/layer-lookup';
 import { appendNotepadEntry } from '../memory/append-notepad-entry';
+import { createMemoryComposer } from '../memory/create-memory-composer';
 import { resolveRunInvocation } from './resolve-run-invocation';
 import type { ResolvedRunInvocation } from './resolved-run-invocation';
 import { UsageError } from './usage-error';
@@ -241,7 +242,7 @@ describe('resolveRunInvocation', () => {
     );
   });
 
-  it('composes memory from the memory base directory, not the worktree', async () => {
+  it('composes memory through the provided composer, not from the worktree', async () => {
     await scaffold();
     await writeFile(
       join(projectDir, '.devin', 'agents', 'reviewer', 'AGENT.md'),
@@ -259,7 +260,7 @@ describe('resolveRunInvocation', () => {
       {
         workingDirectory: worktreeDir,
         provisionedWorktree: true,
-        memoryBaseDir: projectDir,
+        composeMemory: createMemoryComposer(projectDir, 5),
       },
     );
 
