@@ -7,6 +7,10 @@ describe('requireBenchString', () => {
     expect(requireBenchString('reviewer', 'role')).toBe('reviewer');
   });
 
+  it('returns the trimmed value it validated', () => {
+    expect(requireBenchString('  reviewer  ', 'role')).toBe('reviewer');
+  });
+
   it('rejects a missing field by name', () => {
     expect(() => requireBenchString(undefined, 'hypothesis')).toThrow(
       BenchFixtureError,

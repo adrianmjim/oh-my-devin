@@ -13,6 +13,11 @@ describe('resolveBenchMode', () => {
     expect(resolveBenchMode({ OMD_BENCH: 'dry' })).toBe('dry');
   });
 
+  it('tolerates incidental whitespace around the opt-in value', () => {
+    expect(resolveBenchMode({ OMD_BENCH: ' 1 ' })).toBe('real');
+    expect(resolveBenchMode({ OMD_BENCH: 'dry ' })).toBe('dry');
+  });
+
   it('selects nothing without the opt-in so the suite can fail loudly', () => {
     expect(resolveBenchMode({})).toBeNull();
     expect(resolveBenchMode({ OMD_BENCH: '' })).toBeNull();

@@ -18,6 +18,12 @@ describe('requireBenchKeywords', () => {
     );
   });
 
+  it('rejects with a message that fits fragments as well as keywords', () => {
+    expect(() => requireBenchKeywords([], 'criteria[0].contains')).toThrow(
+      '"criteria[0].contains" must be a non-empty array of strings',
+    );
+  });
+
   it('rejects a blank keyword', () => {
     expect(() => requireBenchKeywords(['ok', ' '], 'keywords')).toThrow(
       BenchFixtureError,

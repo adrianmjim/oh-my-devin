@@ -13,6 +13,12 @@ describe('resolveBenchModel', () => {
     );
   });
 
+  it('trims incidental whitespace from the override', () => {
+    expect(resolveBenchModel({ OMD_BENCH_MODEL: ' claude-opus-5-high ' })).toBe(
+      'claude-opus-5-high',
+    );
+  });
+
   it('ignores a blank override', () => {
     expect(resolveBenchModel({ OMD_BENCH_MODEL: '  ' })).toBe(BENCH_MODEL);
   });

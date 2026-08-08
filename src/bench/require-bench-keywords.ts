@@ -7,7 +7,7 @@ export function requireBenchKeywords(
 ): readonly string[] {
   if (!Array.isArray(value) || value.length === 0) {
     throw new BenchFixtureError(
-      `"${field}" must be a non-empty array of keywords`,
+      `"${field}" must be a non-empty array of strings`,
     );
   }
   return value.map((entry: unknown, index: number): string =>
