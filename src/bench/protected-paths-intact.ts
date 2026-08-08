@@ -10,12 +10,9 @@ export async function protectedPathsIntact(
     paths.map(async (path: string): Promise<boolean> => {
       let intact: boolean;
       try {
-        const original: string = await readFile(
-          join(originalDir, path),
-          'utf8',
-        );
-        const current: string = await readFile(join(treeDir, path), 'utf8');
-        intact = original === current;
+        const original: Buffer = await readFile(join(originalDir, path));
+        const current: Buffer = await readFile(join(treeDir, path));
+        intact = original.equals(current);
       } catch {
         intact = false;
       }
