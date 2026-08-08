@@ -1,0 +1,8 @@
+{
+  "role": "debugger",
+  "hypothesis": "The debugger prompt makes the diagnosis rest on a reproduction it ran and stop at the cause it can actually isolate: a failure whose cause is one wrong property read is located at that line with evidence from the failing command, and a failure that does not reproduce draws an honest not-isolated statement rather than an invented cause.",
+  "fixtures": [
+    { "id": "resume-id", "clean": false },
+    { "id": "stable-suite", "clean": true }
+  ]
+}

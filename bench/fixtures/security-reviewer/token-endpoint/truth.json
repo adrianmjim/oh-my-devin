@@ -1,0 +1,26 @@
+{
+  "role": "security-reviewer",
+  "expectedVerdict": "request_changes",
+  "vulnerabilities": [
+    {
+      "id": "sql-injection",
+      "keywords": ["sql", "injection", "account", "parameter"],
+      "severity": "critical"
+    },
+    {
+      "id": "command-injection",
+      "keywords": ["command", "execsync", "name", "shell"],
+      "severity": "critical"
+    },
+    {
+      "id": "hardcoded-secret",
+      "keywords": ["secret", "key", "hardcoded", "literal"],
+      "severity": "high"
+    },
+    {
+      "id": "secret-in-response",
+      "keywords": ["response", "leaks", "key", "body"],
+      "severity": "high"
+    }
+  ]
+}

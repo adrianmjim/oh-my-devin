@@ -1,0 +1,15 @@
+{
+  "role": "document-specialist",
+  "answers": [
+    {
+      "id": "attempt-ceiling",
+      "keywords": ["five", "retried"],
+      "source": "docs/retries.md"
+    },
+    {
+      "id": "exhausted-events",
+      "keywords": ["dead", "letter"],
+      "source": "docs/retries.md"
+    }
+  ]
+}

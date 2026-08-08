@@ -1,0 +1,8 @@
+{
+  "role": "explore",
+  "hypothesis": "The explore prompt returns a map the caller can act on without re-searching: the files that carry the answer are named with relevance to the question asked and the relationship between them is recorded, while a question this codebase does not answer draws an explicit nothing-found statement rather than the nearest file.",
+  "fixtures": [
+    { "id": "retry-path", "clean": false },
+    { "id": "no-telemetry", "clean": true }
+  ]
+}

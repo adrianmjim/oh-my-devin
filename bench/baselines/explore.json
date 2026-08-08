@@ -1,0 +1,56 @@
+{
+  "role": "explore",
+  "promptDigest": "69598f57c3577f3f9d4853f92ca1be26131401dca770a1835b9c2868c3a8bcb3",
+  "omdVersion": "0.0.0",
+  "engineVersion": "3000.3.27",
+  "model": "gpt-5.6-luna",
+  "fixtures": [
+    {
+      "fixtureId": "retry-path",
+      "role": "explore",
+      "model": "gpt-5.6-luna",
+      "dimensions": [
+        {
+          "dimension": "file-recall",
+          "score": 1
+        },
+        {
+          "dimension": "relationship-coverage",
+          "score": 1
+        },
+        {
+          "dimension": "false-positive-resistance",
+          "score": 1
+        }
+      ],
+      "composite": 1,
+      "artifactValid": true,
+      "failureTier": null,
+      "validationErrors": []
+    },
+    {
+      "fixtureId": "no-telemetry",
+      "role": "explore",
+      "model": "gpt-5.6-luna",
+      "dimensions": [
+        {
+          "dimension": "file-recall",
+          "score": 1
+        },
+        {
+          "dimension": "relationship-coverage",
+          "score": 1
+        },
+        {
+          "dimension": "false-positive-resistance",
+          "score": 1
+        }
+      ],
+      "composite": 1,
+      "artifactValid": true,
+      "failureTier": null,
+      "validationErrors": []
+    }
+  ],
+  "composite": 1
+}

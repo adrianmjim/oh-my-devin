@@ -1,0 +1,64 @@
+{
+  "role": "security-reviewer",
+  "promptDigest": "7decc49b2e822473c18b5f4f75b24e6509efff075af7b4a30e1a0f984b981ca0",
+  "omdVersion": "0.0.0",
+  "engineVersion": "3000.3.27",
+  "model": "gpt-5.6-luna",
+  "fixtures": [
+    {
+      "fixtureId": "token-endpoint",
+      "role": "security-reviewer",
+      "model": "gpt-5.6-luna",
+      "dimensions": [
+        {
+          "dimension": "detection",
+          "score": 0.5
+        },
+        {
+          "dimension": "false-positive-resistance",
+          "score": 0.5
+        },
+        {
+          "dimension": "severity-accuracy",
+          "score": 0.5
+        },
+        {
+          "dimension": "verdict-accuracy",
+          "score": 1
+        }
+      ],
+      "composite": 0.5750000000000001,
+      "artifactValid": true,
+      "failureTier": null,
+      "validationErrors": []
+    },
+    {
+      "fixtureId": "safe-slug",
+      "role": "security-reviewer",
+      "model": "gpt-5.6-luna",
+      "dimensions": [
+        {
+          "dimension": "detection",
+          "score": 1
+        },
+        {
+          "dimension": "false-positive-resistance",
+          "score": 1
+        },
+        {
+          "dimension": "severity-accuracy",
+          "score": 1
+        },
+        {
+          "dimension": "verdict-accuracy",
+          "score": 1
+        }
+      ],
+      "composite": 1,
+      "artifactValid": true,
+      "failureTier": null,
+      "validationErrors": []
+    }
+  ],
+  "composite": 0.7875000000000001
+}

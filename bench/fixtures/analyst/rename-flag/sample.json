@@ -1,0 +1,27 @@
+{
+  "acceptanceCriteria": [
+    {
+      "check": "The new spelling works",
+      "passesWhen": "`report build --silent` produces no progress output on stdout"
+    },
+    {
+      "check": "The old spelling still works and warns",
+      "passesWhen": "`report build --quiet` behaves as --silent and prints `--quiet is deprecated; use --silent` to stderr"
+    },
+    {
+      "check": "Both spellings together are a usage error",
+      "passesWhen": "The command exits 2 and the message names both --quiet and --silent"
+    },
+    {
+      "check": "The deprecation notice leaves stdout untouched",
+      "passesWhen": "Piping stdout of `report build --quiet` yields the same bytes as `--silent`"
+    },
+    {
+      "check": "Help documents only the new spelling",
+      "passesWhen": "`report build --help` lists --silent and does not list --quiet"
+    }
+  ],
+  "openQuestions": [],
+  "assumptions": [],
+  "scopeRisks": []
+}

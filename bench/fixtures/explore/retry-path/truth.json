@@ -1,0 +1,18 @@
+{
+  "role": "explore",
+  "files": [
+    { "id": "send", "path": "src/send.js" },
+    { "id": "backoff", "path": "src/backoff.js" },
+    { "id": "dead-letters", "path": "src/dead-letters.js" }
+  ],
+  "relationships": [
+    {
+      "id": "send-uses-backoff",
+      "keywords": ["send", "backoff", "delay"]
+    },
+    {
+      "id": "send-records-dead-letter",
+      "keywords": ["send", "dead", "letter"]
+    }
+  ]
+}
