@@ -1,0 +1,16 @@
+{
+  "role": "reviewer",
+  "expectedVerdict": "request_changes",
+  "defects": [
+    {
+      "id": "unbounded-retry-loop",
+      "keywords": ["retry", "attempt", "loop"],
+      "severity": "high"
+    },
+    {
+      "id": "swallowed-error",
+      "keywords": ["error", "catch", "ignore"],
+      "severity": "high"
+    }
+  ]
+}

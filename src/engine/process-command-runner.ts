@@ -34,7 +34,7 @@ export class ProcessCommandRunner implements CommandRunner {
           reject(error);
         });
         child.on('close', (code: number | null): void => {
-          resolve({ stdout, stderr, exitCode: code ?? 0 });
+          resolve({ stdout, stderr, exitCode: code });
         });
       },
     );

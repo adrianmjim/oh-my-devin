@@ -1,0 +1,64 @@
+{
+  "role": "executor",
+  "promptDigest": "6074df88a8014b44a566f35fd72cdac683da90a966da83c3e9ce6af0d97b0322",
+  "omdVersion": "0.0.0",
+  "engineVersion": "3000.3.27",
+  "model": "gpt-5.6-luna",
+  "fixtures": [
+    {
+      "fixtureId": "null-input-guard",
+      "role": "executor",
+      "model": "gpt-5.6-luna",
+      "dimensions": [
+        {
+          "dimension": "criteria-satisfaction",
+          "score": 1
+        },
+        {
+          "dimension": "verification-outcome",
+          "score": 1
+        },
+        {
+          "dimension": "test-integrity",
+          "score": 1
+        },
+        {
+          "dimension": "evidence-accuracy",
+          "score": 1
+        }
+      ],
+      "composite": 1,
+      "artifactValid": true,
+      "failureTier": null,
+      "validationErrors": []
+    },
+    {
+      "fixtureId": "slugify",
+      "role": "executor",
+      "model": "gpt-5.6-luna",
+      "dimensions": [
+        {
+          "dimension": "criteria-satisfaction",
+          "score": 1
+        },
+        {
+          "dimension": "verification-outcome",
+          "score": 1
+        },
+        {
+          "dimension": "test-integrity",
+          "score": 1
+        },
+        {
+          "dimension": "evidence-accuracy",
+          "score": 0.75
+        }
+      ],
+      "composite": 0.9500000000000001,
+      "artifactValid": true,
+      "failureTier": null,
+      "validationErrors": []
+    }
+  ],
+  "composite": 0.9750000000000001
+}

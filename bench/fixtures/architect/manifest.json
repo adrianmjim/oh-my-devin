@@ -1,0 +1,9 @@
+{
+  "role": "architect",
+  "hypothesis": "The architect prompt produces a plan that closes the gaps the task actually leaves open — the migration, backfill and caller work a rename needs, the storage, response and configuration a rate limit needs — while its scope boundary keeps the plan from taking the adjacent rewrite the codebase invites.",
+  "fixtures": [
+    { "id": "rename-email-column", "clean": false },
+    { "id": "rate-limit-public-api", "clean": false },
+    { "id": "health-endpoint", "clean": true }
+  ]
+}

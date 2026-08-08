@@ -2,4 +2,7 @@ dist
 coverage
 node_modules
 pnpm-lock.yaml
+bench
+bench-results
+bench-scratch
 smoke-scratch

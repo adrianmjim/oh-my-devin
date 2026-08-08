@@ -1,0 +1,9 @@
+{
+  "role": "reviewer",
+  "hypothesis": "The reviewer prompt makes the verdict follow from the findings and keeps severity tracking impact rather than effort: correctness defects in a diff are found, filed at the severity their impact warrants, and blocked on — while a diff that satisfies its requirement draws an approval with no invented findings.",
+  "fixtures": [
+    { "id": "unbounded-retry", "clean": false },
+    { "id": "off-by-one-page", "clean": false },
+    { "id": "extract-timeout-constant", "clean": true }
+  ]
+}

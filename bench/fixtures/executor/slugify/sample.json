@@ -1,0 +1,14 @@
+{
+  "tests": "passed",
+  "commands": [
+    {
+      "command": "node --test",
+      "result": "3 tests passed, 0 failed — slugify lowercases, joins with hyphens and returns an empty string when nothing survives"
+    },
+    {
+      "command": "ls src",
+      "result": "slugify.js now exists and exports slugify"
+    }
+  ],
+  "notes": "Implemented src/slugify.js against the existing tests; the tests were not touched."
+}

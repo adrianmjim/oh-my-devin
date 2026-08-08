@@ -1,0 +1,24 @@
+{
+  "approach": "Rename in expand-and-contract order so old and new code can run side by side through the rolling deploy: add the new column, keep both in step, move the readers, then drop the old one.",
+  "steps": [
+    {
+      "description": "Add a migration that adds an `email` column to the `users` table alongside `email_address`, with the same NOT NULL and UNIQUE constraints deferred until the backfill completes.",
+      "files": ["schema.sql"]
+    },
+    {
+      "description": "Backfill `email` from `email_address` for every existing row, and keep both columns in step for the duration of the deploy so instances running either version read a correct value.",
+      "files": ["schema.sql"]
+    },
+    {
+      "description": "Update every reader query in the repository and the notifications module to select and insert `email` instead of `email_address`.",
+      "files": ["src/users-repository.js", "src/notifications.js"]
+    },
+    {
+      "description": "Once every instance runs the new code, drop the old `email_address` column and its index in a follow-up migration.",
+      "files": ["schema.sql"]
+    }
+  ],
+  "risks": [
+    "Dropping the old column before the deploy finishes breaks the instances still reading it."
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "role": "architect",
+  "gaps": [
+    {
+      "id": "register-health-route",
+      "keywords": ["health", "route", "register"]
+    },
+    {
+      "id": "probe-the-database",
+      "keywords": ["database", "query", "check"]
+    },
+    {
+      "id": "unhealthy-status-code",
+      "keywords": ["status", "unhealthy", "503"]
+    }
+  ],
+  "spurious": []
+}

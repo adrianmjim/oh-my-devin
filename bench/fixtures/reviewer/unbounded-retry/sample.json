@@ -1,0 +1,17 @@
+{
+  "verdict": "request_changes",
+  "findings": [
+    {
+      "severity": "high",
+      "location": "src/upload.js:5",
+      "summary": "The retry loop is unbounded: `while (true)` never stops after three attempts, so a permanently failing upload retries forever and the call never settles.",
+      "fix": "Count the attempts and stop after the third, rethrowing instead of looping again."
+    },
+    {
+      "severity": "high",
+      "location": "src/upload.js:9",
+      "summary": "The catch block ignores the error it caught, so the requirement to reject with the last attempt's error cannot be met and the caller learns nothing.",
+      "fix": "Bind the caught error, keep the last one, and reject with it once the attempts are exhausted."
+    }
+  ]
+}

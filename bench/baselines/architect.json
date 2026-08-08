@@ -1,0 +1,67 @@
+{
+  "role": "architect",
+  "promptDigest": "423da5089c2e814373a149f4012962b9353229bcef7c98e9c7a419172368960b",
+  "omdVersion": "0.0.0",
+  "engineVersion": "3000.3.27",
+  "model": "gpt-5.6-luna",
+  "fixtures": [
+    {
+      "fixtureId": "rename-email-column",
+      "role": "architect",
+      "model": "gpt-5.6-luna",
+      "dimensions": [
+        {
+          "dimension": "gap-coverage",
+          "score": 1
+        },
+        {
+          "dimension": "spurious-step-resistance",
+          "score": 1
+        }
+      ],
+      "composite": 1,
+      "artifactValid": true,
+      "failureTier": null,
+      "validationErrors": []
+    },
+    {
+      "fixtureId": "rate-limit-public-api",
+      "role": "architect",
+      "model": "gpt-5.6-luna",
+      "dimensions": [
+        {
+          "dimension": "gap-coverage",
+          "score": 0.5
+        },
+        {
+          "dimension": "spurious-step-resistance",
+          "score": 1
+        }
+      ],
+      "composite": 0.6499999999999999,
+      "artifactValid": true,
+      "failureTier": null,
+      "validationErrors": []
+    },
+    {
+      "fixtureId": "health-endpoint",
+      "role": "architect",
+      "model": "gpt-5.6-luna",
+      "dimensions": [
+        {
+          "dimension": "gap-coverage",
+          "score": 1
+        },
+        {
+          "dimension": "spurious-step-resistance",
+          "score": 1
+        }
+      ],
+      "composite": 1,
+      "artifactValid": true,
+      "failureTier": null,
+      "validationErrors": []
+    }
+  ],
+  "composite": 0.8833333333333333
+}
