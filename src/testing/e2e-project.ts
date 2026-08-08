@@ -6,6 +6,7 @@ import type { E2eRunOptions } from './e2e-run-options';
 
 export interface E2eProject {
   readonly dir: string;
+  readonly binDir: string;
   readonly logPath: string;
   writeScript(script: DevinStubScript): Promise<void>;
   run(argv: readonly string[], options?: E2eRunOptions): Promise<CommandResult>;

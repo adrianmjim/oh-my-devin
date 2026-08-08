@@ -1,6 +1,6 @@
 import { spawn } from 'node:child_process';
 import type { ChildProcessWithoutNullStreams } from 'node:child_process';
-import { join } from 'node:path';
+import { delimiter, join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { CommandResult } from '../engine/command-result';
 import { JournalWriter } from '../observability/journal-writer';
@@ -26,6 +26,7 @@ function runHook(
   dir: string,
   phase: string,
   event: unknown,
+  binDir: string,
 ): Promise<HookOutput> {
   return new Promise<HookOutput>(
     (
@@ -35,7 +36,13 @@ function runHook(
       const child: ChildProcessWithoutNullStreams = spawn(
         process.execPath,
         [join(dir, '.devin', 'hooks', 'omd-mode.mjs'), phase],
-        { cwd: dir },
+        {
+          cwd: dir,
+          env: {
+            ...process.env,
+            PATH: `${binDir}${delimiter}${process.env['PATH'] ?? ''}`,
+          },
+        },
       );
       let stdout: string = '';
       child.stdout.on('data', (chunk: Buffer): void => {
@@ -51,19 +58,29 @@ function runHook(
   );
 }
 
-function injectionFor(dir: string, sessionId: string): Promise<HookOutput> {
-  return runHook(dir, 'user-prompt', {
-    hook_event_name: 'UserPromptSubmit',
-    session_id: sessionId,
-    prompt: 'continue',
-  });
+function injectionFor(
+  project: E2eProject,
+  sessionId: string,
+): Promise<HookOutput> {
+  return runHook(
+    project.dir,
+    'user-prompt',
+    {
+      hook_event_name: 'UserPromptSubmit',
+      session_id: sessionId,
+      prompt: 'continue',
+    },
+    project.binDir,
+  );
 }
 
-function stopFor(dir: string, sessionId: string): Promise<HookOutput> {
-  return runHook(dir, 'stop', {
-    hook_event_name: 'Stop',
-    session_id: sessionId,
-  });
+function stopFor(project: E2eProject, sessionId: string): Promise<HookOutput> {
+  return runHook(
+    project.dir,
+    'stop',
+    { hook_event_name: 'Stop', session_id: sessionId },
+    project.binDir,
+  );
 }
 
 describe('omd mode (e2e)', () => {
@@ -83,11 +100,16 @@ describe('omd mode (e2e)', () => {
     if (project === null) {
       throw new Error('project not initialised');
     }
-    await runHook(project.dir, 'tool-use', {
-      hook_event_name: 'PreToolUse',
-      session_id: sessionId,
-      tool_input: { command: `omd ${argv.join(' ')}` },
-    });
+    await runHook(
+      project.dir,
+      'tool-use',
+      {
+        hook_event_name: 'PreToolUse',
+        session_id: sessionId,
+        tool_input: { command: `omd ${argv.join(' ')}` },
+      },
+      project.binDir,
+    );
     return project.run(argv);
   }
 
@@ -121,7 +143,7 @@ describe('omd mode (e2e)', () => {
     expect(set.exitCode, set.stderr).toBe(0);
     expect(set.stdout).toContain('mode set: team');
 
-    const injected: HookOutput = await injectionFor(project.dir, 'sess-a');
+    const injected: HookOutput = await injectionFor(project, 'sess-a');
     expect(injected.hookSpecificOutput?.additionalContext).toContain(
       'Active mode: team',
     );
@@ -130,7 +152,7 @@ describe('omd mode (e2e)', () => {
     expect(clear.exitCode, clear.stderr).toBe(0);
     expect(clear.stdout).toContain('mode cleared: team');
 
-    const released: HookOutput = await injectionFor(project.dir, 'sess-a');
+    const released: HookOutput = await injectionFor(project, 'sess-a');
     expect(released.hookSpecificOutput?.additionalContext).toBe(
       'Oh My Devin layer active.',
     );
@@ -154,8 +176,8 @@ describe('omd mode (e2e)', () => {
     await fromSession('sess-a', ['mode', 'set', 'plan']);
     await fromSession('sess-b', ['mode', 'set', 'verify']);
 
-    const first: HookOutput = await injectionFor(project.dir, 'sess-a');
-    const second: HookOutput = await injectionFor(project.dir, 'sess-b');
+    const first: HookOutput = await injectionFor(project, 'sess-a');
+    const second: HookOutput = await injectionFor(project, 'sess-b');
 
     expect(first.hookSpecificOutput?.additionalContext).toContain(
       'Active mode: plan',
@@ -183,7 +205,7 @@ describe('omd mode (e2e)', () => {
       'mode refused: team — autopilot is held by session sess-a',
     );
 
-    const holder: HookOutput = await injectionFor(project.dir, 'sess-a');
+    const holder: HookOutput = await injectionFor(project, 'sess-a');
     expect(holder.hookSpecificOutput?.additionalContext).toContain(
       'Active mode: autopilot',
     );
@@ -203,7 +225,7 @@ describe('omd mode (e2e)', () => {
     expect(displaced.exitCode, displaced.stderr).toBe(0);
     expect(displaced.stdout).toContain('mode set: ralph (displaced autopilot)');
 
-    const injected: HookOutput = await injectionFor(project.dir, 'sess-a');
+    const injected: HookOutput = await injectionFor(project, 'sess-a');
     expect(injected.hookSpecificOutput?.additionalContext).toContain(
       'Active mode: ralph',
     );
@@ -240,7 +262,7 @@ describe('omd mode (e2e)', () => {
     ]);
     expect(correlated.exitCode, correlated.stderr).toBe(0);
 
-    const blocked: HookOutput = await stopFor(project.dir, 'sess-a');
+    const blocked: HookOutput = await stopFor(project, 'sess-a');
     expect(blocked.decision).toBe('block');
     expect(blocked.hookSpecificOutput?.decision).toBe('block');
     expect(blocked.reason).toContain('run-live');
@@ -259,7 +281,7 @@ describe('omd mode (e2e)', () => {
       Date.now(),
     );
 
-    const approved: HookOutput = await stopFor(project.dir, 'sess-a');
+    const approved: HookOutput = await stopFor(project, 'sess-a');
     expect(approved.decision).toBe('approve');
     expect(approved.hookSpecificOutput?.decision).toBe('approve');
   });

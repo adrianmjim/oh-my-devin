@@ -172,6 +172,10 @@ describe('HOOK_SCRIPT', () => {
       expect(await runPhase(TOOL_USE_PHASE, EVENT)).toBe('{}');
     });
 
+    it('injects nothing on tool-use when the binary is absent', async () => {
+      expect(await runPhase(TOOL_USE_PHASE, EVENT)).toBe('{}');
+    });
+
     it('degrades to the layer announcement when the binary is absent', async () => {
       expect(await runPhase(USER_PROMPT_PHASE, EVENT)).toBe(FALLBACK_INJECTION);
     });

@@ -1,4 +1,5 @@
 import { STOP_PHASE } from './stop-phase';
+import { TOOL_USE_PHASE } from './tool-use-phase';
 
 export const HOOK_SCRIPT: string = [
   '#!/usr/bin/env node',
@@ -7,6 +8,9 @@ export const HOOK_SCRIPT: string = [
   "const phase = process.argv[2] ?? '';",
   '',
   'function fallback() {',
+  `  if (phase === '${TOOL_USE_PHASE}') {`,
+  '    return {};',
+  '  }',
   `  if (phase === '${STOP_PHASE}') {`,
   "    return { decision: 'approve', hookSpecificOutput: { decision: 'approve' } };",
   '  }',

@@ -24,7 +24,11 @@ import type { E2eProject } from '../testing/e2e-project';
 import { SESSION_START_PHASE } from './session-start-phase';
 import { USER_PROMPT_PHASE } from './user-prompt-phase';
 
-function runDeployedHook(projectDir: string, phase: string): Promise<string> {
+function runDeployedHook(
+  projectDir: string,
+  phase: string,
+  binDir: string,
+): Promise<string> {
   return new Promise<string>(
     (
       resolvePromise: (stdout: string) => void,
@@ -33,7 +37,13 @@ function runDeployedHook(projectDir: string, phase: string): Promise<string> {
       const child: ChildProcessWithoutNullStreams = spawn(
         process.execPath,
         [join(projectDir, '.devin', 'hooks', 'omd-mode.mjs'), phase],
-        { cwd: projectDir },
+        {
+          cwd: projectDir,
+          env: {
+            ...process.env,
+            PATH: `${binDir}${delimiter}${process.env['PATH'] ?? ''}`,
+          },
+        },
       );
       let stdout: string = '';
       child.stdout.on('data', (chunk: Buffer): void => {
@@ -388,7 +398,11 @@ describe('omd setup (e2e)', () => {
     expect(deployed).not.toContain(NOTEPAD_RELATIVE_PATH);
     expect(deployed).not.toContain("entry.kind === 'priority'");
     for (const phase of [SESSION_START_PHASE, USER_PROMPT_PHASE]) {
-      const injected: string = await runDeployedHook(project.dir, phase);
+      const injected: string = await runDeployedHook(
+        project.dir,
+        phase,
+        project.binDir,
+      );
       expect(injected).toContain('Project memory');
       expect(injected).toContain('deploys need the staging gate');
       expect(injected).not.toContain('the gate runs on staging');

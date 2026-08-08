@@ -15,6 +15,7 @@ import { EMPTY_STUB_SCRIPT } from './empty-stub-script';
 import { STUB_LOG_ENV } from './stub-log-env';
 import { STUB_SCRIPT_ENV } from './stub-script-env';
 import { writeDevinStubBin } from './write-devin-stub-bin';
+import { writeOmdShimBin } from './write-omd-shim-bin';
 
 export async function createE2eProject(): Promise<E2eProject> {
   const root: string = await mkdtemp(join(tmpdir(), 'omd-e2e-'));
@@ -25,6 +26,7 @@ export async function createE2eProject(): Promise<E2eProject> {
 
   await mkdir(dir, { recursive: true });
   await writeDevinStubBin(binDir);
+  await writeOmdShimBin(binDir);
   await writeFile(scriptPath, JSON.stringify(EMPTY_STUB_SCRIPT), 'utf8');
 
   async function writeScript(script: DevinStubScript): Promise<void> {
@@ -120,6 +122,7 @@ export async function createE2eProject(): Promise<E2eProject> {
 
   return {
     dir,
+    binDir,
     logPath,
     writeScript,
     run,
