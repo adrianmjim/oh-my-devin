@@ -11,40 +11,25 @@ import {
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { AMBIENT_PRIORITY_ENTRY_CAP } from '../memory/ambient-priority-entry-cap';
-import { MemoryStorePaths } from '../memory/memory-store-paths';
-import type { NotepadEntry } from '../memory/notepad-entry';
-import type { NotepadEntryKind } from '../memory/notepad-entry-kind';
+import { HOOK_PHASES } from './hook-phases';
 import { HOOK_SCRIPT } from './hook-script';
 import { SESSION_START_PHASE } from './session-start-phase';
 import { STOP_PHASE } from './stop-phase';
+import { TOOL_USE_PHASE } from './tool-use-phase';
 import { USER_PROMPT_PHASE } from './user-prompt-phase';
 
-const TODAYS_INJECTION: string = JSON.stringify({
+const FALLBACK_INJECTION: string = JSON.stringify({
   hookSpecificOutput: { additionalContext: 'Oh My Devin layer active.' },
 });
 
-const TODAYS_STOP_DECISION: string = JSON.stringify({
+const FALLBACK_STOP: string = JSON.stringify({
   decision: 'approve',
   hookSpecificOutput: { decision: 'approve' },
 });
 
-const GATE_LISTING: string = JSON.stringify({
-  runs: [
-    {
-      runId: 'run-gate',
-      runKind: 'pipeline',
-      state: 'awaiting-gate',
-      subject: 'feature-team',
-      currentStage: 'architect',
-      turnsUsed: 3,
-      maxTurns: 8,
-      pendingGate: 'architect',
-      failureTier: null,
-      lastEventAt: 2200,
-      stateEnteredAt: 2200,
-    },
-  ],
+const EVENT: string = JSON.stringify({
+  session_id: 'sess-1',
+  tool_input: { command: 'omd mode set plan' },
 });
 
 describe('HOOK_SCRIPT', () => {
@@ -52,24 +37,24 @@ describe('HOOK_SCRIPT', () => {
     expect(HOOK_SCRIPT.startsWith('#!/usr/bin/env node')).toBe(true);
   });
 
-  it('reads the persisted mode state', () => {
-    expect(HOOK_SCRIPT).toContain('.omd/mode.json');
+  it('pipes every phase to the binary', () => {
+    expect(HOOK_SCRIPT).toContain("execFileSync('omd', ['hook', phase]");
   });
 
-  it('blocks a stop with unmet verification criteria', () => {
-    expect(HOOK_SCRIPT).toContain('Unmet verification criteria for mode');
-    expect(HOOK_SCRIPT).toContain("decision: 'block'");
+  it('carries no state layout of its own', () => {
+    expect(HOOK_SCRIPT).not.toContain('.omd/');
+    expect(HOOK_SCRIPT).not.toContain('mode.json');
+    expect(HOOK_SCRIPT).not.toContain('notepad');
   });
 
-  it('injects the active mode context on the other phases', () => {
-    expect(HOOK_SCRIPT).toContain('additionalContext');
-    expect(HOOK_SCRIPT).toContain('Oh My Devin layer active.');
+  it('carries no session matching or staleness judgment of its own', () => {
+    expect(HOOK_SCRIPT).not.toContain('session_id');
+    expect(HOOK_SCRIPT).not.toContain('stale');
+    expect(HOOK_SCRIPT).not.toContain('verification');
   });
 
   it('answers on stdout after stdin ends', () => {
-    expect(HOOK_SCRIPT).toContain(
-      'process.stdout.write(JSON.stringify(output))',
-    );
+    expect(HOOK_SCRIPT).toContain('process.stdout.write(JSON.stringify(');
   });
 
   describe('run as the deployed hook of a project', () => {
@@ -78,6 +63,7 @@ describe('HOOK_SCRIPT', () => {
     let binDir: string;
     let scriptPath: string;
     let argsPath: string;
+    let stdinPath: string;
 
     beforeEach(async () => {
       root = await mkdtemp(join(tmpdir(), 'omd-hook-script-'));
@@ -85,6 +71,7 @@ describe('HOOK_SCRIPT', () => {
       binDir = join(root, 'bin');
       scriptPath = join(root, 'omd-mode.mjs');
       argsPath = join(root, 'omd-args.txt');
+      stdinPath = join(root, 'omd-stdin.txt');
       await mkdir(projectDir, { recursive: true });
       await mkdir(binDir, { recursive: true });
       await writeFile(scriptPath, HOOK_SCRIPT, 'utf8');
@@ -101,6 +88,11 @@ describe('HOOK_SCRIPT', () => {
         [
           '#!/bin/sh',
           `printf '%s' "$*" > ${JSON.stringify(argsPath)}`,
+          '{',
+          '  while IFS= read -r line || [ -n "$line" ]; do',
+          '    printf \'%s\' "$line"',
+          '  done',
+          `} > ${JSON.stringify(stdinPath)}`,
           `printf '%s' '${output.replaceAll("'", `'\\''`)}'`,
           '',
         ].join('\n'),
@@ -109,7 +101,7 @@ describe('HOOK_SCRIPT', () => {
       await chmod(stubPath, 0o755);
     }
 
-    function runPhase(phase: string): Promise<string> {
+    function runPhase(phase: string, payload: string): Promise<string> {
       return new Promise<string>(
         (
           resolvePromise: (stdout: string) => void,
@@ -128,171 +120,78 @@ describe('HOOK_SCRIPT', () => {
           child.on('close', (): void => {
             resolvePromise(stdout);
           });
-          child.stdin.end();
+          child.stdin.end(payload);
         },
       );
     }
 
-    it('appends an ambient run summary at session start', async () => {
-      await installStubOmd(GATE_LISTING);
+    it('invokes the binary once per phase with that phase', async () => {
+      await installStubOmd('{}');
 
-      const output: string = await runPhase(SESSION_START_PHASE);
+      for (const phase of HOOK_PHASES) {
+        await runPhase(phase, EVENT);
 
-      expect(output).toContain('Oh My Devin layer active.');
-      expect(output).toContain('run-gate');
-      expect(output).toContain('awaiting-gate');
-      expect(output).toContain('architect');
-      expect(output).toContain('2200');
+        expect(await readFile(argsPath, 'utf8')).toBe(`hook ${phase}`);
+      }
     });
 
-    it('appends an ambient run summary on each user prompt', async () => {
-      await installStubOmd(GATE_LISTING);
+    it('pipes the hook event through to the binary', async () => {
+      await installStubOmd('{}');
 
-      const output: string = await runPhase(USER_PROMPT_PHASE);
+      await runPhase(USER_PROMPT_PHASE, EVENT);
 
-      expect(output).toContain('run-gate');
-      expect(output).toContain('awaiting-gate');
+      expect(await readFile(stdinPath, 'utf8')).toBe(EVENT);
     });
 
-    it('obtains the summary from the public status listing surface', async () => {
-      await installStubOmd(GATE_LISTING);
+    it('echoes the injection the binary composed', async () => {
+      const answer: string = JSON.stringify({
+        hookSpecificOutput: { additionalContext: 'Active mode: plan.' },
+      });
+      await installStubOmd(answer);
 
-      await runPhase(SESSION_START_PHASE);
-
-      expect(await readFile(argsPath, 'utf8')).toBe('status --json');
+      expect(await runPhase(SESSION_START_PHASE, EVENT)).toBe(answer);
     });
 
-    it('appends nothing when the project has no runs to report', async () => {
-      await installStubOmd(JSON.stringify({ runs: [] }));
+    it('echoes the stop decision the binary derived', async () => {
+      const answer: string = JSON.stringify({
+        decision: 'block',
+        reason: 'run r-1 is running',
+        hookSpecificOutput: {
+          decision: 'block',
+          reason: 'run r-1 is running',
+        },
+      });
+      await installStubOmd(answer);
 
-      expect(await runPhase(SESSION_START_PHASE)).toBe(TODAYS_INJECTION);
+      expect(await runPhase(STOP_PHASE, EVENT)).toBe(answer);
     });
 
-    it('degrades silently when the status surface is absent', async () => {
-      expect(await runPhase(SESSION_START_PHASE)).toBe(TODAYS_INJECTION);
+    it('answers the tool-use phase without a decision', async () => {
+      await installStubOmd('{}');
+
+      expect(await runPhase(TOOL_USE_PHASE, EVENT)).toBe('{}');
     });
 
-    it('degrades silently when the status surface emits garbage', async () => {
+    it('degrades to the layer announcement when the binary is absent', async () => {
+      expect(await runPhase(USER_PROMPT_PHASE, EVENT)).toBe(FALLBACK_INJECTION);
+    });
+
+    it('degrades to an approval on stop when the binary is absent', async () => {
+      expect(await runPhase(STOP_PHASE, EVENT)).toBe(FALLBACK_STOP);
+    });
+
+    it('degrades when the binary answers something that is not JSON', async () => {
       await installStubOmd('not json at all');
 
-      expect(await runPhase(SESSION_START_PHASE)).toBe(TODAYS_INJECTION);
-    });
-
-    it('degrades silently when the status listing has an unexpected shape', async () => {
-      await installStubOmd(JSON.stringify({ unexpected: true }));
-
-      expect(await runPhase(SESSION_START_PHASE)).toBe(TODAYS_INJECTION);
-    });
-
-    async function writeNotepad(
-      entries: readonly NotepadEntry[],
-    ): Promise<void> {
-      const paths: MemoryStorePaths = new MemoryStorePaths(projectDir);
-      await mkdir(paths.dir, { recursive: true });
-      await writeFile(paths.notepad, JSON.stringify(entries), 'utf8');
-    }
-
-    function note(text: string, kind: NotepadEntryKind): NotepadEntry {
-      return { kind, text, hash: text, recordedAt: 1 };
-    }
-
-    it('injects the priority notes at session start', async () => {
-      await installStubOmd(JSON.stringify({ runs: [] }));
-      await writeNotepad([note('deploys need the staging gate', 'priority')]);
-
-      const output: string = await runPhase(SESSION_START_PHASE);
-
-      expect(output).toContain('deploys need the staging gate');
-    });
-
-    it('injects the priority notes on each user prompt', async () => {
-      await installStubOmd(JSON.stringify({ runs: [] }));
-      await writeNotepad([note('deploys need the staging gate', 'priority')]);
-
-      const output: string = await runPhase(USER_PROMPT_PHASE);
-
-      expect(output).toContain('deploys need the staging gate');
-    });
-
-    it('injects only the priority notes, never the working or manual ones', async () => {
-      await installStubOmd(JSON.stringify({ runs: [] }));
-      await writeNotepad([
-        note('deploys need the staging gate', 'priority'),
-        note('mid-task scratch', 'working'),
-        note('a manual aside', 'manual'),
-      ]);
-
-      const output: string = await runPhase(SESSION_START_PHASE);
-
-      expect(output).toContain('deploys need the staging gate');
-      expect(output).not.toContain('mid-task scratch');
-      expect(output).not.toContain('a manual aside');
-    });
-
-    it('bounds how many priority notes it injects', async () => {
-      await installStubOmd(JSON.stringify({ runs: [] }));
-      await writeNotepad(
-        Array.from(
-          { length: AMBIENT_PRIORITY_ENTRY_CAP + 4 },
-          (_unused: unknown, index: number): NotepadEntry =>
-            note(`priority note ${index}`, 'priority'),
-        ),
-      );
-
-      const output: string = await runPhase(SESSION_START_PHASE);
-
-      expect(output.match(/priority note /g) ?? []).toHaveLength(
-        AMBIENT_PRIORITY_ENTRY_CAP,
+      expect(await runPhase(SESSION_START_PHASE, EVENT)).toBe(
+        FALLBACK_INJECTION,
       );
     });
 
-    it('injects no profile content ambiently', async () => {
-      await installStubOmd(JSON.stringify({ runs: [] }));
-      await writeNotepad([note('deploys need the staging gate', 'priority')]);
-      await writeFile(
-        new MemoryStorePaths(projectDir).profile,
-        JSON.stringify({
-          stack: ['unmistakable-stack-marker'],
-          layout: [],
-          entryCommands: [],
-          derivedAt: 1,
-        }),
-        'utf8',
-      );
+    it('degrades when the binary answers a JSON scalar', async () => {
+      await installStubOmd('42');
 
-      const output: string = await runPhase(SESSION_START_PHASE);
-
-      expect(output).not.toContain('unmistakable-stack-marker');
-    });
-
-    it('injects nothing when the notepad holds no priority note', async () => {
-      await installStubOmd(JSON.stringify({ runs: [] }));
-      await writeNotepad([note('mid-task scratch', 'working')]);
-
-      expect(await runPhase(SESSION_START_PHASE)).toBe(TODAYS_INJECTION);
-    });
-
-    it('degrades silently when the memory store cannot be read', async () => {
-      await installStubOmd(JSON.stringify({ runs: [] }));
-      const paths: MemoryStorePaths = new MemoryStorePaths(projectDir);
-      await mkdir(paths.dir, { recursive: true });
-      await writeFile(paths.notepad, 'not json at all', 'utf8');
-
-      expect(await runPhase(SESSION_START_PHASE)).toBe(TODAYS_INJECTION);
-    });
-
-    it('leaves the stop decision free of memory content', async () => {
-      await installStubOmd(GATE_LISTING);
-      await writeNotepad([note('deploys need the staging gate', 'priority')]);
-
-      expect(await runPhase(STOP_PHASE)).toBe(TODAYS_STOP_DECISION);
-    });
-
-    it('leaves the stop decision untouched and queries no status', async () => {
-      await installStubOmd(GATE_LISTING);
-
-      expect(await runPhase(STOP_PHASE)).toBe(TODAYS_STOP_DECISION);
-      await expect(readFile(argsPath, 'utf8')).rejects.toThrow();
+      expect(await runPhase(STOP_PHASE, EVENT)).toBe(FALLBACK_STOP);
     });
   });
 });

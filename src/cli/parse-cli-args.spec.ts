@@ -390,7 +390,13 @@ describe('parseCliArgs', () => {
     expect(() => parseCliArgs(['mode', 'set', 'team', 'extra'])).toThrow(
       UsageError,
     );
-    expect(() => parseCliArgs(['mode', 'clear', 'extra'])).toThrow(UsageError);
+    expect(() => parseCliArgs(['mode', 'clear', 'team', 'extra'])).toThrow(
+      UsageError,
+    );
+  });
+
+  it('parses the mode slot a clear targets', () => {
+    expect(parseCliArgs(['mode', 'clear', 'team']).kind).toBe('mode-clear');
   });
 
   it('parses `memory remember "<text>"`', () => {

@@ -6,6 +6,7 @@ import { parseSkillFrontmatter } from '../testing/parse-skill-frontmatter';
 import type { SkillFrontmatter } from '../testing/skill-frontmatter';
 import type { ModeDelegation } from './mode-delegation';
 import type { ModeLane } from './mode-lane';
+import { EXCLUSIVE_MODES } from './exclusive-modes';
 import { MODE_CATALOG } from './mode-catalog';
 
 interface EmittedSkill {
@@ -125,5 +126,19 @@ describe('emitted skill verification', () => {
 
   it('instructs no contractual command from the read-only deep-dive skill', () => {
     expect(extractInstructedCommands(emitted('deep-dive').content)).toEqual([]);
+  });
+
+  it('instructs every work-driving mode to correlate its launched run by re-setting with --run', () => {
+    for (const name of EXCLUSIVE_MODES) {
+      const commands: readonly (readonly string[])[] =
+        extractInstructedCommands(emitted(name).content);
+      expect(commands, name).toContainEqual([
+        'mode',
+        'set',
+        name,
+        '--run',
+        'run-1',
+      ]);
+    }
   });
 });

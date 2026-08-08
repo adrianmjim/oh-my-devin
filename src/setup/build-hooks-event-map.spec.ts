@@ -15,5 +15,8 @@ describe('buildHooksEventMap', () => {
     expect(map.Stop).toEqual([
       { hooks: [{ type: 'command', command: 'node run.mjs stop' }] },
     ]);
+    expect(map.PreToolUse).toEqual([
+      { hooks: [{ type: 'command', command: 'node run.mjs tool-use' }] },
+    ]);
   });
 });

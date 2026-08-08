@@ -9,6 +9,7 @@ describe('legacyHookCommands', () => {
       'node "/home/u/.config/devin/hooks/omd-mode.mjs" session-start',
       'node "/home/u/.config/devin/hooks/omd-mode.mjs" user-prompt',
       'node "/home/u/.config/devin/hooks/omd-mode.mjs" stop',
+      'node "/home/u/.config/devin/hooks/omd-mode.mjs" tool-use',
     ]);
   });
 });

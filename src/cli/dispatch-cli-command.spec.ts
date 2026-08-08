@@ -7,6 +7,10 @@ import { ProcessCommandRunner } from '../engine/process-command-runner';
 import { MEMORY_CLASS_CAP } from '../memory/memory-class-cap';
 import type { NotepadEntry } from '../memory/notepad-entry';
 import { readNotepad } from '../memory/read-notepad';
+import type { ModeActivation } from '../modes/mode-activation';
+import { readSessionSlots } from '../modes/read-session-slots';
+import { recordSessionSeen } from '../modes/record-session-seen';
+import { stageSessionIdentity } from '../modes/stage-session-identity';
 import type { JsonRunListing } from '../observability/json-run-listing';
 import { JournalWriter } from '../observability/journal-writer';
 import { RunRecordPaths } from '../observability/run-record-paths';
@@ -91,9 +95,21 @@ describe('dispatchCliCommand', () => {
     expect(written.join('')).toBe(`${String(manifest['version'])}\n`);
   });
 
-  it('persists the requested mode state for mode-set', async () => {
+  async function stageMode(invocation: string): Promise<void> {
+    await recordSessionSeen(cwd, 'sess-1', Date.now());
+    await stageSessionIdentity(cwd, 'sess-1', `omd ${invocation}`, Date.now());
+  }
+
+  it('records the requested mode against the staging session', async () => {
+    await stageMode('mode set ralph');
+
     const code: number = await dispatchCliCommand(
-      { kind: 'mode-set', mode: 'ralph' },
+      {
+        kind: 'mode-set',
+        mode: 'ralph',
+        runId: null,
+        invocation: 'mode set ralph',
+      },
       cwd,
       userConfigDir,
       runner,
@@ -101,28 +117,91 @@ describe('dispatchCliCommand', () => {
 
     expect(code).toBe(0);
     expect(written.join('')).toContain('mode set: ralph');
-    expect(await readFile(join(cwd, '.omd', 'mode.json'), 'utf8')).toContain(
-      'ralph',
+    const held: readonly ModeActivation[] = await readSessionSlots(
+      cwd,
+      'sess-1',
     );
+    expect(held.map((slot: ModeActivation): string => slot.mode)).toEqual([
+      'ralph',
+    ]);
   });
 
-  it('drops the persisted mode state for mode-clear', async () => {
-    await dispatchCliCommand(
-      { kind: 'mode-set', mode: 'ralph' },
+  it('refuses an unattributable mode-set with a non-zero code', async () => {
+    const code: number = await dispatchCliCommand(
+      {
+        kind: 'mode-set',
+        mode: 'ralph',
+        runId: null,
+        invocation: 'mode set ralph',
+      },
       cwd,
       userConfigDir,
       runner,
     );
 
+    expect(code).not.toBe(0);
+    expect(written.join('')).toContain('mode refused: ralph');
+  });
+
+  it('rejects a mode outside the state catalog', async () => {
+    await stageMode('mode set deep-dive');
+
+    await expect(
+      dispatchCliCommand(
+        {
+          kind: 'mode-set',
+          mode: 'deep-dive',
+          runId: null,
+          invocation: 'mode set deep-dive',
+        },
+        cwd,
+        userConfigDir,
+        runner,
+      ),
+    ).rejects.toThrow(UsageError);
+  });
+
+  it('deactivates the session own slot for mode-clear', async () => {
+    await stageMode('mode set ralph');
+    await dispatchCliCommand(
+      {
+        kind: 'mode-set',
+        mode: 'ralph',
+        runId: null,
+        invocation: 'mode set ralph',
+      },
+      cwd,
+      userConfigDir,
+      runner,
+    );
+    await stageMode('mode clear');
+
     const code: number = await dispatchCliCommand(
-      { kind: 'mode-clear' },
+      { kind: 'mode-clear', mode: null, invocation: 'mode clear' },
       cwd,
       userConfigDir,
       runner,
     );
 
     expect(code).toBe(0);
-    expect(written.join('')).toContain('mode cleared');
+    expect(written.join('')).toContain('mode cleared: ralph');
+    expect(await readSessionSlots(cwd, 'sess-1')).toEqual([]);
+  });
+
+  it('writes no mode.json for either verb', async () => {
+    await stageMode('mode set ralph');
+    await dispatchCliCommand(
+      {
+        kind: 'mode-set',
+        mode: 'ralph',
+        runId: null,
+        invocation: 'mode set ralph',
+      },
+      cwd,
+      userConfigDir,
+      runner,
+    );
+
     await expect(
       readFile(join(cwd, '.omd', 'mode.json'), 'utf8'),
     ).rejects.toThrow();

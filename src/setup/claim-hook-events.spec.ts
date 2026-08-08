@@ -21,12 +21,23 @@ function claimedOrThrow(outcome: ClaimOutcome): Record<string, unknown> {
 }
 
 describe('claimHookEvents', () => {
-  it('leaves an event omd does not claim untouched', () => {
+  it('preserves a foreign entry on the tool-use event it now claims', () => {
     const events: Record<string, unknown> = claimedOrThrow(
       claimHookEvents({ PreToolUse: [FOREIGN_ENTRY] }, OMD_MAP, []),
     );
 
-    expect(events['PreToolUse']).toEqual([FOREIGN_ENTRY]);
+    expect(events['PreToolUse']).toEqual([
+      FOREIGN_ENTRY,
+      ...OMD_MAP.PreToolUse,
+    ]);
+  });
+
+  it('leaves an event omd does not claim untouched', () => {
+    const events: Record<string, unknown> = claimedOrThrow(
+      claimHookEvents({ PostToolUse: [FOREIGN_ENTRY] }, OMD_MAP, []),
+    );
+
+    expect(events['PostToolUse']).toEqual([FOREIGN_ENTRY]);
   });
 
   it('keeps foreign entries within a claimed event, in order', () => {
