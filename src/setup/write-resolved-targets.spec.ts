@@ -207,6 +207,7 @@ describe('writeResolvedTargets', () => {
       SessionStart: [...target.hooksMap.SessionStart],
       UserPromptSubmit: [...target.hooksMap.UserPromptSubmit],
       Stop: [...target.hooksMap.Stop],
+      PreToolUse: [...target.hooksMap.PreToolUse],
     });
   });
 

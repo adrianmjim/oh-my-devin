@@ -32,7 +32,7 @@ const MY_SKILL: string = [
 
 const FOREIGN_HOOKS: string = `${JSON.stringify(
   {
-    PreToolUse: [
+    PostToolUse: [
       { hooks: [{ type: 'command', command: 'node ./scripts/my-guard.mjs' }] },
     ],
   },
@@ -104,7 +104,7 @@ describe('omd setup never destroys (e2e)', () => {
     const hooks: Record<string, unknown> = JSON.parse(
       await readFile(join(project.dir, '.devin', 'hooks.v1.json'), 'utf8'),
     ) as Record<string, unknown>;
-    expect(hooks['PreToolUse']).toEqual([
+    expect(hooks['PostToolUse']).toEqual([
       { hooks: [{ type: 'command', command: 'node ./scripts/my-guard.mjs' }] },
     ]);
     expect(hooks['SessionStart']).toBeDefined();
