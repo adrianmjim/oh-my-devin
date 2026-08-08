@@ -19,6 +19,14 @@ const REMEMBERED: MemoryDelivery = {
       recordedAt: 5,
     },
   ],
+  knowledge: [
+    {
+      text: 'the release gate is manual',
+      triggers: ['release'],
+      hash: 'ghi',
+      recordedAt: 7,
+    },
+  ],
 };
 
 const ROLE: RoleDefinition = {
@@ -115,5 +123,23 @@ describe('buildContractualPreamble', () => {
 
     expect(preamble).toContain('deploys need the staging gate');
     expect(preamble).not.toContain('pnpm run test');
+  });
+
+  it('carries the knowledge a declaring role was delivered', () => {
+    const preamble: string = buildContractualPreamble(ROLE, {
+      ...EMPTY_MEMORY_DELIVERY,
+      knowledge: REMEMBERED.knowledge,
+    });
+
+    expect(preamble).toContain('the release gate is manual');
+  });
+
+  it('carries no trigger term of its own into the preamble', () => {
+    const preamble: string = buildContractualPreamble(ROLE, {
+      ...EMPTY_MEMORY_DELIVERY,
+      knowledge: REMEMBERED.knowledge,
+    });
+
+    expect(preamble).not.toContain('triggers');
   });
 });

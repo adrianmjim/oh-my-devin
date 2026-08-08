@@ -19,6 +19,14 @@ const FULL: MemoryDelivery = {
     },
     { kind: 'manual', text: 'the gate is manual', hash: 'def', recordedAt: 6 },
   ],
+  knowledge: [
+    {
+      text: 'the release gate is manual',
+      triggers: ['release'],
+      hash: 'ghi',
+      recordedAt: 7,
+    },
+  ],
 };
 
 describe('renderMemoryDelivery', () => {
@@ -51,6 +59,7 @@ describe('renderMemoryDelivery', () => {
     const text: string = renderMemoryDelivery({
       profile: FULL.profile,
       notepad: [],
+      knowledge: [],
     });
 
     expect(text).toContain('typescript');

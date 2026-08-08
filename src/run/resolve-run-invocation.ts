@@ -40,7 +40,7 @@ export async function resolveRunInvocation(
   const composeMemory: MemoryComposer =
     context.composeMemory ??
     createMemoryComposer(context.workingDirectory, Date.now());
-  const memory: MemoryDelivery = await composeMemory(role.memorySelection);
+  const memory: MemoryDelivery = await composeMemory(role.memorySelection, task);
   const bundle: AgentConfigBundle = compileRunBundle(
     role,
     context.workingDirectory,
