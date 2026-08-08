@@ -1,5 +1,5 @@
 import { tmpdir } from 'node:os';
-import { basename, isAbsolute } from 'node:path';
+import { basename, isAbsolute, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { SMOKE_SCRATCH_DIR } from './smoke-scratch-dir';
 
@@ -10,6 +10,7 @@ describe('SMOKE_SCRATCH_DIR', () => {
   });
 
   it('stays inside the repository rather than the untrusted system temp directory', () => {
-    expect(SMOKE_SCRATCH_DIR.startsWith(tmpdir())).toBe(false);
+    const fromTemp: string = relative(tmpdir(), SMOKE_SCRATCH_DIR);
+    expect(fromTemp.startsWith('..') || isAbsolute(fromTemp)).toBe(true);
   });
 });

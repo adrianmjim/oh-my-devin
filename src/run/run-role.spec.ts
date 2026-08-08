@@ -403,6 +403,7 @@ describe('runRole', () => {
 
     const turn = runner.invocations.find((i) => i.args.includes('-p'));
     const args: readonly string[] = turn?.args ?? [];
+    expect(args).toContain('--permission-mode');
     expect(args[args.indexOf('--permission-mode') + 1]).toBe('dangerous');
   });
 

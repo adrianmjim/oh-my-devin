@@ -122,6 +122,8 @@ describe("omd's own flows smoke suite", () => {
     it(
       'completes one real single-role run roundtrip producing its schema-valid artifact',
       async () => {
+        const artifactPath: string = join(scratchDir, 'review.json');
+        await rm(artifactPath, { force: true });
         const result: CommandResult = await runOmd(scratchDir, [
           'run',
           'reviewer',
@@ -131,7 +133,6 @@ describe("omd's own flows smoke suite", () => {
         const report: JsonReport = JSON.parse(result.stdout) as JsonReport;
         expect(report.role).toBe('reviewer');
         expect(report.exitCode).toBe(result.exitCode);
-        const artifactPath: string = join(scratchDir, 'review.json');
         expect(
           await exists(artifactPath),
           'the run ended without its declared artifact review.json',
