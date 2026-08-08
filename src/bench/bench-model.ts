@@ -1,1 +1,1 @@
-export const BENCH_MODEL: string = 'swe-1-6-slow';
+export const BENCH_MODEL: string = 'gpt-5.6-luna';

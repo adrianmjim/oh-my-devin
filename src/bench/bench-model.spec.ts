@@ -3,7 +3,7 @@ import { BENCH_MODEL } from './bench-model';
 
 describe('BENCH_MODEL', () => {
   it('pins the model a bench run uses unless overridden', () => {
-    expect(BENCH_MODEL).toBe('swe-1-6-slow');
+    expect(BENCH_MODEL).toBe('gpt-5.6-luna');
   });
 
   it('names a fully qualified variant rather than a drifting alias', () => {
