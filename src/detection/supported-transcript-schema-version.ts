@@ -1,0 +1,1 @@
+export const SUPPORTED_TRANSCRIPT_SCHEMA_VERSION: number = 16;
