@@ -126,9 +126,18 @@ describe('runRole', () => {
     maxTurns: number,
     roleModel: string | null = null,
     wallTime: string | null = null,
+    allowRules: readonly string[] | null = null,
   ): Promise<void> {
     const roleDir: string = join(dir, '.devin', 'agents', 'reviewer');
     await mkdir(roleDir, { recursive: true });
+    const permissionLines: string[] =
+      allowRules === null
+        ? []
+        : [
+            'permissions:',
+            '  allow:',
+            ...allowRules.map((rule: string): string => `    - "${rule}"`),
+          ];
     const agentMd: string = [
       '---',
       'omd-output: review.json',
@@ -136,6 +145,7 @@ describe('runRole', () => {
       `omd-max-turns: ${maxTurns}`,
       ...(roleModel === null ? [] : [`model: ${roleModel}`]),
       ...(wallTime === null ? [] : [`omd-wall-time: ${wallTime}`]),
+      ...permissionLines,
       '---',
       'You are the reviewer.',
     ].join('\n');
@@ -351,6 +361,50 @@ describe('runRole', () => {
     const turn = runner.invocations.find((i) => i.args.includes('-p'));
     expect(turn?.args).toContain('--model');
     expect(turn?.args).toContain('role-tier');
+  });
+
+  it('drives the session with the posture derived from the compiled bundle', async () => {
+    await scaffold(8);
+    const runner = new FakeRunner(
+      artifactPath,
+      [{ write: JSON.stringify({ verdict: 'pass' }) }],
+      dir,
+    );
+    await runRole({
+      roleName: 'reviewer',
+      task: 'assess the diff',
+      workingDirectory: dir,
+      model: null,
+      runner,
+      clock: (): number => 0,
+    });
+
+    const turn = runner.invocations.find((i) => i.args.includes('-p'));
+    const args: readonly string[] = turn?.args ?? [];
+    expect(args).toContain('--permission-mode');
+    expect(args[args.indexOf('--permission-mode') + 1]).toBe('accept-edits');
+  });
+
+  it('widens the posture only when the role itself grants command execution', async () => {
+    await scaffold(8, null, null, ['Write(review.json)', 'Exec(**)']);
+    const runner = new FakeRunner(
+      artifactPath,
+      [{ write: JSON.stringify({ verdict: 'pass' }) }],
+      dir,
+    );
+    await runRole({
+      roleName: 'reviewer',
+      task: 'assess the diff',
+      workingDirectory: dir,
+      model: null,
+      runner,
+      clock: (): number => 0,
+    });
+
+    const turn = runner.invocations.find((i) => i.args.includes('-p'));
+    const args: readonly string[] = turn?.args ?? [];
+    expect(args).toContain('--permission-mode');
+    expect(args[args.indexOf('--permission-mode') + 1]).toBe('dangerous');
   });
 
   it('rejects an unknown role as a usage error before launching a session', async () => {

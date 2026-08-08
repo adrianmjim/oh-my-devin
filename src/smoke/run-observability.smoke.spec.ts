@@ -1,12 +1,12 @@
 import { spawn } from 'node:child_process';
 import type { ChildProcessWithoutNullStreams } from 'node:child_process';
-import { access, mkdtemp, rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { access, mkdir, mkdtemp, rm } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { CommandResult } from '../engine/command-result';
 import type { JsonRunSnapshot } from '../observability/json-run-snapshot';
+import { SMOKE_SCRATCH_DIR } from '../testing/smoke-scratch-dir';
 
 const smokeEnabled: boolean = process.env['OMD_SMOKE'] === '1';
 
@@ -122,7 +122,10 @@ describe('omd run --detach observability smoke suite', () => {
     let scratchDir: string;
 
     beforeAll(async () => {
-      scratchDir = await mkdtemp(join(tmpdir(), 'omd-observability-smoke-'));
+      await mkdir(SMOKE_SCRATCH_DIR, { recursive: true });
+      scratchDir = await mkdtemp(
+        join(SMOKE_SCRATCH_DIR, 'omd-observability-smoke-'),
+      );
       await runOmd(scratchDir, ['setup']);
     }, SETUP_TIMEOUT_MS);
 
