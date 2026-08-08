@@ -122,7 +122,7 @@ describe('scoreArchitect', () => {
     expect(scoreOf(scores, 'spurious-step-resistance')).toBe(1);
   });
 
-  it('reads the approach alongside the steps when pairing gaps', () => {
+  it('counts a gap covered only when a step closes it, never the approach', () => {
     const artifact: ArchitectArtifact = {
       approach: 'Backfill after the migration renames the column',
       steps: [{ description: 'Ship it', files: [] }],
@@ -134,6 +134,26 @@ describe('scoreArchitect', () => {
       KEYWORD_MATCH_THRESHOLD,
     );
 
+    expect(scoreOf(scores, 'gap-coverage')).toBe(0);
+  });
+
+  it('keeps resistance when the approach names the rejected alternative', () => {
+    const artifact: ArchitectArtifact = {
+      approach:
+        'Rename the column in place rather than rewrite the auth module',
+      steps: [
+        { description: 'Add a migration renaming the column', files: [] },
+        { description: 'Backfill the new column', files: [] },
+      ],
+    };
+
+    const scores: readonly DimensionScore[] = scoreArchitect(
+      artifact,
+      TRUTH,
+      KEYWORD_MATCH_THRESHOLD,
+    );
+
+    expect(scoreOf(scores, 'spurious-step-resistance')).toBe(1);
     expect(scoreOf(scores, 'gap-coverage')).toBe(1);
   });
 
