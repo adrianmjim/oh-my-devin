@@ -1,5 +1,6 @@
 import type { EngineKind } from '../role/engine-kind';
 import type { CommandInvocation } from './command-invocation';
+import { devinPermissionModeFor } from './devin-permission-mode-for';
 import type { Engine } from './engine';
 import { EngineError } from './engine-error';
 import type { PromptTurn } from './prompt-turn';
@@ -19,6 +20,7 @@ export class DevinHeadlessEngine implements Engine {
     if (turn.model !== null) {
       args.push('--model', turn.model);
     }
+    args.push('--permission-mode', devinPermissionModeFor(turn.posture));
     return { command: 'devin', args };
   }
 
