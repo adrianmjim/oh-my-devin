@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { KeywordItem } from './keyword-item';
 import { KEYWORD_MATCH_THRESHOLD } from './keyword-match-threshold';
+import type { KeywordPair } from './keyword-pair';
 import { pairTruthItems } from './pair-truth-items';
 import type { PairingCandidate } from './pairing-candidate';
 import type { PairingResult } from './pairing-result';
@@ -66,6 +67,29 @@ describe('pairTruthItems', () => {
     expect(result.pairs).toHaveLength(1);
     expect(result.pairs[0]?.itemId).toBe('unbounded-loop');
     expect(result.unmatchedCandidateIds).toHaveLength(1);
+  });
+
+  it('pairs both items when one finding could take either', () => {
+    const candidates: readonly PairingCandidate[] = [
+      {
+        id: 'finding-0',
+        text: 'unbounded loop never terminates and the null guard is missing',
+      },
+      { id: 'finding-1', text: 'the unbounded loop never terminates' },
+    ];
+
+    const result: PairingResult = pairTruthItems(
+      candidates,
+      ITEMS,
+      KEYWORD_MATCH_THRESHOLD,
+    );
+
+    expect(result.pairs).toHaveLength(2);
+    expect(
+      result.pairs.map((pair: KeywordPair): string => pair.itemId).sort(),
+    ).toEqual(['missing-guard', 'unbounded-loop']);
+    expect(result.unmatchedCandidateIds).toEqual([]);
+    expect(result.unmatchedItemIds).toEqual([]);
   });
 
   it('prefers the strongest pairing when several clear the threshold', () => {

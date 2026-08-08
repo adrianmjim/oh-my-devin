@@ -1,6 +1,7 @@
 import type { KeywordItem } from './keyword-item';
 import { keywordMatchScore } from './keyword-match-score';
 import type { KeywordPair } from './keyword-pair';
+import { maximumPairing } from './maximum-pairing';
 import type { PairingCandidate } from './pairing-candidate';
 import type { PairingOption } from './pairing-option';
 import type { PairingResult } from './pairing-result';
@@ -21,33 +22,23 @@ export function pairTruthItems(
       },
     );
   });
-  options.sort(
-    (left: PairingOption, right: PairingOption): number =>
-      right.score - left.score ||
-      left.itemIndex - right.itemIndex ||
-      left.candidateIndex - right.candidateIndex,
+
+  const chosen: readonly PairingOption[] = maximumPairing(options);
+  const pairedItems: ReadonlySet<string> = new Set<string>(
+    chosen.map((option: PairingOption): string => option.item.id),
+  );
+  const pairedCandidates: ReadonlySet<string> = new Set<string>(
+    chosen.map((option: PairingOption): string => option.candidate.id),
   );
 
-  const pairedItems: Set<string> = new Set<string>();
-  const pairedCandidates: Set<string> = new Set<string>();
-  const pairs: KeywordPair[] = [];
-  for (const option of options) {
-    const free: boolean =
-      !pairedItems.has(option.item.id) &&
-      !pairedCandidates.has(option.candidate.id);
-    if (free) {
-      pairedItems.add(option.item.id);
-      pairedCandidates.add(option.candidate.id);
-      pairs.push({
+  return {
+    pairs: chosen.map(
+      (option: PairingOption): KeywordPair => ({
         candidateId: option.candidate.id,
         itemId: option.item.id,
         score: option.score,
-      });
-    }
-  }
-
-  return {
-    pairs,
+      }),
+    ),
     unmatchedCandidateIds: candidates
       .filter(
         (candidate: PairingCandidate): boolean =>
