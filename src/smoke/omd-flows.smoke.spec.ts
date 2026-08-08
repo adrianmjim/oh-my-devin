@@ -1,11 +1,13 @@
 import { spawn } from 'node:child_process';
 import type { ChildProcessWithoutNullStreams } from 'node:child_process';
-import { access, mkdtemp, rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { access, mkdir, mkdtemp, rm } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import type { ArtifactValidation } from '../artifact/artifact-validation';
+import { validateArtifact } from '../artifact/validate-artifact';
 import type { CommandResult } from '../engine/command-result';
+import { SMOKE_SCRATCH_DIR } from '../testing/smoke-scratch-dir';
 
 const smokeEnabled: boolean = process.env['OMD_SMOKE'] === '1';
 
@@ -73,7 +75,8 @@ describe("omd's own flows smoke suite", () => {
     let scratchDir: string;
 
     beforeAll(async () => {
-      scratchDir = await mkdtemp(join(tmpdir(), 'omd-flows-smoke-'));
+      await mkdir(SMOKE_SCRATCH_DIR, { recursive: true });
+      scratchDir = await mkdtemp(join(SMOKE_SCRATCH_DIR, 'omd-flows-smoke-'));
     });
 
     afterAll(async () => {
@@ -117,7 +120,7 @@ describe("omd's own flows smoke suite", () => {
     );
 
     it(
-      'completes one real single-role run roundtrip',
+      'completes one real single-role run roundtrip producing its schema-valid artifact',
       async () => {
         const result: CommandResult = await runOmd(scratchDir, [
           'run',
@@ -128,7 +131,16 @@ describe("omd's own flows smoke suite", () => {
         const report: JsonReport = JSON.parse(result.stdout) as JsonReport;
         expect(report.role).toBe('reviewer');
         expect(report.exitCode).toBe(result.exitCode);
-        expect(['success', 'failure']).toContain(report.outcome);
+        const artifactPath: string = join(scratchDir, 'review.json');
+        expect(
+          await exists(artifactPath),
+          'the run ended without its declared artifact review.json',
+        ).toBe(true);
+        const validation: ArtifactValidation = await validateArtifact(
+          artifactPath,
+          join(scratchDir, '.devin', 'schemas', 'review.schema.json'),
+        );
+        expect(validation.valid, validation.errors.join('; ')).toBe(true);
       },
       RUN_TIMEOUT_MS,
     );

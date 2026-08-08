@@ -15,6 +15,7 @@ function turn(stdout: string): CommandResult {
 const CONFIG: SessionConfig = {
   agentConfigPath: '/tmp/bundle.json',
   model: null,
+  posture: 'artifact-write',
   workingDirectory: '/repo/a',
 };
 const LISTING: CommandResult = turn(
@@ -56,6 +57,8 @@ describe('attemptRepair', () => {
       expect.stringContaining('must have required property verdict'),
       '--agent-config',
       '/tmp/bundle.json',
+      '--permission-mode',
+      'accept-edits',
     ]);
   });
 });

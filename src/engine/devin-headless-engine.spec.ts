@@ -9,6 +9,7 @@ const FRESH_TURN: PromptTurn = {
   prompt: 'do the work',
   agentConfigPath: '/tmp/bundle.json',
   model: null,
+  posture: 'artifact-write',
   resumeSessionId: null,
 };
 
@@ -28,6 +29,8 @@ describe('DevinHeadlessEngine', () => {
       'do the work',
       '--agent-config',
       '/tmp/bundle.json',
+      '--permission-mode',
+      'accept-edits',
     ]);
   });
 
@@ -47,7 +50,29 @@ describe('DevinHeadlessEngine', () => {
       'again',
       '--agent-config',
       '/tmp/bundle.json',
+      '--permission-mode',
+      'accept-edits',
     ]);
+  });
+
+  it('carries the execution posture on fresh and resumed turns alike', () => {
+    const engine: DevinHeadlessEngine = new DevinHeadlessEngine();
+
+    const fresh: CommandInvocation = engine.turnInvocation({
+      ...FRESH_TURN,
+      posture: 'command-execution',
+    });
+    const resumed: CommandInvocation = engine.turnInvocation({
+      ...FRESH_TURN,
+      posture: 'command-execution',
+      resumeSessionId: 's1',
+    });
+
+    for (const invocation of [fresh, resumed]) {
+      const flagIndex: number = invocation.args.indexOf('--permission-mode');
+      expect(flagIndex).toBeGreaterThanOrEqual(0);
+      expect(invocation.args[flagIndex + 1]).toBe('dangerous');
+    }
   });
 
   it('passes the declared model via `--model` when present', () => {

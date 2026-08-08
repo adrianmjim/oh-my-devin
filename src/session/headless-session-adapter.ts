@@ -37,6 +37,7 @@ export class HeadlessSessionAdapter implements TurnSender {
       prompt,
       agentConfigPath: this.config.agentConfigPath,
       model: this.config.model,
+      posture: this.config.posture,
       resumeSessionId,
     };
     const invocation: CommandInvocation = this.engine.turnInvocation(turn);

@@ -13,6 +13,7 @@ function turn(stdout: string): CommandResult {
 const CONFIG: SessionConfig = {
   agentConfigPath: '/tmp/bundle.json',
   model: null,
+  posture: 'artifact-write',
   workingDirectory: '/repo/a',
 };
 
@@ -62,6 +63,8 @@ describe('HeadlessSessionAdapter', () => {
       'continue',
       '--agent-config',
       '/tmp/bundle.json',
+      '--permission-mode',
+      'accept-edits',
     ]);
   });
 
@@ -85,7 +88,31 @@ describe('HeadlessSessionAdapter', () => {
       'use it',
       '--agent-config',
       '/tmp/bundle.json',
+      '--permission-mode',
+      'accept-edits',
     ]);
+  });
+
+  it('forwards the configured posture into every turn it drives', async () => {
+    const stub = new DevinStub({
+      turns: [turn('x')],
+      listResponse: LISTING,
+      listResponses: [EMPTY_LISTING],
+    });
+    const session = new HeadlessSessionAdapter(
+      stub,
+      new DevinHeadlessEngine(),
+      {
+        ...CONFIG,
+        posture: 'command-execution',
+      },
+    );
+
+    await session.sendTurn('go');
+
+    const first = stub.invocations.find((i) => i.args.includes('-p'));
+    const args: readonly string[] = first?.args ?? [];
+    expect(args[args.indexOf('--permission-mode') + 1]).toBe('dangerous');
   });
 
   it('enumerates only once and caches the session id once it is known', async () => {

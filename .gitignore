@@ -4,5 +4,6 @@ dist/
 coverage/
 test-results/
 evidence/
+smoke-scratch/
 *.log
 .DS_Store
