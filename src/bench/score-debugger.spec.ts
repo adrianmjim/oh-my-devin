@@ -14,9 +14,23 @@ const TRUTH: DebuggerTruthDocument = {
       location: 'src/session.js:12',
     },
   ],
+  evidence: [],
+  eliminations: [],
 };
 
-const CLEAN: DebuggerTruthDocument = { role: 'debugger', causes: [] };
+const CLEAN: DebuggerTruthDocument = {
+  role: 'debugger',
+  causes: [],
+  evidence: [],
+  eliminations: [],
+};
+
+const EXPECTING: DebuggerTruthDocument = {
+  role: 'debugger',
+  causes: [],
+  evidence: [{ id: 'repeated-runs', keywords: ['test.js', 'pass'] }],
+  eliminations: [{ id: 'no-reproduction', keywords: ['reproduce'] }],
+};
 
 function scoreOf(scores: readonly DimensionScore[], dimension: string): number {
   return (
@@ -120,6 +134,48 @@ describe('scoreDebugger', () => {
 
     expect(scoreOf(scores, 'root-cause-localization')).toBe(1);
     expect(scoreOf(scores, 'false-positive-resistance')).toBe(1);
+  });
+
+  it('scores an honest not-isolated report against the expected surfaces', () => {
+    const scores: readonly DimensionScore[] = score(
+      {
+        evidence: ['node test.js repeated ten times: every run passes'],
+        rootCause: null,
+        eliminated: ['an intermittent failure: it does not reproduce here'],
+      },
+      EXPECTING,
+    );
+
+    expect(scoreOf(scores, 'detection')).toBe(1);
+    expect(scoreOf(scores, 'root-cause-localization')).toBe(1);
+    expect(scoreOf(scores, 'false-positive-resistance')).toBe(1);
+  });
+
+  it('scores fabricated not-isolated content at zero detection', () => {
+    const scores: readonly DimensionScore[] = score(
+      {
+        evidence: ['inspected the code and saw nothing suspicious'],
+        rootCause: null,
+        eliminated: ['perhaps the network was slow'],
+      },
+      EXPECTING,
+    );
+
+    expect(scoreOf(scores, 'detection')).toBe(0);
+    expect(scoreOf(scores, 'false-positive-resistance')).toBe(1);
+  });
+
+  it('pairs expected eliminations only with eliminated hypotheses', () => {
+    const scores: readonly DimensionScore[] = score(
+      {
+        evidence: ['node test.js passes and the failure does not reproduce'],
+        rootCause: null,
+        eliminated: [],
+      },
+      EXPECTING,
+    );
+
+    expect(scoreOf(scores, 'detection')).toBe(0.5);
   });
 
   it('penalises inventing a cause on a clean fixture', () => {

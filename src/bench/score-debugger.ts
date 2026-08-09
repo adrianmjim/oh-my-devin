@@ -13,19 +13,22 @@ export function scoreDebugger(
   truth: DebuggerTruthDocument,
   threshold: number,
 ): readonly DimensionScore[] {
-  const stated: readonly PairingCandidate[] = [
-    ...artifact.evidence.map(
-      (text: string, index: number): PairingCandidate => ({
-        id: `evidence-${index}`,
-        text,
-      }),
-    ),
-    ...artifact.eliminated.map(
+  const evidenceCandidates: readonly PairingCandidate[] = artifact.evidence.map(
+    (text: string, index: number): PairingCandidate => ({
+      id: `evidence-${index}`,
+      text,
+    }),
+  );
+  const eliminatedCandidates: readonly PairingCandidate[] =
+    artifact.eliminated.map(
       (text: string, index: number): PairingCandidate => ({
         id: `eliminated-${index}`,
         text,
       }),
-    ),
+    );
+  const stated: readonly PairingCandidate[] = [
+    ...evidenceCandidates,
+    ...eliminatedCandidates,
     ...(artifact.rootCause === null
       ? []
       : [
@@ -40,6 +43,18 @@ export function scoreDebugger(
     truth.causes,
     threshold,
   );
+  const evidencePairing: PairingResult = pairTruthItems(
+    evidenceCandidates,
+    truth.evidence,
+    threshold,
+  );
+  const eliminationPairing: PairingResult = pairTruthItems(
+    eliminatedCandidates,
+    truth.eliminations,
+    threshold,
+  );
+  const expected: number =
+    truth.causes.length + truth.evidence.length + truth.eliminations.length;
 
   const named: DebuggerTruthItem | undefined =
     artifact.rootCause === null
@@ -77,9 +92,12 @@ export function scoreDebugger(
     {
       dimension: 'detection',
       score:
-        truth.causes.length === 0
+        expected === 0
           ? 1
-          : surfaced.pairs.length / truth.causes.length,
+          : (surfaced.pairs.length +
+              evidencePairing.pairs.length +
+              eliminationPairing.pairs.length) /
+            expected,
     },
     { dimension: 'false-positive-resistance', score: resistance },
   ];

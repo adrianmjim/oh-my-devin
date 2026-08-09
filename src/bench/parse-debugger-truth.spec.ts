@@ -12,6 +12,8 @@ const VALID: Record<string, unknown> = {
       location: 'src/session.js:12',
     },
   ],
+  evidence: [],
+  eliminations: [],
 };
 
 describe('parseDebuggerTruth', () => {
@@ -54,7 +56,48 @@ describe('parseDebuggerTruth', () => {
 
   it('accepts a clean fixture whose failure has no planted cause', () => {
     expect(
-      parseDebuggerTruth({ role: 'debugger', causes: [] }, 'truth.json').causes,
+      parseDebuggerTruth(
+        { role: 'debugger', causes: [], evidence: [], eliminations: [] },
+        'truth.json',
+      ).causes,
     ).toEqual([]);
+  });
+
+  it('reads the expected evidence and eliminations of a clean fixture', () => {
+    const truth: DebuggerTruthDocument = parseDebuggerTruth(
+      {
+        role: 'debugger',
+        causes: [],
+        evidence: [{ id: 'repeated-runs', keywords: ['test.js'] }],
+        eliminations: [{ id: 'no-reproduction', keywords: ['reproduce'] }],
+      },
+      'truth.json',
+    );
+
+    expect(truth.evidence[0]?.id).toBe('repeated-runs');
+    expect(truth.eliminations[0]?.keywords).toEqual(['reproduce']);
+  });
+
+  it('rejects expected evidence that is not a list', () => {
+    expect(() =>
+      parseDebuggerTruth(
+        { role: 'debugger', causes: [], evidence: 1, eliminations: [] },
+        'truth.json',
+      ),
+    ).toThrow(BenchFixtureError);
+  });
+
+  it('rejects an expected elimination with no keywords to pair on', () => {
+    expect(() =>
+      parseDebuggerTruth(
+        {
+          role: 'debugger',
+          causes: [],
+          evidence: [],
+          eliminations: [{ id: 'no-reproduction', keywords: [] }],
+        },
+        'truth.json',
+      ),
+    ).toThrow(BenchFixtureError);
   });
 });
