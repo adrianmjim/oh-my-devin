@@ -196,11 +196,31 @@ describe('scoreCritic', () => {
       TRUTH,
     );
 
-    expect(
-      scoreOf(scores, 'detection') +
-        scoreOf(scores, 'missing-element-coverage'),
-    ).toBeLessThanOrEqual(2);
+    expect(scoreOf(scores, 'detection')).toBe(1);
+    expect(scoreOf(scores, 'missing-element-coverage')).toBe(0);
     expect(scoreOf(scores, 'false-positive-resistance')).toBe(1);
+  });
+
+  it('gives a mislabeled finding no credit in the other category', () => {
+    const scores: readonly DimensionScore[] = score(
+      {
+        verdict: 'request_changes',
+        findings: [
+          {
+            severity: 'high',
+            category: 'present_flaw',
+            where: 'plan.md:6',
+            summary: 'Nothing undoes the cutover',
+            fix: 'Add a rollback step',
+          },
+        ],
+      },
+      TRUTH,
+    );
+
+    expect(scoreOf(scores, 'detection')).toBe(0);
+    expect(scoreOf(scores, 'missing-element-coverage')).toBe(0);
+    expect(scoreOf(scores, 'false-positive-resistance')).toBe(0);
   });
 
   it('scores the same inputs identically every time', () => {

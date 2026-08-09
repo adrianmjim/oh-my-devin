@@ -14,12 +14,22 @@ export function scoreCritic(
   truth: CriticTruthDocument,
   threshold: number,
 ): readonly DimensionScore[] {
-  const candidates: readonly PairingCandidate[] = artifact.findings.map(
-    (finding: CriticFinding, index: number): PairingCandidate => ({
-      id: `finding-${index}`,
-      text: `${finding.where} ${finding.summary} ${finding.fix}`,
-    }),
-  );
+  const candidateOf = (
+    finding: CriticFinding,
+    index: number,
+  ): PairingCandidate => ({
+    id: `finding-${index}`,
+    text: `${finding.where} ${finding.summary} ${finding.fix}`,
+  });
+  const candidates: readonly PairingCandidate[] =
+    artifact.findings.map(candidateOf);
+  const candidatesOf = (
+    category: CriticCategory,
+  ): readonly PairingCandidate[] =>
+    artifact.findings.flatMap(
+      (finding: CriticFinding, index: number): readonly PairingCandidate[] =>
+        finding.category === category ? [candidateOf(finding, index)] : [],
+    );
   const itemsOf = (
     category: CriticCategory,
   ): readonly CriticTruthItem[] =>
@@ -30,12 +40,12 @@ export function scoreCritic(
   const flaws: readonly CriticTruthItem[] = itemsOf('present_flaw');
   const absences: readonly CriticTruthItem[] = itemsOf('missing_element');
   const flawPairing: PairingResult = pairTruthItems(
-    candidates,
+    candidatesOf('present_flaw'),
     flaws,
     threshold,
   );
   const absencePairing: PairingResult = pairTruthItems(
-    candidates,
+    candidatesOf('missing_element'),
     absences,
     threshold,
   );
