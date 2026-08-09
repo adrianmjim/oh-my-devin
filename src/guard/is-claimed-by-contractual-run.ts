@@ -6,7 +6,7 @@ import type { RunClaim } from '../observability/run-claim';
 import type { RunId } from '../observability/run-id';
 import { claimCoversDirectory } from './claim-covers-directory';
 
-export async function isContractualSession(
+export async function isClaimedByContractualRun(
   baseDir: string,
   sessionId: SessionId | null,
   cwd: string,

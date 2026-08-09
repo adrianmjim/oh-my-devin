@@ -5,11 +5,11 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { RunClaim } from '../observability/run-claim';
 import { RunRecordPaths } from '../observability/run-record-paths';
 import { writeRunClaim } from '../observability/write-run-claim';
-import { isContractualSession } from './is-contractual-session';
+import { isClaimedByContractualRun } from './is-claimed-by-contractual-run';
 
 const NOW: number = 1_000_000;
 
-describe('isContractualSession', () => {
+describe('isClaimedByContractualRun', () => {
   let baseDir: string;
   let worktree: string;
 
@@ -38,10 +38,20 @@ describe('isContractualSession', () => {
     });
 
     expect(
-      await isContractualSession(baseDir, 'unknown-session', worktree, NOW),
+      await isClaimedByContractualRun(
+        baseDir,
+        'unknown-session',
+        worktree,
+        NOW,
+      ),
     ).toBe(true);
     expect(
-      await isContractualSession(baseDir, null, join(worktree, 'src'), NOW),
+      await isClaimedByContractualRun(
+        baseDir,
+        null,
+        join(worktree, 'src'),
+        NOW,
+      ),
     ).toBe(true);
   });
 
@@ -53,7 +63,7 @@ describe('isContractualSession', () => {
     });
 
     expect(
-      await isContractualSession(baseDir, 'role-session', baseDir, NOW),
+      await isClaimedByContractualRun(baseDir, 'role-session', baseDir, NOW),
     ).toBe(true);
   });
 
@@ -65,10 +75,10 @@ describe('isContractualSession', () => {
     });
 
     expect(
-      await isContractualSession(baseDir, 'role-session', baseDir, NOW),
+      await isClaimedByContractualRun(baseDir, 'role-session', baseDir, NOW),
     ).toBe(false);
     expect(
-      await isContractualSession(baseDir, 'human-session', baseDir, NOW),
+      await isClaimedByContractualRun(baseDir, 'human-session', baseDir, NOW),
     ).toBe(false);
   });
 
@@ -80,13 +90,13 @@ describe('isContractualSession', () => {
     });
 
     expect(
-      await isContractualSession(baseDir, 'human-session', baseDir, NOW),
+      await isClaimedByContractualRun(baseDir, 'human-session', baseDir, NOW),
     ).toBe(false);
   });
 
   it('governs an unknown session in an unclaimed directory', async () => {
     expect(
-      await isContractualSession(baseDir, 'human-session', baseDir, NOW),
+      await isClaimedByContractualRun(baseDir, 'human-session', baseDir, NOW),
     ).toBe(false);
   });
 
@@ -99,7 +109,7 @@ describe('isContractualSession', () => {
     const stale: number = NOW + 3_600_000;
 
     expect(
-      await isContractualSession(baseDir, 'role-session', worktree, stale),
+      await isClaimedByContractualRun(baseDir, 'role-session', worktree, stale),
     ).toBe(false);
   });
 
@@ -111,7 +121,12 @@ describe('isContractualSession', () => {
     });
 
     expect(
-      await isContractualSession(baseDir, null, `${worktree}-sibling`, NOW),
+      await isClaimedByContractualRun(
+        baseDir,
+        null,
+        `${worktree}-sibling`,
+        NOW,
+      ),
     ).toBe(false);
   });
 });

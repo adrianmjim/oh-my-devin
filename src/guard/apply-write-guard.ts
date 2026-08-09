@@ -4,7 +4,7 @@ import { decideGuardOutcome } from './decide-guard-outcome';
 import type { EnforcementLevel } from './enforcement-level';
 import { guardMessage } from './guard-message';
 import type { GuardOutcome } from './guard-outcome';
-import { isContractualSession } from './is-contractual-session';
+import { isClaimedByContractualRun } from './is-claimed-by-contractual-run';
 import { isLayerPath } from './is-layer-path';
 import { isWriteTool } from './is-write-tool';
 import type { PendingNotice } from './pending-notice';
@@ -26,7 +26,7 @@ export async function applyWriteGuard(
     tool !== null &&
     target !== null &&
     isWriteTool(tool) &&
-    !(await isContractualSession(baseDir, event.sessionId, cwd, now))
+    !(await isClaimedByContractualRun(baseDir, event.sessionId, cwd, now))
   ) {
     const level: EnforcementLevel = await resolveEffectiveLevel(
       baseDir,
