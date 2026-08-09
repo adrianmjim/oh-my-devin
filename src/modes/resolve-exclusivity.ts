@@ -14,7 +14,7 @@ export function resolveExclusivity(
   if (modeExclusivityOf(mode) === 'exclusive') {
     const conflicts: readonly ModeActivation[] = activations.filter(
       (slot: ModeActivation): boolean =>
-        slot.mode !== mode &&
+        !(slot.mode === mode && slot.sessionId === sessionId) &&
         modeExclusivityOf(slot.mode) === 'exclusive' &&
         isLive(slot.sessionId),
     );

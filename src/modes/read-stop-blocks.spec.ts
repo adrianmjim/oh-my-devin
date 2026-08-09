@@ -1,8 +1,9 @@
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { readStopBlocks } from './read-stop-blocks';
+import { SessionStatePaths } from './session-state-paths';
 import { writeStopBlocks } from './write-stop-blocks';
 
 describe('readStopBlocks', () => {
@@ -34,7 +35,22 @@ describe('readStopBlocks', () => {
 
   it('counts no blocked stop from an unreadable record', async () => {
     await writeStopBlocks(projectDir, 'sess-1', 3);
-    await writeStopBlocks(projectDir, 'sess-1', 0);
+    await writeFile(
+      new SessionStatePaths(projectDir, 'sess-1').stops,
+      'not json',
+      'utf8',
+    );
+
+    expect(await readStopBlocks(projectDir, 'sess-1')).toBe(0);
+  });
+
+  it('counts no blocked stop from a non-numeric count', async () => {
+    await writeStopBlocks(projectDir, 'sess-1', 3);
+    await writeFile(
+      new SessionStatePaths(projectDir, 'sess-1').stops,
+      '{"blocked":"three"}',
+      'utf8',
+    );
 
     expect(await readStopBlocks(projectDir, 'sess-1')).toBe(0);
   });

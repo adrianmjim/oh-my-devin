@@ -67,6 +67,22 @@ describe('parseMode', () => {
     expect(() => parseMode(['set', 'ralph', '--run'])).toThrow(UsageError);
   });
 
+  it('rejects a correlated run placed before the mode', () => {
+    expect(() => parseMode(['set', '--run', 'run-7', 'ralph'])).toThrow(
+      UsageError,
+    );
+  });
+
+  it('rejects a correlated run standing in for the mode', () => {
+    expect(() => parseMode(['set', '--run', 'run-7'])).toThrow(UsageError);
+  });
+
+  it('rejects a repeated run flag', () => {
+    expect(() =>
+      parseMode(['set', 'ralph', '--run', 'run-7', '--run']),
+    ).toThrow(UsageError);
+  });
+
   it('rejects a correlated run on clear', () => {
     expect(() => parseMode(['clear', '--run', 'run-7'])).toThrow(UsageError);
   });

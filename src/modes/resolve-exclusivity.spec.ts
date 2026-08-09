@@ -31,6 +31,22 @@ describe('resolveExclusivity', () => {
     });
   });
 
+  it('refuses the same mode held by another live session', () => {
+    const outcome: ExclusivityOutcome = resolveExclusivity(
+      [activation('ralph', 'sess-2')],
+      ALL_LIVE,
+      'ralph',
+      'sess-1',
+    );
+
+    expect(outcome).toEqual({
+      kind: 'refused',
+      mode: 'ralph',
+      reason: 'exclusive-conflict',
+      holder: { mode: 'ralph', sessionId: 'sess-2' },
+    });
+  });
+
   it('displaces a class member held by the activating session', () => {
     const outcome: ExclusivityOutcome = resolveExclusivity(
       [activation('autopilot', 'sess-1')],
