@@ -168,7 +168,7 @@ describe('memory detection smoke suite', () => {
           detected,
           'the real prompt-submission payload carried the prompt detection reads',
         ).toBeDefined();
-        expect(detected?.confirmingCommand).toContain('omd memory remember "');
+        expect(detected?.confirmingCommand).toContain("omd memory remember '");
         expect(
           detected?.deliveredAt,
           'the turn own injection carried the proposal once',

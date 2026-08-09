@@ -114,7 +114,7 @@ describe('deriveAmbientContext', () => {
     );
 
     expect(context).toContain(
-      'omd memory remember "In this project, always tag."',
+      "omd memory remember 'In this project, always tag.'",
     );
   });
 

@@ -203,7 +203,7 @@ describe('omd memory detection (e2e)', () => {
     const injected: string = await injectionFor(started, DIRECTIVE);
 
     expect(injected).toContain(PRINCIPLE);
-    expect(injected).toContain(`omd memory remember "${PRINCIPLE}"`);
+    expect(injected).toContain(`omd memory remember '${PRINCIPLE}'`);
     const paths: MemoryStorePaths = new MemoryStorePaths(started.dir);
     await expect(readFile(paths.notepad, 'utf8')).rejects.toThrow();
 

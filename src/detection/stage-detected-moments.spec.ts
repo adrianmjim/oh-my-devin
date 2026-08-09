@@ -88,7 +88,7 @@ describe('stageDetectedMoments', () => {
     const staged: readonly StagedCandidate[] =
       await readStagedCandidates(projectDir);
     expect(staged[0]?.confirmingCommand).toBe(
-      'omd memory remember "In this project, always run the migration check before deploying."',
+      "omd memory remember 'In this project, always run the migration check before deploying.'",
     );
   });
 
