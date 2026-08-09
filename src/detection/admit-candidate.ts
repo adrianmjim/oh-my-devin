@@ -9,7 +9,9 @@ export function admitCandidate(
     (held: StagedCandidate): boolean => held.expiresAt > now,
   );
   const known: boolean = live.some(
-    (held: StagedCandidate): boolean => held.principle === candidate.principle,
+    (held: StagedCandidate): boolean =>
+      held.principle === candidate.principle &&
+      held.sessionId === candidate.sessionId,
   );
   return known ? [...live] : [...live, candidate];
 }

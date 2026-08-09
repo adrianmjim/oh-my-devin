@@ -1,18 +1,21 @@
+import type { AmbientQuery } from '../detection/ambient-query';
 import { deliverAmbientMemory } from '../detection/deliver-ambient-memory';
 import { deriveRunListing } from '../observability/derive-run-listing';
 import { LIVENESS_STALL_THRESHOLD_MS } from '../observability/liveness-stall-threshold-ms';
 import type { RunListing } from '../observability/run-listing';
 import type { RunListingEntry } from '../observability/run-listing-entry';
 import { deriveSessionInjection } from './derive-session-injection';
-import type { SessionId } from './session-id';
 
 export async function deriveAmbientContext(
   baseDir: string,
-  sessionId: SessionId | null,
-  prompt: string,
+  query: AmbientQuery,
   now: number,
 ): Promise<string> {
-  const modes: string = await deriveSessionInjection(baseDir, sessionId, now);
+  const modes: string = await deriveSessionInjection(
+    baseDir,
+    query.sessionId,
+    now,
+  );
   const sections: string[] = [
     modes === '' ? 'Oh My Devin layer active.' : modes,
   ];
@@ -33,7 +36,7 @@ export async function deriveAmbientContext(
       ].join('\n'),
     );
   }
-  const memory: string = await deliverAmbientMemory(baseDir, prompt, now);
+  const memory: string = await deliverAmbientMemory(baseDir, query, now);
   if (memory !== '') {
     sections.push(memory);
   }

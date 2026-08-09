@@ -12,6 +12,7 @@ const CANDIDATE: StagedCandidate = {
   confirmingCommand:
     'omd memory remember "In this project, always run the linter before pushing."',
   score: 0.8,
+  sessionId: 'sess-1',
   expiresAt: 5_000,
   deliveredAt: null,
 };

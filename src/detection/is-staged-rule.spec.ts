@@ -7,6 +7,19 @@ describe('isStagedRule', () => {
       isStagedRule({
         text: 'the data owner reviews migrations',
         hash: 'abc',
+        sessionId: 'sess-1',
+        stagedAt: 100,
+        deliveredAt: null,
+      }),
+    ).toBe(true);
+  });
+
+  it('recognizes a rule staged for no session', () => {
+    expect(
+      isStagedRule({
+        text: 'the data owner reviews migrations',
+        hash: 'abc',
+        sessionId: null,
         stagedAt: 100,
         deliveredAt: null,
       }),
@@ -15,6 +28,14 @@ describe('isStagedRule', () => {
 
   it('rejects staging that lost a field', () => {
     expect(isStagedRule({ text: 'a rule', hash: 'abc' })).toBe(false);
+    expect(
+      isStagedRule({
+        text: 'a rule',
+        hash: 'abc',
+        stagedAt: 100,
+        deliveredAt: null,
+      }),
+    ).toBe(false);
     expect(isStagedRule(null)).toBe(false);
   });
 });

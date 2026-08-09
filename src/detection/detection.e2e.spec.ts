@@ -157,12 +157,30 @@ describe('omd memory detection (e2e)', () => {
           },
         );
         let stdout: string = '';
+        let stderr: string = '';
         child.stdout.on('data', (chunk: Buffer): void => {
           stdout += chunk.toString();
         });
+        child.stderr.on('data', (chunk: Buffer): void => {
+          stderr += chunk.toString();
+        });
         child.on('error', reject);
-        child.on('close', (): void => {
-          resolvePromise(JSON.parse(stdout) as HookOutput);
+        child.on('close', (code: number | null): void => {
+          if (code !== 0) {
+            reject(
+              new Error(
+                `hook ${phase} exited ${String(code)}: ${stderr || stdout}`,
+              ),
+            );
+          } else {
+            try {
+              resolvePromise(JSON.parse(stdout) as HookOutput);
+            } catch {
+              reject(
+                new Error(`hook ${phase} answered no JSON: ${stdout}${stderr}`),
+              );
+            }
+          }
         });
         child.stdin.write(JSON.stringify(event));
         child.stdin.end();
@@ -173,10 +191,11 @@ describe('omd memory detection (e2e)', () => {
   async function injectionFor(
     started: E2eProject,
     prompt: string,
+    sessionId: string = 'sess-1',
   ): Promise<string> {
     const output: HookOutput = await runHook(started, 'user-prompt', {
       hook_event_name: 'UserPromptSubmit',
-      session_id: 'sess-1',
+      session_id: sessionId,
       prompt,
     });
     return output.hookSpecificOutput?.additionalContext ?? '';
@@ -335,5 +354,38 @@ describe('omd memory detection (e2e)', () => {
     expect(await injectionFor(started, 'carry on')).not.toContain(
       EXPORT_RULE.text,
     );
+  });
+
+  it('defers a staged rule past a session-start injection', async () => {
+    const started: E2eProject = await startProject();
+    const paths: MemoryStorePaths = new MemoryStorePaths(started.dir);
+    await mkdir(paths.dir, { recursive: true });
+    await writeFile(paths.rules, JSON.stringify([EXPORT_RULE]), 'utf8');
+    await touch(started, 'src/api/export-endpoint.ts');
+
+    const atStart: HookOutput = await runHook(started, 'session-start', {
+      hook_event_name: 'SessionStart',
+      session_id: 'sess-1',
+    });
+    const atPrompt: string = await injectionFor(started, 'carry on');
+
+    expect(atStart.hookSpecificOutput?.additionalContext ?? '').not.toContain(
+      EXPORT_RULE.text,
+    );
+    expect(atPrompt).toContain(EXPORT_RULE.text);
+  });
+
+  it('delivers a staged rule only to the session that staged it', async () => {
+    const started: E2eProject = await startProject();
+    const paths: MemoryStorePaths = new MemoryStorePaths(started.dir);
+    await mkdir(paths.dir, { recursive: true });
+    await writeFile(paths.rules, JSON.stringify([EXPORT_RULE]), 'utf8');
+    await touch(started, 'src/api/export-endpoint.ts');
+
+    const other: string = await injectionFor(started, 'carry on', 'sess-2');
+    const own: string = await injectionFor(started, 'carry on');
+
+    expect(other).not.toContain(EXPORT_RULE.text);
+    expect(own).toContain(EXPORT_RULE.text);
   });
 });

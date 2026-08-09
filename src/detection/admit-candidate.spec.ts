@@ -6,11 +6,13 @@ function candidate(
   principle: string,
   expiresAt: number,
   deliveredAt: number | null = null,
+  sessionId: string | null = 'sess-1',
 ): StagedCandidate {
   return {
     principle,
     confirmingCommand: `omd memory remember "${principle}"`,
     score: 0.8,
+    sessionId,
     expiresAt,
     deliveredAt,
   };
@@ -27,7 +29,7 @@ describe('admitCandidate', () => {
     expect(staged).toHaveLength(1);
   });
 
-  it('collapses a principle already staged', () => {
+  it('collapses a principle already staged for the same session', () => {
     const first: readonly StagedCandidate[] = admitCandidate(
       [],
       candidate('always lint', 2_000),
@@ -42,6 +44,22 @@ describe('admitCandidate', () => {
 
     expect(second).toHaveLength(1);
     expect(second[0]?.expiresAt).toBe(2_000);
+  });
+
+  it('admits the same principle detected in another session', () => {
+    const first: readonly StagedCandidate[] = admitCandidate(
+      [],
+      candidate('always lint', 2_000, null, 'sess-1'),
+      1_000,
+    );
+
+    const second: readonly StagedCandidate[] = admitCandidate(
+      first,
+      candidate('always lint', 9_000, null, 'sess-2'),
+      1_000,
+    );
+
+    expect(second).toHaveLength(2);
   });
 
   it('drops candidates whose expiry window has passed', () => {

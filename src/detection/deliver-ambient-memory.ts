@@ -1,4 +1,5 @@
 import type { AmbientMemory } from './ambient-memory';
+import type { AmbientQuery } from './ambient-query';
 import { composeAmbientMemory } from './compose-ambient-memory';
 import { markCandidatesDelivered } from './mark-candidates-delivered';
 import { markRulesDelivered } from './mark-rules-delivered';
@@ -12,12 +13,12 @@ import { writeStagedRules } from './write-staged-rules';
 
 export async function deliverAmbientMemory(
   baseDir: string,
-  prompt: string,
+  query: AmbientQuery,
   now: number,
 ): Promise<string> {
   const ambient: AmbientMemory = await composeAmbientMemory(
     baseDir,
-    prompt,
+    query,
     now,
   );
   if (ambient.proposals.length > 0) {
@@ -25,24 +26,14 @@ export async function deliverAmbientMemory(
       await readStagedCandidates(baseDir);
     await writeStagedCandidates(
       baseDir,
-      markCandidatesDelivered(
-        staged,
-        ambient.proposals.map(
-          (candidate: StagedCandidate): string => candidate.principle,
-        ),
-        now,
-      ),
+      markCandidatesDelivered(staged, ambient.proposals, now),
     );
   }
   if (ambient.rules.length > 0) {
     const staged: readonly StagedRule[] = await readStagedRules(baseDir);
     await writeStagedRules(
       baseDir,
-      markRulesDelivered(
-        staged,
-        ambient.rules.map((rule: StagedRule): string => rule.text),
-        now,
-      ),
+      markRulesDelivered(staged, ambient.rules, now),
     );
   }
   return renderAmbientMemory(ambient);

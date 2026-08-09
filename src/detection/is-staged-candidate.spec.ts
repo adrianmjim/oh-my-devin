@@ -9,6 +9,21 @@ describe('isStagedCandidate', () => {
         confirmingCommand:
           'omd memory remember "In this project, always lint."',
         score: 0.8,
+        sessionId: 'sess-1',
+        expiresAt: 5_000,
+        deliveredAt: null,
+      }),
+    ).toBe(true);
+  });
+
+  it('recognizes a candidate staged for no session', () => {
+    expect(
+      isStagedCandidate({
+        principle: 'In this project, always lint.',
+        confirmingCommand:
+          'omd memory remember "In this project, always lint."',
+        score: 0.8,
+        sessionId: null,
         expiresAt: 5_000,
         deliveredAt: null,
       }),
@@ -18,6 +33,16 @@ describe('isStagedCandidate', () => {
   it('rejects staging that lost a field', () => {
     expect(
       isStagedCandidate({ principle: 'p', score: 0.8, expiresAt: 1 }),
+    ).toBe(false);
+    expect(
+      isStagedCandidate({
+        principle: 'In this project, always lint.',
+        confirmingCommand:
+          'omd memory remember "In this project, always lint."',
+        score: 0.8,
+        expiresAt: 5_000,
+        deliveredAt: null,
+      }),
     ).toBe(false);
     expect(isStagedCandidate(null)).toBe(false);
   });

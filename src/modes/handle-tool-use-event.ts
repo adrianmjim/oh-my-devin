@@ -1,3 +1,4 @@
+import { isContractualSession } from '../detection/is-contractual-session';
 import { readStagedRules } from '../detection/read-staged-rules';
 import { stageMatchedRules } from '../detection/stage-matched-rules';
 import type { StagedRule } from '../detection/staged-rule';
@@ -20,13 +21,13 @@ export async function handleToolUseEvent(
       await stageSessionIdentity(baseDir, event.sessionId, event.command, now);
     }
   }
-  if (event.path !== null) {
+  if (event.path !== null && !isContractualSession(env)) {
     const rules: readonly RuleEntry[] = await readRules(baseDir);
     if (rules.length > 0) {
       const staged: readonly StagedRule[] = await readStagedRules(baseDir);
       await writeStagedRules(
         baseDir,
-        stageMatchedRules(staged, rules, event.path, env, now),
+        stageMatchedRules(staged, rules, event.path, event.sessionId, now),
       );
     }
   }

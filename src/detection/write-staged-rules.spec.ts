@@ -10,6 +10,7 @@ import { writeStagedRules } from './write-staged-rules';
 const RULE: StagedRule = {
   text: 'the data owner reviews migrations',
   hash: 'abc',
+  sessionId: 'sess-1',
   stagedAt: 100,
   deliveredAt: null,
 };

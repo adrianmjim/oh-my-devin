@@ -2,6 +2,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import type { AmbientQuery } from '../detection/ambient-query';
 import { stageCandidate } from '../detection/stage-candidate';
 import { writeStagedCandidates } from '../detection/write-staged-candidates';
 import { writeStagedRules } from '../detection/write-staged-rules';
@@ -22,6 +23,13 @@ const DEPLOY: KnowledgeEntry = {
   recordedAt: 10,
 };
 
+function query(
+  prompt: string,
+  sessionId: string | null = 'sess-1',
+): AmbientQuery {
+  return { sessionId, prompt, phase: 'prompt-submission' };
+}
+
 describe('deriveAmbientContext', () => {
   let projectDir: string;
 
@@ -36,8 +44,7 @@ describe('deriveAmbientContext', () => {
   it('announces the layer in a project with nothing to inject', async () => {
     const context: string = await deriveAmbientContext(
       projectDir,
-      'sess-1',
-      '',
+      query(''),
       100,
     );
 
@@ -51,8 +58,7 @@ describe('deriveAmbientContext', () => {
 
     const context: string = await deriveAmbientContext(
       projectDir,
-      'sess-1',
-      '',
+      query(''),
       110,
     );
 
@@ -64,8 +70,7 @@ describe('deriveAmbientContext', () => {
 
     const context: string = await deriveAmbientContext(
       projectDir,
-      'sess-1',
-      '',
+      query(''),
       110,
     );
 
@@ -77,8 +82,7 @@ describe('deriveAmbientContext', () => {
 
     const context: string = await deriveAmbientContext(
       projectDir,
-      'sess-1',
-      'can you deploy the api tonight',
+      query('can you deploy the api tonight'),
       110,
     );
 
@@ -90,8 +94,7 @@ describe('deriveAmbientContext', () => {
 
     const context: string = await deriveAmbientContext(
       projectDir,
-      'sess-1',
-      'what does the readme say',
+      query('what does the readme say'),
       110,
     );
 
@@ -102,14 +105,14 @@ describe('deriveAmbientContext', () => {
     await writeStagedCandidates(projectDir, [
       stageCandidate(
         { principle: 'In this project, always tag.', score: 0.7 },
+        'sess-1',
         50,
       ),
     ]);
 
     const context: string = await deriveAmbientContext(
       projectDir,
-      'sess-1',
-      '',
+      query(''),
       110,
     );
 
@@ -123,26 +126,52 @@ describe('deriveAmbientContext', () => {
       {
         text: 'export endpoints stay paginated',
         hash: contentHash('export endpoints stay paginated'),
+        sessionId: 'sess-1',
         stagedAt: 50,
         deliveredAt: null,
       },
     ]);
     const first: string = await deriveAmbientContext(
       projectDir,
-      'sess-1',
-      '',
+      query(''),
       110,
     );
 
     const second: string = await deriveAmbientContext(
       projectDir,
-      'sess-1',
-      '',
+      query(''),
       120,
     );
 
     expect(first).toContain('export endpoints stay paginated');
     expect(second).not.toContain('export endpoints stay paginated');
+  });
+
+  it('defers staged content at a session-start injection', async () => {
+    await writeStagedRules(projectDir, [
+      {
+        text: 'export endpoints stay paginated',
+        hash: contentHash('export endpoints stay paginated'),
+        sessionId: 'sess-1',
+        stagedAt: 50,
+        deliveredAt: null,
+      },
+    ]);
+
+    const atStart: string = await deriveAmbientContext(
+      projectDir,
+      { sessionId: 'sess-1', prompt: '', phase: 'session-start' },
+      110,
+    );
+
+    const atPrompt: string = await deriveAmbientContext(
+      projectDir,
+      query(''),
+      120,
+    );
+
+    expect(atStart).not.toContain('export endpoints stay paginated');
+    expect(atPrompt).toContain('export endpoints stay paginated');
   });
 
   it('carries no profile content', async () => {
@@ -153,7 +182,7 @@ describe('deriveAmbientContext', () => {
       derivedAt: 10,
     });
 
-    expect(await deriveAmbientContext(projectDir, 'sess-1', '', 110)).toBe(
+    expect(await deriveAmbientContext(projectDir, query(''), 110)).toBe(
       'Oh My Devin layer active.',
     );
   });
@@ -165,8 +194,7 @@ describe('deriveAmbientContext', () => {
 
     const context: string = await deriveAmbientContext(
       projectDir,
-      'sess-1',
-      '',
+      query(''),
       110,
     );
 
@@ -174,7 +202,7 @@ describe('deriveAmbientContext', () => {
   });
 
   it('degrades to the announcement when no session owns the event', async () => {
-    expect(await deriveAmbientContext(projectDir, null, '', 100)).toBe(
+    expect(await deriveAmbientContext(projectDir, query('', null), 100)).toBe(
       'Oh My Devin layer active.',
     );
   });

@@ -11,7 +11,7 @@ const MOMENT: DetectedMoment = {
 
 describe('stageCandidate', () => {
   it('carries the principle and the command that confirms it', () => {
-    const candidate: StagedCandidate = stageCandidate(MOMENT, 1_000);
+    const candidate: StagedCandidate = stageCandidate(MOMENT, 'sess-1', 1_000);
 
     expect(candidate.principle).toBe(MOMENT.principle);
     expect(candidate.confirmingCommand).toContain('omd memory remember');
@@ -19,13 +19,21 @@ describe('stageCandidate', () => {
     expect(candidate.score).toBe(0.8);
   });
 
+  it('carries the session the moment was detected in', () => {
+    expect(stageCandidate(MOMENT, 'sess-1', 1_000).sessionId).toBe('sess-1');
+  });
+
+  it('carries a null session for a moment no session claims', () => {
+    expect(stageCandidate(MOMENT, null, 1_000).sessionId).toBeNull();
+  });
+
   it('expires after the omd-owned window', () => {
-    expect(stageCandidate(MOMENT, 1_000).expiresAt).toBe(
+    expect(stageCandidate(MOMENT, 'sess-1', 1_000).expiresAt).toBe(
       1_000 + CANDIDATE_EXPIRY_WINDOW_MS,
     );
   });
 
   it('stages undelivered', () => {
-    expect(stageCandidate(MOMENT, 1_000).deliveredAt).toBeNull();
+    expect(stageCandidate(MOMENT, 'sess-1', 1_000).deliveredAt).toBeNull();
   });
 });

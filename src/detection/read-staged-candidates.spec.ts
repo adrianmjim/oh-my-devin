@@ -36,6 +36,7 @@ describe('readStagedCandidates', () => {
           confirmingCommand:
             'omd memory remember "In this project, always lint."',
           score: 0.8,
+          sessionId: 'sess-1',
           expiresAt: 5_000,
           deliveredAt: null,
         },

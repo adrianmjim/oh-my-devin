@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { contentHash } from '../memory/content-hash';
 import type { RuleEntry } from '../memory/rule-entry';
-import { RUN_ID_ENV } from '../observability/run-id-env';
 import { stageMatchedRules } from './stage-matched-rules';
 import type { StagedRule } from './staged-rule';
 
@@ -19,7 +18,7 @@ describe('stageMatchedRules', () => {
       [],
       [MIGRATIONS],
       'db/migrations/001.sql',
-      {},
+      'sess-1',
       1_000,
     );
 
@@ -28,21 +27,21 @@ describe('stageMatchedRules', () => {
     expect(staged[0]?.deliveredAt).toBeNull();
   });
 
-  it('stages nothing for a path no rule governs', () => {
-    expect(
-      stageMatchedRules([], [MIGRATIONS], 'src/index.ts', {}, 1_000),
-    ).toEqual([]);
+  it('stages the rule for the session whose write touched it', () => {
+    const staged: readonly StagedRule[] = stageMatchedRules(
+      [],
+      [MIGRATIONS],
+      'db/migrations/001.sql',
+      'sess-1',
+      1_000,
+    );
+
+    expect(staged[0]?.sessionId).toBe('sess-1');
   });
 
-  it('stages nothing in a contractual session', () => {
+  it('stages nothing for a path no rule governs', () => {
     expect(
-      stageMatchedRules(
-        [],
-        [MIGRATIONS],
-        'db/migrations/001.sql',
-        { [RUN_ID_ENV]: 'run-7' },
-        1_000,
-      ),
+      stageMatchedRules([], [MIGRATIONS], 'src/index.ts', 'sess-1', 1_000),
     ).toEqual([]);
   });
 
@@ -51,6 +50,7 @@ describe('stageMatchedRules', () => {
       {
         text: MIGRATIONS.text,
         hash: MIGRATIONS.hash,
+        sessionId: 'sess-1',
         stagedAt: 500,
         deliveredAt: 800,
       },
@@ -60,7 +60,7 @@ describe('stageMatchedRules', () => {
       delivered,
       [MIGRATIONS],
       'db/migrations/002.sql',
-      {},
+      'sess-1',
       1_000,
     );
 
@@ -69,10 +69,41 @@ describe('stageMatchedRules', () => {
     expect(staged[0]?.stagedAt).toBe(1_000);
   });
 
+  it('holds another session staging of the same rule alongside', () => {
+    const other: readonly StagedRule[] = [
+      {
+        text: MIGRATIONS.text,
+        hash: MIGRATIONS.hash,
+        sessionId: 'sess-other',
+        stagedAt: 500,
+        deliveredAt: null,
+      },
+    ];
+
+    const staged: readonly StagedRule[] = stageMatchedRules(
+      other,
+      [MIGRATIONS],
+      'db/migrations/002.sql',
+      'sess-1',
+      1_000,
+    );
+
+    expect(staged).toHaveLength(2);
+    expect(
+      staged.map((entry: StagedRule): string | null => entry.sessionId),
+    ).toEqual(['sess-other', 'sess-1']);
+  });
+
   it('leaves the staging it was given untouched', () => {
     const held: readonly StagedRule[] = [];
 
-    stageMatchedRules(held, [MIGRATIONS], 'db/migrations/001.sql', {}, 1_000);
+    stageMatchedRules(
+      held,
+      [MIGRATIONS],
+      'db/migrations/001.sql',
+      'sess-1',
+      1_000,
+    );
 
     expect(held).toHaveLength(0);
   });

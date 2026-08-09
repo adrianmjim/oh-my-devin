@@ -406,8 +406,14 @@ export async function dispatchCliCommand(
                 hookSpecificOutput: {
                   additionalContext: await deriveAmbientContext(
                     baseDir,
-                    event.sessionId,
-                    prompt,
+                    {
+                      sessionId: event.sessionId,
+                      prompt,
+                      phase:
+                        command.phase === USER_PROMPT_PHASE
+                          ? 'prompt-submission'
+                          : 'session-start',
+                    },
                     at,
                   ),
                 },

@@ -9,6 +9,7 @@ export function isStagedCandidate(value: unknown): value is StagedCandidate {
     typeof candidate.principle === 'string' &&
     typeof candidate.confirmingCommand === 'string' &&
     typeof candidate.score === 'number' &&
+    (candidate.sessionId === null || typeof candidate.sessionId === 'string') &&
     typeof candidate.expiresAt === 'number' &&
     (candidate.deliveredAt === null ||
       typeof candidate.deliveredAt === 'number')

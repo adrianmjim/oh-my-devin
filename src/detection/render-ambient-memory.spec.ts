@@ -13,6 +13,7 @@ const FULL: AmbientMemory = {
       confirmingCommand:
         'omd memory remember "In this project, always run the linter before pushing."',
       score: 0.8,
+      sessionId: 'sess-1',
       expiresAt: 5_000,
       deliveredAt: null,
     },
@@ -29,6 +30,7 @@ const FULL: AmbientMemory = {
     {
       text: 'the data owner reviews migrations',
       hash: 'c',
+      sessionId: 'sess-1',
       stagedAt: 100,
       deliveredAt: null,
     },

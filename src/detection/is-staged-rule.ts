@@ -8,6 +8,7 @@ export function isStagedRule(value: unknown): value is StagedRule {
   return (
     typeof candidate.text === 'string' &&
     typeof candidate.hash === 'string' &&
+    (candidate.sessionId === null || typeof candidate.sessionId === 'string') &&
     typeof candidate.stagedAt === 'number' &&
     (candidate.deliveredAt === null ||
       typeof candidate.deliveredAt === 'number')

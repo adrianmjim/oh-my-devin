@@ -1,7 +1,8 @@
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { DetectionStatePaths } from '../detection/detection-state-paths';
 import { readStagedRules } from '../detection/read-staged-rules';
 import type { StagedRule } from '../detection/staged-rule';
 import { contentHash } from '../memory/content-hash';
@@ -100,6 +101,7 @@ describe('handleToolUseEvent', () => {
       {
         text: EXPORT_RULE.text,
         hash: EXPORT_RULE.hash,
+        sessionId: 'sess-1',
         stagedAt: 500,
         deliveredAt: null,
       },
@@ -130,6 +132,9 @@ describe('handleToolUseEvent', () => {
     );
 
     expect(await readStagedRules(projectDir)).toEqual([]);
+    await expect(
+      stat(new DetectionStatePaths(projectDir).rules),
+    ).rejects.toThrow();
   });
 
   it('leaves a rule staged by an earlier event alone', async () => {

@@ -41,7 +41,11 @@ export async function stageDetectedMoments(
     let staged: readonly StagedCandidate[] =
       await readStagedCandidates(baseDir);
     for (const moment of moments) {
-      staged = admitCandidate(staged, stageCandidate(moment, now), now);
+      staged = admitCandidate(
+        staged,
+        stageCandidate(moment, sessionId, now),
+        now,
+      );
     }
     await writeStagedCandidates(baseDir, staged);
   }

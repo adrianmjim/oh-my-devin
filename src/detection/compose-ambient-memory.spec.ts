@@ -9,6 +9,7 @@ import type { KnowledgeEntry } from '../memory/knowledge-entry';
 import { MemoryStorePaths } from '../memory/memory-store-paths';
 import { writeKnowledge } from '../memory/write-knowledge';
 import type { AmbientMemory } from './ambient-memory';
+import type { AmbientQuery } from './ambient-query';
 import { composeAmbientMemory } from './compose-ambient-memory';
 import type { StagedCandidate } from './staged-candidate';
 import type { StagedRule } from './staged-rule';
@@ -20,6 +21,7 @@ const CANDIDATE: StagedCandidate = {
   confirmingCommand:
     'omd memory remember "In this project, always run the linter before pushing."',
   score: 0.8,
+  sessionId: 'sess-1',
   expiresAt: 5_000,
   deliveredAt: null,
 };
@@ -27,6 +29,7 @@ const CANDIDATE: StagedCandidate = {
 const RULE: StagedRule = {
   text: 'the data owner reviews migrations',
   hash: 'abc',
+  sessionId: 'sess-1',
   stagedAt: 100,
   deliveredAt: null,
 };
@@ -37,6 +40,10 @@ const KNOWLEDGE: KnowledgeEntry = {
   hash: 'def',
   recordedAt: 5,
 };
+
+function query(prompt: string): AmbientQuery {
+  return { sessionId: 'sess-1', prompt, phase: 'prompt-submission' };
+}
 
 describe('composeAmbientMemory', () => {
   let projectDir: string;
@@ -52,7 +59,7 @@ describe('composeAmbientMemory', () => {
   it('carries nothing when the project remembers nothing', async () => {
     const ambient: AmbientMemory = await composeAmbientMemory(
       projectDir,
-      'cut the release',
+      query('cut the release'),
       1_000,
     );
 
@@ -70,7 +77,7 @@ describe('composeAmbientMemory', () => {
 
     const ambient: AmbientMemory = await composeAmbientMemory(
       projectDir,
-      'anything',
+      query('anything'),
       1_000,
     );
 
@@ -83,7 +90,7 @@ describe('composeAmbientMemory', () => {
 
     const ambient: AmbientMemory = await composeAmbientMemory(
       projectDir,
-      'anything',
+      query('anything'),
       1_000,
     );
 
@@ -99,8 +106,34 @@ describe('composeAmbientMemory', () => {
     ]);
 
     expect(
-      (await composeAmbientMemory(projectDir, 'anything', 1_000)).proposals,
+      (await composeAmbientMemory(projectDir, query('anything'), 1_000))
+        .proposals,
     ).toEqual([]);
+  });
+
+  it('carries no proposal another session staged', async () => {
+    await writeStagedCandidates(projectDir, [
+      { ...CANDIDATE, sessionId: 'sess-other' },
+    ]);
+
+    expect(
+      (await composeAmbientMemory(projectDir, query('anything'), 1_000))
+        .proposals,
+    ).toEqual([]);
+  });
+
+  it('carries no staged content at session start', async () => {
+    await writeStagedCandidates(projectDir, [CANDIDATE]);
+    await writeStagedRules(projectDir, [RULE]);
+
+    const ambient: AmbientMemory = await composeAmbientMemory(
+      projectDir,
+      { sessionId: 'sess-1', prompt: '', phase: 'session-start' },
+      1_000,
+    );
+
+    expect(ambient.proposals).toEqual([]);
+    expect(ambient.rules).toEqual([]);
   });
 
   it('carries the knowledge the prompt triggers and no other', async () => {
@@ -116,7 +149,7 @@ describe('composeAmbientMemory', () => {
 
     const ambient: AmbientMemory = await composeAmbientMemory(
       projectDir,
-      'cut the release branch',
+      query('cut the release branch'),
       1_000,
     );
 
@@ -130,12 +163,20 @@ describe('composeAmbientMemory', () => {
 
     const ambient: AmbientMemory = await composeAmbientMemory(
       projectDir,
-      'anything',
+      query('anything'),
       1_000,
     );
 
     expect(ambient.rules).toHaveLength(1);
     expect(ambient.rules[0]?.text).toBe(RULE.text);
+  });
+
+  it('carries no rule another session staged', async () => {
+    await writeStagedRules(projectDir, [{ ...RULE, sessionId: 'sess-other' }]);
+
+    expect(
+      (await composeAmbientMemory(projectDir, query('anything'), 1_000)).rules,
+    ).toEqual([]);
   });
 
   it('bounds every class it carries', async () => {
@@ -166,7 +207,7 @@ describe('composeAmbientMemory', () => {
 
     const ambient: AmbientMemory = await composeAmbientMemory(
       projectDir,
-      'cut the release',
+      query('cut the release'),
       1_000,
     );
 
@@ -182,7 +223,7 @@ describe('composeAmbientMemory', () => {
 
     const ambient: AmbientMemory = await composeAmbientMemory(
       projectDir,
-      'cut the release',
+      query('cut the release'),
       1_000,
     );
 
@@ -191,7 +232,7 @@ describe('composeAmbientMemory', () => {
   });
 
   it('never reads the profile class', async () => {
-    await composeAmbientMemory(projectDir, 'anything', 1_000);
+    await composeAmbientMemory(projectDir, query('anything'), 1_000);
 
     await expect(
       rm(new MemoryStorePaths(projectDir).profile),

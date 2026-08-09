@@ -12,6 +12,7 @@ import { writeKnowledge } from '../memory/write-knowledge';
 import { writeProfile } from '../memory/write-profile';
 import { writeRules } from '../memory/write-rules';
 import { AMBIENT_PROPOSAL_CAP } from './ambient-proposal-cap';
+import type { AmbientQuery } from './ambient-query';
 import { deliverAmbientMemory } from './deliver-ambient-memory';
 import { stageCandidate } from './stage-candidate';
 import type { StagedCandidate } from './staged-candidate';
@@ -38,13 +39,21 @@ const EXPORT_RULE: RuleEntry = {
   recordedAt: 10,
 };
 
-function stagedRule(rule: RuleEntry): StagedRule {
+function stagedRule(
+  rule: RuleEntry,
+  sessionId: string | null = 'sess-1',
+): StagedRule {
   return {
     text: rule.text,
     hash: rule.hash,
+    sessionId,
     stagedAt: 50,
     deliveredAt: null,
   };
+}
+
+function query(prompt: string): AmbientQuery {
+  return { sessionId: 'sess-1', prompt, phase: 'prompt-submission' };
 }
 
 describe('deliverAmbientMemory', () => {
@@ -59,17 +68,17 @@ describe('deliverAmbientMemory', () => {
   });
 
   it('carries nothing where the project holds no memory', async () => {
-    expect(await deliverAmbientMemory(projectDir, 'deploy the api', 100)).toBe(
-      '',
-    );
+    expect(
+      await deliverAmbientMemory(projectDir, query('deploy the api'), 100),
+    ).toBe('');
   });
 
   it('carries the notepad priority entries', async () => {
     await appendNotepadEntry(projectDir, 'priority', 'gate on staging', 10);
 
-    expect(await deliverAmbientMemory(projectDir, 'anything', 100)).toContain(
-      'gate on staging',
-    );
+    expect(
+      await deliverAmbientMemory(projectDir, query('anything'), 100),
+    ).toContain('gate on staging');
   });
 
   it('carries no working or manual notepad entry', async () => {
@@ -78,7 +87,7 @@ describe('deliverAmbientMemory', () => {
 
     const carried: string = await deliverAmbientMemory(
       projectDir,
-      'anything',
+      query('anything'),
       100,
     );
 
@@ -90,7 +99,7 @@ describe('deliverAmbientMemory', () => {
 
     const carried: string = await deliverAmbientMemory(
       projectDir,
-      'can you deploy the api tonight',
+      query('can you deploy the api tonight'),
       100,
     );
 
@@ -102,7 +111,11 @@ describe('deliverAmbientMemory', () => {
     await writeKnowledge(projectDir, [DEPLOY]);
 
     expect(
-      await deliverAmbientMemory(projectDir, 'what does the readme say', 100),
+      await deliverAmbientMemory(
+        projectDir,
+        query('what does the readme say'),
+        100,
+      ),
     ).toBe('');
   });
 
@@ -122,7 +135,7 @@ describe('deliverAmbientMemory', () => {
 
     const carried: string = await deliverAmbientMemory(
       projectDir,
-      'deploy now',
+      query('deploy now'),
       100,
     );
 
@@ -137,13 +150,14 @@ describe('deliverAmbientMemory', () => {
     await writeStagedCandidates(projectDir, [
       stageCandidate(
         { principle: 'In this project, always tag.', score: 0.7 },
+        'sess-1',
         50,
       ),
     ]);
 
     const carried: string = await deliverAmbientMemory(
       projectDir,
-      'anything',
+      query('anything'),
       100,
     );
 
@@ -161,6 +175,7 @@ describe('deliverAmbientMemory', () => {
         (_unused: unknown, index: number): StagedCandidate =>
           stageCandidate(
             { principle: `In this project, rule ${index}.`, score: 0.7 },
+            'sess-1',
             50,
           ),
       ),
@@ -168,7 +183,7 @@ describe('deliverAmbientMemory', () => {
 
     const carried: string = await deliverAmbientMemory(
       projectDir,
-      'anything',
+      query('anything'),
       100,
     );
 
@@ -185,34 +200,91 @@ describe('deliverAmbientMemory', () => {
     await writeRules(projectDir, [EXPORT_RULE]);
     await writeStagedRules(projectDir, [stagedRule(EXPORT_RULE)]);
 
-    expect(await deliverAmbientMemory(projectDir, 'anything', 100)).toContain(
-      'export endpoints stay paginated',
-    );
+    expect(
+      await deliverAmbientMemory(projectDir, query('anything'), 100),
+    ).toContain('export endpoints stay paginated');
   });
 
   it('carries no repeat of a rule an earlier injection delivered', async () => {
     await writeRules(projectDir, [EXPORT_RULE]);
     await writeStagedRules(projectDir, [stagedRule(EXPORT_RULE)]);
-    await deliverAmbientMemory(projectDir, 'anything', 100);
+    await deliverAmbientMemory(projectDir, query('anything'), 100);
 
-    expect(await deliverAmbientMemory(projectDir, 'anything', 200)).toBe('');
+    expect(await deliverAmbientMemory(projectDir, query('anything'), 200)).toBe(
+      '',
+    );
   });
 
   it('carries no repeat of a proposal an earlier injection delivered', async () => {
     await writeStagedCandidates(projectDir, [
       stageCandidate(
         { principle: 'In this project, always tag.', score: 0.7 },
+        'sess-1',
         50,
       ),
     ]);
-    await deliverAmbientMemory(projectDir, 'anything', 100);
+    await deliverAmbientMemory(projectDir, query('anything'), 100);
 
-    expect(await deliverAmbientMemory(projectDir, 'anything', 200)).toBe('');
+    expect(await deliverAmbientMemory(projectDir, query('anything'), 200)).toBe(
+      '',
+    );
+  });
+
+  it('leaves staged content for another session pending and unmarked', async () => {
+    await writeRules(projectDir, [EXPORT_RULE]);
+    await writeStagedRules(projectDir, [stagedRule(EXPORT_RULE, 'sess-other')]);
+
+    const carried: string = await deliverAmbientMemory(
+      projectDir,
+      query('anything'),
+      100,
+    );
+
+    expect(carried).toBe('');
+    expect(
+      await deliverAmbientMemory(
+        projectDir,
+        {
+          sessionId: 'sess-other',
+          prompt: 'anything',
+          phase: 'prompt-submission',
+        },
+        200,
+      ),
+    ).toContain('export endpoints stay paginated');
+  });
+
+  it('defers staged content past a session-start injection', async () => {
+    await writeRules(projectDir, [EXPORT_RULE]);
+    await writeStagedRules(projectDir, [stagedRule(EXPORT_RULE)]);
+    await writeStagedCandidates(projectDir, [
+      stageCandidate(
+        { principle: 'In this project, always tag.', score: 0.7 },
+        'sess-1',
+        50,
+      ),
+    ]);
+
+    const atStart: string = await deliverAmbientMemory(
+      projectDir,
+      { sessionId: 'sess-1', prompt: '', phase: 'session-start' },
+      100,
+    );
+
+    expect(atStart).toBe('');
+    const atPrompt: string = await deliverAmbientMemory(
+      projectDir,
+      query('anything'),
+      200,
+    );
+    expect(atPrompt).toContain('export endpoints stay paginated');
+    expect(atPrompt).toContain('In this project, always tag.');
   });
 
   it('carries an expired proposal no longer', async () => {
     const candidate: StagedCandidate = stageCandidate(
       { principle: 'In this project, always tag.', score: 0.7 },
+      'sess-1',
       50,
     );
     await writeStagedCandidates(projectDir, [candidate]);
@@ -220,7 +292,7 @@ describe('deliverAmbientMemory', () => {
     expect(
       await deliverAmbientMemory(
         projectDir,
-        'anything',
+        query('anything'),
         candidate.expiresAt + 1,
       ),
     ).toBe('');
@@ -234,7 +306,9 @@ describe('deliverAmbientMemory', () => {
       derivedAt: 10,
     });
 
-    expect(await deliverAmbientMemory(projectDir, 'anything', 100)).toBe('');
+    expect(await deliverAmbientMemory(projectDir, query('anything'), 100)).toBe(
+      '',
+    );
   });
 
   it('degrades to carrying nothing when the store cannot be read', async () => {
@@ -244,6 +318,8 @@ describe('deliverAmbientMemory', () => {
     await writeFile(paths.knowledge, 'not json at all', 'utf8');
     await writeFile(paths.rules, 'not json at all', 'utf8');
 
-    expect(await deliverAmbientMemory(projectDir, 'deploy now', 100)).toBe('');
+    expect(
+      await deliverAmbientMemory(projectDir, query('deploy now'), 100),
+    ).toBe('');
   });
 });
