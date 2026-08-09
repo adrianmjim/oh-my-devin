@@ -49,7 +49,7 @@ describe('clearSessionMode', () => {
 
     expect(report).toEqual({
       kind: 'refused',
-      mode: '',
+      mode: null,
       reason: 'unattributable',
       holder: null,
     });

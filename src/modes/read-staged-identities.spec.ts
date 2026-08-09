@@ -35,6 +35,19 @@ describe('readStagedIdentities', () => {
     expect(await readStagedIdentities(projectDir, 'sess-1')).toEqual([]);
   });
 
+  it('drops entries naming a different session', async () => {
+    await writeStagedFile(
+      JSON.stringify([
+        { sessionId: 'sess-1', invocation: 'mode clear', stagedAt: 1 },
+        { sessionId: '../../sess-2', invocation: 'mode clear', stagedAt: 2 },
+      ]),
+    );
+
+    expect(await readStagedIdentities(projectDir, 'sess-1')).toEqual([
+      { sessionId: 'sess-1', invocation: 'mode clear', stagedAt: 1 },
+    ]);
+  });
+
   it('drops entries whose shape it does not recognize', async () => {
     await writeStagedFile(
       JSON.stringify([

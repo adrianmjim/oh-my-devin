@@ -23,7 +23,11 @@ export async function readStagedIdentities(
       parsed = null;
     }
     if (Array.isArray(parsed)) {
-      staged = parsed.filter(isStagedIdentity);
+      staged = parsed
+        .filter(isStagedIdentity)
+        .filter(
+          (entry: StagedIdentity): boolean => entry.sessionId === sessionId,
+        );
     }
   }
   return staged;

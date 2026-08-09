@@ -88,10 +88,15 @@ describe('deriveModeHold', () => {
     ).toBeNull();
   });
 
-  it('holds nothing when the correlated run record is gone', async () => {
-    expect(
-      await deriveModeHold(projectDir, activation('ralph', 'run-gone'), 100),
-    ).toBeNull();
+  it('holds a correlated run it cannot verify', async () => {
+    const hold: string | null = await deriveModeHold(
+      projectDir,
+      activation('ralph', 'run-gone'),
+      100,
+    );
+
+    expect(hold).toContain('run-gone');
+    expect(hold).toContain('cannot be verified');
   });
 
   it('holds on a stalled correlated run', async () => {

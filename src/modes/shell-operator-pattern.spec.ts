@@ -8,6 +8,11 @@ describe('SHELL_OPERATOR_PATTERN', () => {
     expect('mode set team | tee'.search(SHELL_OPERATOR_PATTERN)).toBe(14);
   });
 
+  it('finds the redirection with its descriptor prefix', () => {
+    expect('mode set plan 2>/dev/null'.search(SHELL_OPERATOR_PATTERN)).toBe(14);
+    expect('mode clear < answers'.search(SHELL_OPERATOR_PATTERN)).toBe(11);
+  });
+
   it('finds no operator in an invocation that carries none', () => {
     expect('mode set ralph --run run-7'.search(SHELL_OPERATOR_PATTERN)).toBe(
       -1,

@@ -36,6 +36,12 @@ describe('parseHookEvent', () => {
     expect(parseHookEvent('')).toEqual({ sessionId: null, command: null });
   });
 
+  it('reads no session id that is not a safe path segment', () => {
+    expect(
+      parseHookEvent(JSON.stringify({ session_id: '../../etc' })).sessionId,
+    ).toBeNull();
+  });
+
   it('reads no session id of the wrong type', () => {
     expect(parseHookEvent(JSON.stringify({ session_id: 7 })).sessionId).toBe(
       null,

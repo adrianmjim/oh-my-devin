@@ -30,11 +30,9 @@ export async function deriveModeHold(
     } catch {
       snapshot = null;
     }
-    if (
-      snapshot !== null &&
-      snapshot.state !== 'succeeded' &&
-      snapshot.state !== 'failed'
-    ) {
+    if (snapshot === null) {
+      hold = `mode ${activation.mode} holds run ${activation.correlatedRunId}, which cannot be verified`;
+    } else if (snapshot.state !== 'succeeded' && snapshot.state !== 'failed') {
       hold = `mode ${activation.mode} holds run ${activation.correlatedRunId}, which is ${snapshot.state}`;
     }
   }

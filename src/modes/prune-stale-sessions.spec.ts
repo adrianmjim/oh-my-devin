@@ -1,4 +1,4 @@
-import { mkdtemp, readdir, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -7,6 +7,7 @@ import { modeStateRoot } from './mode-state-root';
 import { pruneStaleSessions } from './prune-stale-sessions';
 import { readSessionSlots } from './read-session-slots';
 import { recordSessionSeen } from './record-session-seen';
+import { SessionStatePaths } from './session-state-paths';
 import { writeSessionSlots } from './write-session-slots';
 
 function activation(mode: string, sessionId: string): ModeActivation {
@@ -60,6 +61,25 @@ describe('pruneStaleSessions', () => {
     await pruneStaleSessions(projectDir, 1050, 100);
 
     expect(await readdir(modeStateRoot(projectDir))).toEqual(['sess-1']);
+  });
+
+  it('never deletes outside the mode-state root for a forged record', async () => {
+    const paths: SessionStatePaths = new SessionStatePaths(
+      projectDir,
+      'sess-evil',
+    );
+    await mkdir(paths.dir, { recursive: true });
+    await writeFile(
+      paths.seen,
+      JSON.stringify({ sessionId: '../../marker', lastSeenAt: 0 }),
+      'utf8',
+    );
+    const markerDir: string = join(projectDir, 'marker');
+    await mkdir(markerDir, { recursive: true });
+
+    await pruneStaleSessions(projectDir, 100000, 100);
+
+    expect(await readdir(markerDir)).toEqual([]);
   });
 
   it('tolerates a project with no mode state', async () => {

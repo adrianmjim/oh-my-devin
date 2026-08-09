@@ -107,12 +107,18 @@ describe('deriveStopDecision', () => {
     );
   });
 
-  it('releases the hold when the correlated run record is gone', async () => {
+  it('keeps the hold when the correlated run record is gone', async () => {
     await activate('ralph', 'run-missing', 100);
 
-    expect((await deriveStopDecision(projectDir, 'sess-1', 110)).decision).toBe(
-      'approve',
+    const decision: StopDecision = await deriveStopDecision(
+      projectDir,
+      'sess-1',
+      110,
     );
+
+    expect(decision.decision).toBe('block');
+    expect(decision.reason).toContain('run-missing');
+    expect(decision.reason).toContain('cannot be verified');
   });
 
   it('blocks an uncorrelated mode on its verification criteria', async () => {

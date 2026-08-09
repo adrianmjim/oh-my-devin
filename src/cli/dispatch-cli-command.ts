@@ -32,6 +32,7 @@ import { appendNotepadEntry } from '../memory/append-notepad-entry';
 import { clearSessionMode } from '../modes/clear-session-mode';
 import { deriveAmbientContext } from '../modes/derive-ambient-context';
 import { deriveStopDecision } from '../modes/derive-stop-decision';
+import { discoverModeBaseDir } from '../modes/discover-mode-base-dir';
 import { handleToolUseEvent } from '../modes/handle-tool-use-event';
 import type { HookEvent } from '../modes/hook-event';
 import type { ModeReport } from '../modes/mode-report';
@@ -347,7 +348,7 @@ export async function dispatchCliCommand(
     case 'mode-set': {
       const state: ModeState = resolveModeState(command.mode);
       const report: ModeReport = await setSessionMode(
-        cwd,
+        await discoverModeBaseDir(cwd),
         state.mode,
         command.runId,
         command.invocation,
@@ -357,9 +358,11 @@ export async function dispatchCliCommand(
       return report.kind === 'refused' ? 1 : 0;
     }
     case 'mode-clear': {
+      const target: string | null =
+        command.mode === null ? null : resolveModeState(command.mode).mode;
       const report: ModeReport = await clearSessionMode(
-        cwd,
-        command.mode,
+        await discoverModeBaseDir(cwd),
+        target,
         command.invocation,
         Date.now(),
       );
@@ -371,23 +374,24 @@ export async function dispatchCliCommand(
         await readStdinText(process.stdin),
       );
       const at: number = Date.now();
+      const baseDir: string = await discoverModeBaseDir(cwd);
       let output: Record<string, unknown>;
       if (command.phase === TOOL_USE_PHASE) {
-        await handleToolUseEvent(cwd, event, at);
+        await handleToolUseEvent(baseDir, event, at);
         output = {};
       } else {
         if (event.sessionId !== null) {
-          await recordSessionSeen(cwd, event.sessionId, at);
+          await recordSessionSeen(baseDir, event.sessionId, at);
         }
         output =
           command.phase === STOP_PHASE
             ? renderStopOutput(
-                await deriveStopDecision(cwd, event.sessionId, at),
+                await deriveStopDecision(baseDir, event.sessionId, at),
               )
             : {
                 hookSpecificOutput: {
                   additionalContext: await deriveAmbientContext(
-                    cwd,
+                    baseDir,
                     event.sessionId,
                     at,
                   ),

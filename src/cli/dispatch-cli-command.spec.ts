@@ -161,6 +161,40 @@ describe('dispatchCliCommand', () => {
     ).rejects.toThrow(UsageError);
   });
 
+  it('resolves mode state from the project root for a nested cwd', async () => {
+    await stageMode('mode set plan');
+    const nested: string = join(cwd, 'packages', 'app');
+    await mkdir(nested, { recursive: true });
+
+    const code: number = await dispatchCliCommand(
+      {
+        kind: 'mode-set',
+        mode: 'plan',
+        runId: null,
+        invocation: 'mode set plan',
+      },
+      nested,
+      userConfigDir,
+      runner,
+    );
+
+    expect(code).toBe(0);
+    expect(await readSessionSlots(cwd, 'sess-1')).toHaveLength(1);
+  });
+
+  it('rejects clearing a mode outside the state catalog', async () => {
+    await stageMode('mode clear rlahp');
+
+    await expect(
+      dispatchCliCommand(
+        { kind: 'mode-clear', mode: 'rlahp', invocation: 'mode clear rlahp' },
+        cwd,
+        userConfigDir,
+        runner,
+      ),
+    ).rejects.toThrow(UsageError);
+  });
+
   it('deactivates the session own slot for mode-clear', async () => {
     await stageMode('mode set ralph');
     await dispatchCliCommand(

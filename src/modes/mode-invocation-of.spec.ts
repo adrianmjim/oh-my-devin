@@ -53,6 +53,17 @@ describe('modeInvocationOf', () => {
     );
   });
 
+  it('cuts a redirection and its descriptor prefix as a unit', () => {
+    expect(modeInvocationOf('omd mode set plan 2>/dev/null')).toBe(
+      'mode set plan',
+    );
+    expect(modeInvocationOf('omd mode set plan 2>&1')).toBe('mode set plan');
+    expect(modeInvocationOf('omd mode set plan >out.txt')).toBe(
+      'mode set plan',
+    );
+    expect(modeInvocationOf('omd mode clear < answers')).toBe('mode clear');
+  });
+
   it('matches the invocation an omd process reads off its own argv', () => {
     const argv: readonly string[] = ['mode', 'set', 'plan'];
 

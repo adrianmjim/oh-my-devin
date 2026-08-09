@@ -19,7 +19,7 @@ export async function readSessionSeen(
     } catch {
       parsed = null;
     }
-    if (isSessionRegistryEntry(parsed)) {
+    if (isSessionRegistryEntry(parsed) && parsed.sessionId === sessionId) {
       entry = parsed;
     }
   }

@@ -44,6 +44,15 @@ describe('readSessionSeen', () => {
     expect(await readSessionSeen(projectDir, 'sess-1')).toBeNull();
   });
 
+  it('reads nothing from a record naming a different session', async () => {
+    await writeSeenFile(
+      'sess-1',
+      JSON.stringify({ sessionId: '../../marker', lastSeenAt: 0 }),
+    );
+
+    expect(await readSessionSeen(projectDir, 'sess-1')).toBeNull();
+  });
+
   it('reads back a recognized record', async () => {
     await writeSeenFile(
       'sess-1',

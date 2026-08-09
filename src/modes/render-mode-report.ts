@@ -14,9 +14,11 @@ export function renderModeReport(report: ModeReport): string {
       break;
     case 'refused':
       rendered =
-        report.holder === null
-          ? `mode refused: ${report.mode} — no live session owns this invocation`
-          : `mode refused: ${report.mode} — ${report.holder.mode} is held by session ${report.holder.sessionId}`;
+        report.mode === null
+          ? 'mode clear refused — no live session owns this invocation'
+          : report.holder === null
+            ? `mode refused: ${report.mode} — no live session owns this invocation`
+            : `mode refused: ${report.mode} — ${report.holder.mode} is held by session ${report.holder.sessionId}`;
       break;
     case 'cleared':
       rendered =

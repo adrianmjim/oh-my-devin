@@ -11,6 +11,7 @@ import { removeActivation } from './remove-activation';
 import { resolveExclusivity } from './resolve-exclusivity';
 import type { SessionId } from './session-id';
 import { upsertActivation } from './upsert-activation';
+import { withModeStateLock } from './with-mode-state-lock';
 import { writeSessionSlots } from './write-session-slots';
 
 export async function setSessionMode(
@@ -20,60 +21,62 @@ export async function setSessionMode(
   invocation: string,
   now: number,
 ): Promise<ModeReport> {
-  await pruneStaleSessions(baseDir, now, MODE_STALENESS_THRESHOLD_MS);
-  const sessionId: SessionId | null = await claimSessionIdentity(
-    baseDir,
-    invocation,
-    now,
-    MODE_STALENESS_THRESHOLD_MS,
-  );
-  let report: ModeReport = {
-    kind: 'refused',
-    mode,
-    reason: 'unattributable',
-    holder: null,
-  };
-  if (sessionId !== null) {
-    const live: readonly ModeActivation[] = await readLiveActivations(
+  return withModeStateLock(baseDir, async (): Promise<ModeReport> => {
+    await pruneStaleSessions(baseDir, now, MODE_STALENESS_THRESHOLD_MS);
+    const sessionId: SessionId | null = await claimSessionIdentity(
       baseDir,
+      invocation,
       now,
       MODE_STALENESS_THRESHOLD_MS,
     );
-    const outcome: ExclusivityOutcome = resolveExclusivity(
-      live,
-      (): boolean => true,
+    let report: ModeReport = {
+      kind: 'refused',
       mode,
-      sessionId,
-    );
-    if (outcome !== null && outcome.kind === 'refused') {
-      report = outcome;
-    } else {
-      const held: readonly ModeActivation[] = await readSessionSlots(
+      reason: 'unattributable',
+      holder: null,
+    };
+    if (sessionId !== null) {
+      const live: readonly ModeActivation[] = await readLiveActivations(
         baseDir,
-        sessionId,
+        now,
+        MODE_STALENESS_THRESHOLD_MS,
       );
-      const kept: readonly ModeActivation[] =
-        outcome === null ? held : removeActivation(held, outcome.displaced);
-      const activation: ModeActivation = {
+      const outcome: ExclusivityOutcome = resolveExclusivity(
+        live,
+        (): boolean => true,
         mode,
         sessionId,
-        activatedAt: now,
-        correlatedRunId: runId,
-      };
-      await writeSessionSlots(
-        baseDir,
-        sessionId,
-        upsertActivation(kept, activation),
       );
-      const joined: ModeReport = {
-        kind: 'joined',
-        mode,
-        alongside: kept
-          .filter((slot: ModeActivation): boolean => slot.mode !== mode)
-          .map((slot: ModeActivation): string => slot.mode),
-      };
-      report = outcome ?? joined;
+      if (outcome !== null && outcome.kind === 'refused') {
+        report = outcome;
+      } else {
+        const held: readonly ModeActivation[] = await readSessionSlots(
+          baseDir,
+          sessionId,
+        );
+        const kept: readonly ModeActivation[] =
+          outcome === null ? held : removeActivation(held, outcome.displaced);
+        const activation: ModeActivation = {
+          mode,
+          sessionId,
+          activatedAt: now,
+          correlatedRunId: runId,
+        };
+        await writeSessionSlots(
+          baseDir,
+          sessionId,
+          upsertActivation(kept, activation),
+        );
+        const joined: ModeReport = {
+          kind: 'joined',
+          mode,
+          alongside: kept
+            .filter((slot: ModeActivation): boolean => slot.mode !== mode)
+            .map((slot: ModeActivation): string => slot.mode),
+        };
+        report = outcome ?? joined;
+      }
     }
-  }
-  return report;
+    return report;
+  });
 }

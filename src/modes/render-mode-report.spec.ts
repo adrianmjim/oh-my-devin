@@ -41,6 +41,19 @@ describe('renderModeReport', () => {
     expect(rendered).toContain('sess-2');
   });
 
+  it('reports an unattributable clear without naming a mode', () => {
+    const rendered: string = renderModeReport({
+      kind: 'refused',
+      mode: null,
+      reason: 'unattributable',
+      holder: null,
+    });
+
+    expect(rendered).toBe(
+      'mode clear refused — no live session owns this invocation',
+    );
+  });
+
   it('reports an unattributable activation with its reason', () => {
     const rendered: string = renderModeReport({
       kind: 'refused',

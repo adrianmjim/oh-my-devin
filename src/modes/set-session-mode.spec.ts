@@ -195,6 +195,21 @@ describe('setSessionMode', () => {
     ]);
   });
 
+  it('admits exactly one of two concurrent exclusive activations', async () => {
+    await stage('sess-1', 'mode set ralph', 100);
+    await stage('sess-2', 'mode set team', 100);
+
+    const reports: readonly ModeReport[] = await Promise.all([
+      setSessionMode(projectDir, 'ralph', null, 'mode set ralph', 110),
+      setSessionMode(projectDir, 'team', null, 'mode set team', 110),
+    ]);
+
+    const admitted: readonly ModeReport[] = reports.filter(
+      (report: ModeReport): boolean => report.kind !== 'refused',
+    );
+    expect(admitted).toHaveLength(1);
+  });
+
   it('lets a stale holder go and admits the activation', async () => {
     await stage('sess-2', 'mode set autopilot', 100);
     await setSessionMode(
