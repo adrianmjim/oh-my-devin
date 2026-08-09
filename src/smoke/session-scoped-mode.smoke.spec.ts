@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process';
 import type { ChildProcessWithoutNullStreams } from 'node:child_process';
 import { mkdir, mkdtemp, realpath, rm } from 'node:fs/promises';
-import { dirname, join, resolve } from 'node:path';
+import { delimiter, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { BENCH_MODEL } from '../bench/bench-model';
@@ -13,6 +13,7 @@ import type { SessionListing } from '../engine/session-listing';
 import type { ModeActivation } from '../modes/mode-activation';
 import { readSessionSlots } from '../modes/read-session-slots';
 import { SMOKE_SCRATCH_DIR } from '../testing/smoke-scratch-dir';
+import { writeOmdShimBin } from '../testing/write-omd-shim-bin';
 
 const smokeEnabled: boolean = process.env['OMD_SMOKE'] === '1';
 
@@ -103,6 +104,8 @@ describe('session-scoped mode state smoke suite', () => {
   describe.runIf(smokeEnabled)('against the installed Devin CLI', () => {
     const engine: DevinHeadlessEngine = new DevinHeadlessEngine();
     let scratchDir: string;
+    let binDir: string;
+    let inheritedPath: string;
     let runner: ProcessCommandRunner;
 
     beforeAll(async () => {
@@ -110,12 +113,17 @@ describe('session-scoped mode state smoke suite', () => {
       scratchDir = await realpath(
         await mkdtemp(join(SMOKE_SCRATCH_DIR, 'omd-mode-smoke-')),
       );
+      binDir = join(scratchDir, '.omd-smoke-bin');
+      await writeOmdShimBin(binDir);
+      inheritedPath = process.env['PATH'] ?? '';
+      process.env['PATH'] = `${binDir}${delimiter}${inheritedPath}`;
       runner = new ProcessCommandRunner(scratchDir);
       const setup: CommandResult = await runOmd(scratchDir, ['setup']);
       expect(setup.exitCode, setup.stderr).toBe(0);
     }, SETUP_TIMEOUT_MS);
 
     afterAll(async () => {
+      process.env['PATH'] = inheritedPath;
       await rm(scratchDir, { recursive: true, force: true });
     });
 
