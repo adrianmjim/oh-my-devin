@@ -85,6 +85,35 @@ describe('scoreAnalyst', () => {
     expect(scoreOf(scores, 'false-positive-resistance')).toBe(1);
   });
 
+  it('covers gaps whose keywords collide across surfaces', () => {
+    const scores: readonly DimensionScore[] = score(
+      {
+        criteria: ['the rate limit is enforced'],
+        questions: ['what is the rate limit'],
+        assumptions: [],
+        risks: [],
+      },
+      {
+        role: 'analyst',
+        gaps: [
+          {
+            id: 'limit-question',
+            keywords: ['rate', 'limit'],
+            surface: 'question',
+          },
+          {
+            id: 'limit-criterion',
+            keywords: ['rate', 'limit'],
+            surface: 'criterion',
+          },
+        ],
+      },
+    );
+
+    expect(scoreOf(scores, 'detection')).toBe(1);
+    expect(scoreOf(scores, 'gap-coverage')).toBe(1);
+  });
+
   it('counts an invented question as a false positive', () => {
     const scores: readonly DimensionScore[] = score(
       {

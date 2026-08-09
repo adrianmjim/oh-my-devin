@@ -3,7 +3,6 @@ import type { AnalystSurface } from './analyst-surface';
 import type { AnalystTruthDocument } from './analyst-truth-document';
 import type { AnalystTruthItem } from './analyst-truth-item';
 import type { DimensionScore } from './dimension-score';
-import type { KeywordPair } from './keyword-pair';
 import { pairTruthItems } from './pair-truth-items';
 import type { PairingCandidate } from './pairing-candidate';
 import type { PairingResult } from './pairing-result';
@@ -48,14 +47,24 @@ export function scoreAnalyst(
     truth.gaps,
     threshold,
   );
-  const inPlace: readonly KeywordPair[] = anywhere.pairs.filter(
-    (pair: KeywordPair): boolean => {
-      const gap: AnalystTruthItem | undefined = truth.gaps.find(
-        (item: AnalystTruthItem): boolean => item.id === pair.itemId,
-      );
-      const surface: AnalystSurface | undefined = gap?.surface;
-      return surface !== undefined && pair.candidateId.startsWith(`${surface}-`);
-    },
+  const surfaces: readonly AnalystSurface[] = [
+    ...new Set<AnalystSurface>(
+      truth.gaps.map((gap: AnalystTruthItem): AnalystSurface => gap.surface),
+    ),
+  ];
+  const covered: number = surfaces.reduce(
+    (sum: number, surface: AnalystSurface): number =>
+      sum +
+      pairTruthItems(
+        entries.filter((entry: PairingCandidate): boolean =>
+          entry.id.startsWith(`${surface}-`),
+        ),
+        truth.gaps.filter(
+          (gap: AnalystTruthItem): boolean => gap.surface === surface,
+        ),
+        threshold,
+      ).pairs.length,
+    0,
   );
 
   return [
@@ -68,8 +77,7 @@ export function scoreAnalyst(
     },
     {
       dimension: 'gap-coverage',
-      score:
-        truth.gaps.length === 0 ? 1 : inPlace.length / truth.gaps.length,
+      score: truth.gaps.length === 0 ? 1 : covered / truth.gaps.length,
     },
     {
       dimension: 'false-positive-resistance',
