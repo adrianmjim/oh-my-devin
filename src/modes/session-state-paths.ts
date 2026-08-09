@@ -8,6 +8,7 @@ export class SessionStatePaths {
   public readonly slots: string;
   public readonly staged: string;
   public readonly stops: string;
+  public readonly notices: string;
 
   public constructor(baseDir: string, sessionId: SessionId) {
     this.dir = join(modeStateRoot(baseDir), sessionId);
@@ -15,5 +16,6 @@ export class SessionStatePaths {
     this.slots = join(this.dir, 'slots.json');
     this.staged = join(this.dir, 'staged.json');
     this.stops = join(this.dir, 'stops.json');
+    this.notices = join(this.dir, 'notices.json');
   }
 }

@@ -30,6 +30,7 @@ import { readRequirements } from '../handoff/read-requirements';
 import type { LayerLookup } from '../layer/layer-lookup';
 import { appendNotepadEntry } from '../memory/append-notepad-entry';
 import { clearSessionMode } from '../modes/clear-session-mode';
+import { userConfigPath } from '../guard/user-config-path';
 import { deriveAmbientContext } from '../modes/derive-ambient-context';
 import { deriveStopDecision } from '../modes/derive-stop-decision';
 import { discoverModeBaseDir } from '../modes/discover-mode-base-dir';
@@ -377,8 +378,13 @@ export async function dispatchCliCommand(
       const baseDir: string = await discoverModeBaseDir(cwd);
       let output: Record<string, unknown>;
       if (command.phase === TOOL_USE_PHASE) {
-        await handleToolUseEvent(baseDir, event, at);
-        output = {};
+        output = await handleToolUseEvent(
+          baseDir,
+          cwd,
+          userConfigPath(userConfigDir),
+          event,
+          at,
+        );
       } else {
         if (event.sessionId !== null) {
           await recordSessionSeen(baseDir, event.sessionId, at);

@@ -21,5 +21,5 @@ export function createRunRecorder(
     LIVENESS_REFRESH_MS,
     systemIntervalScheduler,
   );
-  return new JournalRunRecorder(journal, liveness);
+  return new JournalRunRecorder(journal, liveness, baseDir, runId);
 }

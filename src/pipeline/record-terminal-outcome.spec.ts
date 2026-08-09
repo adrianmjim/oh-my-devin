@@ -9,6 +9,7 @@ function observer(events: ProgressEvent[]): RunObserver {
       events.push(event);
       return Promise.resolve();
     },
+    claim: (): Promise<void> => Promise.resolve(),
     close: (): void => undefined,
   };
 }

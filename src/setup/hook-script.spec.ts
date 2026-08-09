@@ -11,6 +11,10 @@ import {
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { ALL_ENFORCEMENT_LEVELS } from '../guard/all-enforcement-levels';
+import { guardMessage } from '../guard/guard-message';
+import { LAYER_ALLOWLIST } from '../guard/layer-allowlist';
+import { renderDenyOutput } from '../guard/render-deny-output';
 import { HOOK_PHASES } from './hook-phases';
 import { HOOK_SCRIPT } from './hook-script';
 import { SESSION_START_PHASE } from './session-start-phase';
@@ -51,6 +55,25 @@ describe('HOOK_SCRIPT', () => {
     expect(HOOK_SCRIPT).not.toContain('session_id');
     expect(HOOK_SCRIPT).not.toContain('stale');
     expect(HOOK_SCRIPT).not.toContain('verification');
+  });
+
+  it('carries no guard allowlist of its own', () => {
+    for (const entry of LAYER_ALLOWLIST) {
+      expect(HOOK_SCRIPT).not.toContain(entry);
+    }
+  });
+
+  it('carries no enforcement level of its own', () => {
+    for (const level of ALL_ENFORCEMENT_LEVELS) {
+      expect(HOOK_SCRIPT).not.toContain(`'${level}'`);
+    }
+  });
+
+  it('carries no guard message text of its own', () => {
+    expect(HOOK_SCRIPT).not.toContain('omd roles list');
+    expect(HOOK_SCRIPT).not.toContain('omd-delegate');
+    expect(HOOK_SCRIPT).not.toContain('write contract');
+    expect(HOOK_SCRIPT).not.toContain(guardMessage('src/index.ts'));
   });
 
   it('answers on stdout after stdin ends', () => {
@@ -170,6 +193,15 @@ describe('HOOK_SCRIPT', () => {
       await installStubOmd('{}');
 
       expect(await runPhase(TOOL_USE_PHASE, EVENT)).toBe('{}');
+    });
+
+    it('echoes the guard decision the binary emitted', async () => {
+      const answer: string = JSON.stringify(
+        renderDenyOutput(guardMessage('src/index.ts')),
+      );
+      await installStubOmd(answer);
+
+      expect(await runPhase(TOOL_USE_PHASE, EVENT)).toBe(answer);
     });
 
     it('injects nothing on tool-use when the binary is absent', async () => {
