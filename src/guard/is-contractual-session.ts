@@ -22,7 +22,7 @@ export async function isContractualSession(
     const claim: RunClaim | null = await readRunClaim(baseDir, runId);
     if (
       claim !== null &&
-      (claimCoversDirectory(claim, cwd) ||
+      ((await claimCoversDirectory(claim, cwd)) ||
         (sessionId !== null && claim.sessionId === sessionId))
     ) {
       contractual = true;

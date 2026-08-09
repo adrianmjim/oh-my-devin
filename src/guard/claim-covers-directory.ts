@@ -1,10 +1,14 @@
-import { isAbsolute, relative, resolve, sep } from 'node:path';
+import { isAbsolute, relative, sep } from 'node:path';
 import type { RunClaim } from '../observability/run-claim';
+import { realDirectory } from './real-directory';
 
-export function claimCoversDirectory(claim: RunClaim, cwd: string): boolean {
+export async function claimCoversDirectory(
+  claim: RunClaim,
+  cwd: string,
+): Promise<boolean> {
   const within: string = relative(
-    resolve(claim.workingDirectory),
-    resolve(cwd),
+    await realDirectory(claim.workingDirectory),
+    await realDirectory(cwd),
   );
   return (
     claim.worktreeProvisioned &&
