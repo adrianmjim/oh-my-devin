@@ -15,6 +15,7 @@ const CONFIG: SessionConfig = {
   model: null,
   posture: 'artifact-write',
   workingDirectory: '/repo/a',
+  env: null,
 };
 
 const EMPTY_LISTING: CommandResult = turn('[]');
@@ -156,5 +157,42 @@ describe('HeadlessSessionAdapter', () => {
     expect(session.currentSessionId).toBeNull();
     await session.sendTurn('go');
     expect(session.currentSessionId).toBe('s1');
+  });
+
+  it('exports the configured session env on every engine invocation', async () => {
+    const stub = new DevinStub({
+      turns: [turn('x')],
+      listResponse: LISTING,
+      listResponses: [EMPTY_LISTING],
+    });
+    const session = new HeadlessSessionAdapter(
+      stub,
+      new DevinHeadlessEngine(),
+      {
+        ...CONFIG,
+        env: { OMD_RUN_ID: 'run-77' },
+      },
+    );
+
+    await session.sendTurn('go');
+
+    expect(stub.invocations.length).toBeGreaterThan(1);
+    for (const invocation of stub.invocations) {
+      expect(invocation.env).toEqual({ OMD_RUN_ID: 'run-77' });
+    }
+  });
+
+  it('leaves invocations env-free when the session declares none', async () => {
+    const stub = new DevinStub({
+      turns: [turn('x')],
+      listResponse: LISTING,
+      listResponses: [EMPTY_LISTING],
+    });
+
+    await adapter(stub).sendTurn('go');
+
+    for (const invocation of stub.invocations) {
+      expect(invocation.env).toBeUndefined();
+    }
   });
 });

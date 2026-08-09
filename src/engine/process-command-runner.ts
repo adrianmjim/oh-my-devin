@@ -20,7 +20,12 @@ export class ProcessCommandRunner implements CommandRunner {
         const child: ChildProcessWithoutNullStreams = spawn(
           invocation.command,
           [...invocation.args],
-          { cwd: this.cwd },
+          {
+            cwd: this.cwd,
+            ...(invocation.env === undefined
+              ? {}
+              : { env: { ...process.env, ...invocation.env } }),
+          },
         );
         let stdout: string = '';
         let stderr: string = '';
