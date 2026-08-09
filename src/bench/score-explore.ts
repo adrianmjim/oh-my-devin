@@ -45,6 +45,9 @@ export function scoreExplore(
     recall = recalled / truth.files.length;
   }
 
+  const claims: number = artifact.paths.length + links.length;
+  const fabricated: number = unexpected + traced.unmatchedCandidateIds.length;
+
   return [
     { dimension: 'file-recall', score: recall },
     {
@@ -56,10 +59,7 @@ export function scoreExplore(
     },
     {
       dimension: 'false-positive-resistance',
-      score:
-        artifact.paths.length === 0
-          ? 1
-          : 1 - unexpected / artifact.paths.length,
+      score: claims === 0 ? 1 : 1 - fabricated / claims,
     },
   ];
 }

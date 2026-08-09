@@ -83,6 +83,34 @@ describe('scoreExplore', () => {
     expect(scoreOf(scores, 'file-recall')).toBe(1);
   });
 
+  it('counts a fabricated relationship as a false positive', () => {
+    const scores: readonly DimensionScore[] = score(
+      {
+        paths: ['src/mode.js', 'src/engine.js'],
+        relationships: [
+          'src/engine.js src/mode.js reads the mode from',
+          'src/mode.js src/config.js loads defaults from',
+        ],
+      },
+      TRUTH,
+    );
+
+    expect(scoreOf(scores, 'relationship-coverage')).toBe(1);
+    expect(scoreOf(scores, 'false-positive-resistance')).toBe(0.75);
+  });
+
+  it('penalises fabricated relationships on a clean fixture', () => {
+    const scores: readonly DimensionScore[] = score(
+      {
+        paths: [],
+        relationships: ['src/mode.js src/engine.js boots the engine from'],
+      },
+      CLEAN,
+    );
+
+    expect(scoreOf(scores, 'false-positive-resistance')).toBe(0);
+  });
+
   it('rewards an honest empty-handed map on a clean fixture', () => {
     const scores: readonly DimensionScore[] = score(
       { paths: [], relationships: [] },
