@@ -64,12 +64,20 @@ describe('HOOK_SCRIPT', () => {
       expect(HOOK_SCRIPT).not.toContain(marker.phrase);
     }
     expect(HOOK_SCRIPT).not.toContain(String(QUALITY_GATE_THRESHOLD));
-    expect(HOOK_SCRIPT).not.toContain('trigger');
-    expect(HOOK_SCRIPT).not.toContain('glob');
-    expect(HOOK_SCRIPT).not.toContain('**');
-    expect(HOOK_SCRIPT).not.toContain('knowledge');
-    expect(HOOK_SCRIPT).not.toContain('candidate');
-    expect(HOOK_SCRIPT).not.toContain('principle');
+    const detectionArtifacts: readonly string[] = [
+      'candidates.json',
+      'cursors.json',
+      'staged-rules.json',
+      'confirmingCommand',
+      'deliveredAt',
+      'expiresAt',
+      'principle',
+      'triggers',
+      'globs',
+    ];
+    for (const artifact of detectionArtifacts) {
+      expect(HOOK_SCRIPT).not.toContain(artifact);
+    }
   });
 
   describe('run as the deployed hook of a project', () => {

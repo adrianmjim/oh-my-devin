@@ -94,12 +94,30 @@ function runHook(
         { cwd },
       );
       let stdout: string = '';
+      let stderr: string = '';
       child.stdout.on('data', (chunk: Buffer): void => {
         stdout += chunk.toString();
       });
+      child.stderr.on('data', (chunk: Buffer): void => {
+        stderr += chunk.toString();
+      });
       child.on('error', reject);
-      child.on('close', (): void => {
-        resolvePromise(JSON.parse(stdout) as HookOutput);
+      child.on('close', (code: number | null): void => {
+        if (code !== 0) {
+          reject(
+            new Error(
+              `hook ${phase} exited ${String(code)}: ${stderr || stdout}`,
+            ),
+          );
+        } else {
+          try {
+            resolvePromise(JSON.parse(stdout) as HookOutput);
+          } catch {
+            reject(
+              new Error(`hook ${phase} answered no JSON: ${stdout}${stderr}`),
+            );
+          }
+        }
       });
       child.stdin.write(JSON.stringify(event));
       child.stdin.end();
