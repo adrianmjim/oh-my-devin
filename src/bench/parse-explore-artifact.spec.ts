@@ -4,7 +4,7 @@ import type { ExploreArtifact } from './explore-artifact';
 import { parseExploreArtifact } from './parse-explore-artifact';
 
 describe('parseExploreArtifact', () => {
-  it('reads the paths and the relationships', () => {
+  it('reads the findings and the relationships', () => {
     const artifact: ExploreArtifact = parseExploreArtifact(
       {
         findings: [{ path: 'src/mode.js', relevance: 'Decides the mode' }],
@@ -19,7 +19,9 @@ describe('parseExploreArtifact', () => {
       'sample.json',
     );
 
-    expect(artifact.paths).toEqual(['src/mode.js']);
+    expect(artifact.findings).toEqual([
+      { path: 'src/mode.js', relevance: 'Decides the mode' },
+    ]);
     expect(artifact.relationships[0]).toContain('reads the mode');
   });
 
@@ -33,7 +35,7 @@ describe('parseExploreArtifact', () => {
       'sample.json',
     );
 
-    expect(artifact.paths).toEqual([]);
+    expect(artifact.findings).toEqual([]);
   });
 
   it('tolerates an omitted relationships list', () => {

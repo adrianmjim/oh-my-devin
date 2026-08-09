@@ -8,8 +8,8 @@ import { scoreExplore } from './score-explore';
 const TRUTH: ExploreTruthDocument = {
   role: 'explore',
   files: [
-    { id: 'mode', path: 'src/mode.js' },
-    { id: 'engine', path: 'src/engine.js' },
+    { id: 'mode', path: 'src/mode.js', keywords: ['mode', 'flag'] },
+    { id: 'engine', path: 'src/engine.js', keywords: ['engine', 'boot'] },
   ],
   relationships: [
     { id: 'engine-reads-mode', keywords: ['engine', 'mode'] },
@@ -37,7 +37,16 @@ describe('scoreExplore', () => {
   it('recalls the files the truth expects', () => {
     const scores: readonly DimensionScore[] = score(
       {
-        paths: ['src/mode.js', 'src/engine.js'],
+        findings: [
+          {
+            path: 'src/mode.js',
+            relevance: 'Owns the mode flag the run starts from',
+          },
+          {
+            path: 'src/engine.js',
+            relevance: 'Boots the engine with the mode it read',
+          },
+        ],
         relationships: ['src/engine.js src/mode.js reads the mode from'],
       },
       TRUTH,
@@ -50,7 +59,12 @@ describe('scoreExplore', () => {
 
   it('scores partial recall for half the files', () => {
     const scores: readonly DimensionScore[] = score(
-      { paths: ['src/mode.js'], relationships: [] },
+      {
+        findings: [
+          { path: 'src/mode.js', relevance: 'Owns the mode flag' },
+        ],
+        relationships: [],
+      },
       TRUTH,
     );
 
@@ -58,10 +72,39 @@ describe('scoreExplore', () => {
     expect(scoreOf(scores, 'relationship-coverage')).toBe(0);
   });
 
+  it('gives no recall credit to a boilerplate relevance', () => {
+    const scores: readonly DimensionScore[] = score(
+      {
+        findings: [
+          { path: 'src/mode.js', relevance: 'related file' },
+          {
+            path: 'src/engine.js',
+            relevance: 'Boots the engine with the mode it read',
+          },
+        ],
+        relationships: [],
+      },
+      TRUTH,
+    );
+
+    expect(scoreOf(scores, 'file-recall')).toBe(0.5);
+    expect(scoreOf(scores, 'false-positive-resistance')).toBe(1);
+  });
+
   it('counts a path the truth does not expect as a false positive', () => {
     const scores: readonly DimensionScore[] = score(
       {
-        paths: ['src/mode.js', 'src/engine.js', 'README.md'],
+        findings: [
+          {
+            path: 'src/mode.js',
+            relevance: 'Owns the mode flag the run starts from',
+          },
+          {
+            path: 'src/engine.js',
+            relevance: 'Boots the engine with the mode it read',
+          },
+          { path: 'README.md', relevance: 'General notes on the project' },
+        ],
         relationships: [],
       },
       TRUTH,
@@ -74,7 +117,16 @@ describe('scoreExplore', () => {
   it('recalls a file named by a longer path', () => {
     const scores: readonly DimensionScore[] = score(
       {
-        paths: ['./src/mode.js', 'src/engine.js'],
+        findings: [
+          {
+            path: './src/mode.js',
+            relevance: 'Owns the mode flag the run starts from',
+          },
+          {
+            path: 'src/engine.js',
+            relevance: 'Boots the engine with the mode it read',
+          },
+        ],
         relationships: [],
       },
       TRUTH,
@@ -86,7 +138,16 @@ describe('scoreExplore', () => {
   it('counts a fabricated relationship as a false positive', () => {
     const scores: readonly DimensionScore[] = score(
       {
-        paths: ['src/mode.js', 'src/engine.js'],
+        findings: [
+          {
+            path: 'src/mode.js',
+            relevance: 'Owns the mode flag the run starts from',
+          },
+          {
+            path: 'src/engine.js',
+            relevance: 'Boots the engine with the mode it read',
+          },
+        ],
         relationships: [
           'src/engine.js src/mode.js reads the mode from',
           'src/mode.js src/config.js loads defaults from',
@@ -102,7 +163,7 @@ describe('scoreExplore', () => {
   it('penalises fabricated relationships on a clean fixture', () => {
     const scores: readonly DimensionScore[] = score(
       {
-        paths: [],
+        findings: [],
         relationships: ['src/mode.js src/engine.js boots the engine from'],
       },
       CLEAN,
@@ -113,7 +174,7 @@ describe('scoreExplore', () => {
 
   it('rewards an honest empty-handed map on a clean fixture', () => {
     const scores: readonly DimensionScore[] = score(
-      { paths: [], relationships: [] },
+      { findings: [], relationships: [] },
       CLEAN,
     );
 
@@ -124,7 +185,10 @@ describe('scoreExplore', () => {
 
   it('penalises inventing findings on a clean fixture', () => {
     const scores: readonly DimensionScore[] = score(
-      { paths: ['src/mode.js'], relationships: [] },
+      {
+        findings: [{ path: 'src/mode.js', relevance: 'Decides the mode' }],
+        relationships: [],
+      },
       CLEAN,
     );
 
@@ -134,7 +198,9 @@ describe('scoreExplore', () => {
 
   it('scores the same inputs identically every time', () => {
     const artifact: ExploreArtifact = {
-      paths: ['src/mode.js'],
+      findings: [
+        { path: 'src/mode.js', relevance: 'Owns the mode flag' },
+      ],
       relationships: ['engine reads the mode'],
     };
 

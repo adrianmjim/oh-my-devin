@@ -1,9 +1,21 @@
 {
   "role": "explore",
   "files": [
-    { "id": "send", "path": "src/send.js" },
-    { "id": "backoff", "path": "src/backoff.js" },
-    { "id": "dead-letters", "path": "src/dead-letters.js" }
+    {
+      "id": "send",
+      "path": "src/send.js",
+      "keywords": ["retry", "attempt", "dead"]
+    },
+    {
+      "id": "backoff",
+      "path": "src/backoff.js",
+      "keywords": ["delay", "attempt", "backoff"]
+    },
+    {
+      "id": "dead-letters",
+      "path": "src/dead-letters.js",
+      "keywords": ["event", "store", "record"]
+    }
   ],
   "relationships": [
     {

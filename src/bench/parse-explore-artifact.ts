@@ -1,5 +1,6 @@
 import { BenchFixtureError } from './bench-fixture-error';
 import type { ExploreArtifact } from './explore-artifact';
+import type { ExploreFinding } from './explore-finding';
 import { requireBenchFields } from './require-bench-fields';
 import { requireBenchString } from './require-bench-string';
 
@@ -17,12 +18,19 @@ export function parseExploreArtifact(
     throw new BenchFixtureError(`"${source}#relationships" must be an array`);
   }
   return {
-    paths: findings.map((entry: unknown, index: number): string => {
-      const at: string = `${source}#findings[${index}]`;
-      const finding: Record<string, unknown> = requireBenchFields(entry, at);
-      requireBenchString(finding['relevance'], `${at}.relevance`);
-      return requireBenchString(finding['path'], `${at}.path`);
-    }),
+    findings: findings.map(
+      (entry: unknown, index: number): ExploreFinding => {
+        const at: string = `${source}#findings[${index}]`;
+        const finding: Record<string, unknown> = requireBenchFields(entry, at);
+        return {
+          path: requireBenchString(finding['path'], `${at}.path`),
+          relevance: requireBenchString(
+            finding['relevance'],
+            `${at}.relevance`,
+          ),
+        };
+      },
+    ),
     relationships: relationshipsRaw.map(
       (entry: unknown, index: number): string => {
         const at: string = `${source}#relationships[${index}]`;

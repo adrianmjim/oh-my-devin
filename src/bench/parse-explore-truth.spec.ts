@@ -5,7 +5,7 @@ import { parseExploreTruth } from './parse-explore-truth';
 
 const VALID: Record<string, unknown> = {
   role: 'explore',
-  files: [{ id: 'mode', path: 'src/mode.js' }],
+  files: [{ id: 'mode', path: 'src/mode.js', keywords: ['mode', 'flag'] }],
   relationships: [{ id: 'engine-reads-mode', keywords: ['engine', 'mode'] }],
 };
 
@@ -15,7 +15,17 @@ describe('parseExploreTruth', () => {
 
     expect(truth.role).toBe('explore');
     expect(truth.files[0]?.path).toBe('src/mode.js');
+    expect(truth.files[0]?.keywords).toEqual(['mode', 'flag']);
     expect(truth.relationships[0]?.keywords).toEqual(['engine', 'mode']);
+  });
+
+  it('rejects an expected file with no relevance keywords', () => {
+    expect(() =>
+      parseExploreTruth(
+        { ...VALID, files: [{ id: 'mode', path: 'src/mode.js' }] },
+        'truth.json',
+      ),
+    ).toThrow(BenchFixtureError);
   });
 
   it('rejects files that are not a list', () => {

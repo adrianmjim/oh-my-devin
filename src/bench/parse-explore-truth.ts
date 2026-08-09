@@ -26,6 +26,7 @@ export function parseExploreTruth(
       return {
         id: requireBenchString(item['id'], `${at}.id`),
         path: requireBenchString(item['path'], `${at}.path`),
+        keywords: requireBenchKeywords(item['keywords'], `${at}.keywords`),
       };
     }),
     relationships: relationships.map(

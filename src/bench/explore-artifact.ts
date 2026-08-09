@@ -1,4 +1,6 @@
+import type { ExploreFinding } from './explore-finding';
+
 export interface ExploreArtifact {
-  readonly paths: readonly string[];
+  readonly findings: readonly ExploreFinding[];
   readonly relationships: readonly string[];
 }
