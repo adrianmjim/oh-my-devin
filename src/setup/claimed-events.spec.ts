@@ -14,4 +14,11 @@ describe('CLAIMED_EVENTS', () => {
   it('claims each event once', () => {
     expect(new Set(CLAIMED_EVENTS).size).toBe(CLAIMED_EVENTS.length);
   });
+
+  it('claims no further event for detection', () => {
+    expect(CLAIMED_EVENTS).not.toContain('PostToolUse');
+    expect(CLAIMED_EVENTS).not.toContain('PermissionRequest');
+    expect(CLAIMED_EVENTS).not.toContain('PreCompaction');
+    expect(CLAIMED_EVENTS).not.toContain('PostCompaction');
+  });
 });

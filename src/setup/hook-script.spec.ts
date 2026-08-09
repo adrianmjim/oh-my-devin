@@ -11,6 +11,8 @@ import {
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { DIRECTIVE_MARKERS } from '../detection/directive-markers';
+import { QUALITY_GATE_THRESHOLD } from '../detection/quality-gate-threshold';
 import { HOOK_PHASES } from './hook-phases';
 import { HOOK_SCRIPT } from './hook-script';
 import { SESSION_START_PHASE } from './session-start-phase';
@@ -55,6 +57,19 @@ describe('HOOK_SCRIPT', () => {
 
   it('answers on stdout after stdin ends', () => {
     expect(HOOK_SCRIPT).toContain('process.stdout.write(JSON.stringify(');
+  });
+
+  it('carries no detection pattern, gate, trigger, or glob of its own', () => {
+    for (const marker of DIRECTIVE_MARKERS) {
+      expect(HOOK_SCRIPT).not.toContain(marker.phrase);
+    }
+    expect(HOOK_SCRIPT).not.toContain(String(QUALITY_GATE_THRESHOLD));
+    expect(HOOK_SCRIPT).not.toContain('trigger');
+    expect(HOOK_SCRIPT).not.toContain('glob');
+    expect(HOOK_SCRIPT).not.toContain('**');
+    expect(HOOK_SCRIPT).not.toContain('knowledge');
+    expect(HOOK_SCRIPT).not.toContain('candidate');
+    expect(HOOK_SCRIPT).not.toContain('principle');
   });
 
   describe('run as the deployed hook of a project', () => {
@@ -141,6 +156,30 @@ describe('HOOK_SCRIPT', () => {
       await runPhase(USER_PROMPT_PHASE, EVENT);
 
       expect(await readFile(stdinPath, 'utf8')).toBe(EVENT);
+    });
+
+    it('pipes the prompt detection reads through untouched', async () => {
+      await installStubOmd('{}');
+      const submitted: string = JSON.stringify({
+        session_id: 'sess-1',
+        prompt: 'always run the migration check before deploying',
+      });
+
+      await runPhase(USER_PROMPT_PHASE, submitted);
+
+      expect(await readFile(stdinPath, 'utf8')).toBe(submitted);
+    });
+
+    it('pipes the touched path rule staging reads through untouched', async () => {
+      await installStubOmd('{}');
+      const touched: string = JSON.stringify({
+        session_id: 'sess-1',
+        tool_input: { file_path: 'src/api/export-endpoint.ts' },
+      });
+
+      await runPhase(TOOL_USE_PHASE, touched);
+
+      expect(await readFile(stdinPath, 'utf8')).toBe(touched);
     });
 
     it('echoes the injection the binary composed', async () => {
