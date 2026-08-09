@@ -9,12 +9,40 @@ describe('RULES_BODY', () => {
     expect(body).toContain('Contractual lane');
   });
 
-  it('lists the three installed roles', () => {
+  it('lists every installed role', () => {
     const body: string = RULES_BODY.join('\n');
 
-    expect(body).toContain('`architect`');
-    expect(body).toContain('`executor`');
-    expect(body).toContain('`reviewer`');
+    for (const role of [
+      'architect',
+      'executor',
+      'reviewer',
+      'critic',
+      'analyst',
+      'security-reviewer',
+      'debugger',
+      'explore',
+      'document-specialist',
+    ]) {
+      expect(body, role).toContain(`\`${role}\``);
+    }
+  });
+
+  it('names the artifact each installed role writes', () => {
+    const body: string = RULES_BODY.join('\n');
+
+    for (const artifact of [
+      'architecture.json',
+      'evidence.json',
+      'review.json',
+      'critique.json',
+      'requirements-analysis.json',
+      'security-review.json',
+      'diagnosis.json',
+      'findings-map.json',
+      'research-brief.json',
+    ]) {
+      expect(body, artifact).toContain(`\`${artifact}\``);
+    }
   });
 
   it('names the delegation skill', () => {

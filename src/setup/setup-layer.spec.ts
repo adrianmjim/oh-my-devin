@@ -133,7 +133,7 @@ describe('setupLayer', () => {
     expect(executor?.outputSchema).toBe('.devin/schemas/evidence.schema.json');
   });
 
-  it('installs the full canonical trio discoverable without errors', async () => {
+  it('installs the full nine-role catalog discoverable without errors', async () => {
     await setupLayer(dir);
 
     const discovery: RoleDiscovery = await discoverRoles({
@@ -143,7 +143,99 @@ describe('setupLayer', () => {
     expect(discovery.errors).toEqual([]);
     expect(
       [...discovery.roles.map((r: RoleDefinition): string => r.name)].sort(),
-    ).toEqual(['architect', 'executor', 'reviewer']);
+    ).toEqual([
+      'analyst',
+      'architect',
+      'critic',
+      'debugger',
+      'document-specialist',
+      'executor',
+      'explore',
+      'reviewer',
+      'security-reviewer',
+    ]);
+  });
+
+  it('installs a directory and a schema for every evaluator role', async () => {
+    await setupLayer(dir);
+
+    const schemas: Record<string, string> = {
+      critic: 'critique.schema.json',
+      analyst: 'requirements-analysis.schema.json',
+      'security-reviewer': 'security-review.schema.json',
+      debugger: 'diagnosis.schema.json',
+      explore: 'findings-map.schema.json',
+      'document-specialist': 'research-brief.schema.json',
+    };
+    for (const [role, schema] of Object.entries(schemas)) {
+      expect(
+        await exists(join(dir, '.devin', 'agents', role, 'AGENT.md')),
+        role,
+      ).toBe(true);
+      expect(await exists(join(dir, '.devin', 'schemas', schema)), schema).toBe(
+        true,
+      );
+    }
+  });
+
+  it('declares every evaluator artifact-scoped with its own schema', async () => {
+    await setupLayer(dir);
+
+    const discovery: RoleDiscovery = await discoverRoles({
+      projectDir: dir,
+      userConfigDir: null,
+    });
+    const artifacts: Record<string, string> = {
+      critic: 'critique.json',
+      analyst: 'requirements-analysis.json',
+      'security-reviewer': 'security-review.json',
+      debugger: 'diagnosis.json',
+      explore: 'findings-map.json',
+      'document-specialist': 'research-brief.json',
+    };
+    for (const [name, artifact] of Object.entries(artifacts)) {
+      const role: RoleDefinition | undefined = discovery.roles.find(
+        (r: RoleDefinition): boolean => r.name === name,
+      );
+      expect(role, name).toBeDefined();
+      expect(role?.outputArtifact, name).toBe(artifact);
+      expect(role?.outputSchema, name).toBe(
+        `.devin/schemas/${artifact.replace('.json', '.schema.json')}`,
+      );
+      expect(role?.writeScope, name).toBe('artifact');
+    }
+  });
+
+  it('leaves every installed target byte-identical on a second install', async () => {
+    await setupLayer(dir);
+    const paths: readonly string[] = [
+      join('.devin', 'agents', 'critic', 'AGENT.md'),
+      join('.devin', 'agents', 'analyst', 'AGENT.md'),
+      join('.devin', 'agents', 'security-reviewer', 'AGENT.md'),
+      join('.devin', 'agents', 'debugger', 'AGENT.md'),
+      join('.devin', 'agents', 'explore', 'AGENT.md'),
+      join('.devin', 'agents', 'document-specialist', 'AGENT.md'),
+      join('.devin', 'schemas', 'critique.schema.json'),
+      join('.devin', 'schemas', 'requirements-analysis.schema.json'),
+      join('.devin', 'schemas', 'security-review.schema.json'),
+      join('.devin', 'schemas', 'diagnosis.schema.json'),
+      join('.devin', 'schemas', 'findings-map.schema.json'),
+      join('.devin', 'schemas', 'research-brief.schema.json'),
+    ];
+    const before: readonly string[] = await Promise.all(
+      paths.map((path: string): Promise<string> =>
+        readFile(join(dir, path), 'utf8'),
+      ),
+    );
+
+    await setupLayer(dir);
+
+    const after: readonly string[] = await Promise.all(
+      paths.map((path: string): Promise<string> =>
+        readFile(join(dir, path), 'utf8'),
+      ),
+    );
+    expect(after).toEqual(before);
   });
 
   it('names the canonical trio as the installed roles in the rules file', async () => {
@@ -326,36 +418,13 @@ describe('setupLayer', () => {
     });
   });
 
-  it('injects the active mode context at session start and on each user prompt', async () => {
+  it('leaves a leftover mode.json inert at prompt submission', async () => {
     await setupLayer(dir);
     await writeModeState(dir, {
       mode: 'plan',
-      context:
-        'plan mode active: produce a plan artifact before implementation begins.',
+      context: 'plan mode active.',
       verification: ['plan artifact produced'],
     });
-
-    const expected: unknown = {
-      hookSpecificOutput: {
-        additionalContext:
-          'Active mode: plan. plan mode active: produce a plan artifact before implementation begins.',
-      },
-    };
-    expect(
-      runHook(dir, 'session-start', { hook_event_name: 'SessionStart' }),
-    ).toEqual(expected);
-    expect(
-      runHook(dir, 'user-prompt', {
-        hook_event_name: 'UserPromptSubmit',
-        prompt: 'continue',
-      }),
-    ).toEqual(expected);
-  });
-
-  it('falls back to the layer banner when the mode state file is unparseable', async () => {
-    await setupLayer(dir);
-    await mkdir(join(dir, '.omd'), { recursive: true });
-    await writeFile(join(dir, '.omd', 'mode.json'), 'not json', 'utf8');
 
     const output: unknown = runHook(dir, 'user-prompt', {
       hook_event_name: 'UserPromptSubmit',
@@ -368,14 +437,13 @@ describe('setupLayer', () => {
     });
   });
 
-  it('falls back to default behavior when the mode state has the wrong shape', async () => {
+  it('leaves a leftover mode.json inert at session start and stop', async () => {
     await setupLayer(dir);
-    await mkdir(join(dir, '.omd'), { recursive: true });
-    await writeFile(
-      join(dir, '.omd', 'mode.json'),
-      JSON.stringify({ mode: 42, context: [], verification: 'unmet' }),
-      'utf8',
-    );
+    await writeModeState(dir, {
+      mode: 'plan',
+      context: 'plan mode active.',
+      verification: ['plan artifact produced'],
+    });
 
     expect(
       runHook(dir, 'session-start', { hook_event_name: 'SessionStart' }),
@@ -415,7 +483,7 @@ describe('setupLayer', () => {
     });
   });
 
-  it('blocks the stop in both decision shapes naming every unmet criterion', async () => {
+  it('leaves a leftover mode.json from holding the stop', async () => {
     await setupLayer(dir);
     await writeModeState(dir, {
       mode: 'team',
@@ -426,13 +494,21 @@ describe('setupLayer', () => {
       ],
     });
 
-    const reason: string =
-      'Unmet verification criteria for mode team: pipeline terminal outcome reported; review verdict recorded';
-    const output: unknown = runHook(dir, 'stop', { hook_event_name: 'Stop' });
-    expect(output).toEqual({
-      decision: 'block',
-      reason,
-      hookSpecificOutput: { decision: 'block', reason },
+    expect(runHook(dir, 'stop', { hook_event_name: 'Stop' })).toEqual({
+      decision: 'approve',
+      hookSpecificOutput: { decision: 'approve' },
     });
+  });
+
+  it('answers the tool-use phase the layer now claims without injecting context', async () => {
+    await setupLayer(dir);
+
+    expect(
+      runHook(dir, 'tool-use', {
+        hook_event_name: 'PreToolUse',
+        session_id: 'sess-1',
+        tool_input: { command: 'omd mode set plan' },
+      }),
+    ).toEqual({});
   });
 });

@@ -1,0 +1,24 @@
+{
+  "role": "critic",
+  "expectedVerdict": "request_changes",
+  "findings": [
+    {
+      "id": "cutover-before-backfill",
+      "keywords": ["backfill", "before", "cutover", "readers", "null"],
+      "severity": "critical",
+      "category": "present_flaw"
+    },
+    {
+      "id": "no-rollback",
+      "keywords": ["rollback", "undo", "revert", "fails"],
+      "severity": "high",
+      "category": "missing_element"
+    },
+    {
+      "id": "no-dual-write",
+      "keywords": ["writes", "dual", "both", "columns", "diverge"],
+      "severity": "high",
+      "category": "missing_element"
+    }
+  ]
+}

@@ -283,6 +283,7 @@ describe('resolveLayerTargets', () => {
       `node "${script}" session-start`,
       `node "${script}" user-prompt`,
       `node "${script}" stop`,
+      `node "${script}" tool-use`,
     ]);
     expect(registry(project)?.legacyCommands).toEqual([]);
   });

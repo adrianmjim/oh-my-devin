@@ -42,12 +42,12 @@ describe('mergeHookRegistry', () => {
   });
 
   it('keeps an unclaimed event of an existing registry document', () => {
-    const existing: string = JSON.stringify({ PreToolUse: [FOREIGN_ENTRY] });
+    const existing: string = JSON.stringify({ PostToolUse: [FOREIGN_ENTRY] });
 
     const outcome: MergeOutcome = mergeHookRegistry(documentMerge(existing));
 
     expect(outcome.kind).toBe('updated');
-    expect(written(outcome)['PreToolUse']).toEqual([FOREIGN_ENTRY]);
+    expect(written(outcome)['PostToolUse']).toEqual([FOREIGN_ENTRY]);
     expect(written(outcome)['Stop']).toEqual([...OMD_MAP.Stop]);
   });
 
@@ -79,6 +79,7 @@ describe('mergeHookRegistry', () => {
       SessionStart: [...OMD_MAP.SessionStart],
       UserPromptSubmit: [...OMD_MAP.UserPromptSubmit],
       Stop: [...OMD_MAP.Stop],
+      PreToolUse: [...OMD_MAP.PreToolUse],
     });
   });
 
@@ -103,6 +104,7 @@ describe('mergeHookRegistry', () => {
       SessionStart: [...map.SessionStart],
       UserPromptSubmit: [...map.UserPromptSubmit],
       Stop: [...map.Stop],
+      PreToolUse: [...map.PreToolUse],
     });
   });
 

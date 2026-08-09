@@ -4,4 +4,5 @@ export const CLAIMED_EVENTS: readonly (keyof HooksEventMap)[] = [
   'SessionStart',
   'UserPromptSubmit',
   'Stop',
+  'PreToolUse',
 ];

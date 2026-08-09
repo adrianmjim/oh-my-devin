@@ -1,0 +1,8 @@
+{
+  "role": "security-reviewer",
+  "hypothesis": "The security-reviewer prompt reports only what untrusted input can reach and rates it by exploitability and blast radius: an injection and a committed secret are found, located, and rated high or critical, while code with no reachable weakness draws an approval rather than a catalogue of theoretical categories.",
+  "fixtures": [
+    { "id": "token-endpoint", "clean": false },
+    { "id": "safe-slug", "clean": true }
+  ]
+}

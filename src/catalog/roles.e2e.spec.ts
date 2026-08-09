@@ -11,9 +11,21 @@ interface RoleListEntry {
 interface RoleContract {
   readonly name: string;
   readonly output: string;
+  readonly schema: string;
+  readonly writeScope: string;
 }
 
-const SEED_ROLES: readonly string[] = ['architect', 'executor', 'reviewer'];
+const SEED_ROLES: readonly string[] = [
+  'architect',
+  'executor',
+  'reviewer',
+  'critic',
+  'analyst',
+  'security-reviewer',
+  'debugger',
+  'explore',
+  'document-specialist',
+];
 
 describe('omd roles (e2e)', () => {
   let project: E2eProject | null = null;
@@ -43,6 +55,39 @@ describe('omd roles (e2e)', () => {
     );
     expect(reviewer).toBeDefined();
     expect(reviewer?.output).toBe('review.json');
+    expect(
+      [...entries.map((entry: RoleListEntry): string => entry.name)].sort(),
+    ).toEqual([...SEED_ROLES].sort());
+  });
+
+  it('shows each evaluator contract with its artifact, schema, and scope', async () => {
+    project = await createE2eProject();
+    await project.run(['setup']);
+
+    const artifacts: Record<string, string> = {
+      critic: 'critique.json',
+      analyst: 'requirements-analysis.json',
+      'security-reviewer': 'security-review.json',
+      debugger: 'diagnosis.json',
+      explore: 'findings-map.json',
+      'document-specialist': 'research-brief.json',
+    };
+    for (const [name, artifact] of Object.entries(artifacts)) {
+      const json: CommandResult = await project.run([
+        'roles',
+        'show',
+        name,
+        '--json',
+      ]);
+      expect(json.exitCode, name).toBe(0);
+      const contract: RoleContract = JSON.parse(json.stdout) as RoleContract;
+      expect(contract.name, name).toBe(name);
+      expect(contract.output, name).toBe(artifact);
+      expect(contract.schema, name).toBe(
+        `.devin/schemas/${artifact.replace('.json', '.schema.json')}`,
+      );
+      expect(contract.writeScope, name).toBe('artifact');
+    }
   });
 
   it('lists the installed roles with distinct summaries free of region markers', async () => {

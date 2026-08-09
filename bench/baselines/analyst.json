@@ -1,0 +1,56 @@
+{
+  "role": "analyst",
+  "promptDigest": "7abfe3e3db1901902712fc2c8dcd93ebff71cbffcfcad0dc9812e51df997a794",
+  "omdVersion": "0.0.0",
+  "engineVersion": "3000.3.27",
+  "model": "gpt-5.6-luna",
+  "fixtures": [
+    {
+      "fixtureId": "export-endpoint",
+      "role": "analyst",
+      "model": "gpt-5.6-luna",
+      "dimensions": [
+        {
+          "dimension": "detection",
+          "score": 0.6666666666666666
+        },
+        {
+          "dimension": "gap-coverage",
+          "score": 0.3333333333333333
+        },
+        {
+          "dimension": "false-positive-resistance",
+          "score": 0.2857142857142857
+        }
+      ],
+      "composite": 0.45238095238095233,
+      "artifactValid": true,
+      "failureTier": null,
+      "validationErrors": []
+    },
+    {
+      "fixtureId": "rename-flag",
+      "role": "analyst",
+      "model": "gpt-5.6-luna",
+      "dimensions": [
+        {
+          "dimension": "detection",
+          "score": 1
+        },
+        {
+          "dimension": "gap-coverage",
+          "score": 1
+        },
+        {
+          "dimension": "false-positive-resistance",
+          "score": 0
+        }
+      ],
+      "composite": 0.7,
+      "artifactValid": true,
+      "failureTier": null,
+      "validationErrors": []
+    }
+  ],
+  "composite": 0.5761904761904761
+}

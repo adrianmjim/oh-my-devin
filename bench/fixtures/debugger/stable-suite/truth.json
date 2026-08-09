@@ -1,0 +1,16 @@
+{
+  "role": "debugger",
+  "causes": [],
+  "evidence": [
+    {
+      "id": "repeated-runs",
+      "keywords": ["test.js", "run"]
+    }
+  ],
+  "eliminations": [
+    {
+      "id": "failure-eliminated",
+      "keywords": ["fail"]
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "verdict": "request_changes",
+  "findings": [
+    {
+      "severity": "critical",
+      "category": "A03:2021 Injection",
+      "location": "src/reports.js:9",
+      "remediation": "Bind the account as a query parameter instead of interpolating it into the SQL string, so a caller-supplied account cannot alter the statement."
+    },
+    {
+      "severity": "critical",
+      "category": "A03:2021 Injection — OS command",
+      "location": "src/reports.js:15",
+      "remediation": "Replace execSync with execFile passing the name as an argv element, so a shell metacharacter in the name is not interpreted as a command."
+    },
+    {
+      "severity": "high",
+      "category": "A07:2021 Identification and Authentication Failures",
+      "location": "src/reports.js:4",
+      "remediation": "Remove the hardcoded API key literal and read the secret from the environment or a secret store at call time."
+    },
+    {
+      "severity": "high",
+      "category": "A01:2021 Broken Access Control",
+      "location": "src/reports.js:17",
+      "remediation": "Stop returning the admin key in the response body; the handler leaks it to every caller of the report endpoint."
+    }
+  ]
+}
