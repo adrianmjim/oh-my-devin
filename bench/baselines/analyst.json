@@ -12,18 +12,18 @@
       "dimensions": [
         {
           "dimension": "detection",
-          "score": 1
+          "score": 0.5
         },
         {
           "dimension": "gap-coverage",
-          "score": 0.6
+          "score": 0
         },
         {
           "dimension": "false-positive-resistance",
-          "score": 0.36363636363636365
+          "score": 0.125
         }
       ],
-      "composite": 0.6890909090909092,
+      "composite": 0.23750000000000002,
       "artifactValid": true,
       "failureTier": null,
       "validationErrors": []
@@ -52,5 +52,5 @@
       "validationErrors": []
     }
   ],
-  "composite": 0.6945454545454546
+  "composite": 0.46875
 }

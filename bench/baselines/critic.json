@@ -16,18 +16,18 @@
         },
         {
           "dimension": "missing-element-coverage",
-          "score": 0
+          "score": 0.5
         },
         {
           "dimension": "false-positive-resistance",
-          "score": 0.25
+          "score": 0.33333333333333337
         },
         {
           "dimension": "verdict-accuracy",
           "score": 1
         }
       ],
-      "composite": 0.5125,
+      "composite": 0.6833333333333333,
       "artifactValid": true,
       "failureTier": null,
       "validationErrors": []
@@ -60,5 +60,5 @@
       "validationErrors": []
     }
   ],
-  "composite": 0.5562499999999999
+  "composite": 0.6416666666666666
 }

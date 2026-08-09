@@ -20,10 +20,10 @@
         },
         {
           "dimension": "false-positive-resistance",
-          "score": 1
+          "score": 0.7142857142857143
         }
       ],
-      "composite": 1,
+      "composite": 0.9285714285714286,
       "artifactValid": true,
       "failureTier": null,
       "validationErrors": []
@@ -35,7 +35,7 @@
       "dimensions": [
         {
           "dimension": "file-recall",
-          "score": 1
+          "score": 0
         },
         {
           "dimension": "relationship-coverage",
@@ -43,14 +43,14 @@
         },
         {
           "dimension": "false-positive-resistance",
-          "score": 1
+          "score": 0
         }
       ],
-      "composite": 1,
+      "composite": 0.3,
       "artifactValid": true,
       "failureTier": null,
       "validationErrors": []
     }
   ],
-  "composite": 1
+  "composite": 0.6142857142857143
 }
