@@ -12,6 +12,7 @@ import { parseReviewerTruth } from './parse-reviewer-truth';
 import { parseSecurityReviewerTruth } from './parse-security-reviewer-truth';
 import { requireBenchFields } from './require-bench-fields';
 import type { TruthDocument } from './truth-document';
+import type { TruthParser } from './truth-parser';
 
 export function validateTruthDocument(
   value: unknown,
@@ -24,26 +25,16 @@ export function validateTruthDocument(
       `"${source}#role" must name an installed catalog role`,
     );
   }
-  const named: BenchRole = role;
-  let document: TruthDocument;
-  if (named === 'reviewer') {
-    document = parseReviewerTruth(fields, source);
-  } else if (named === 'architect') {
-    document = parseArchitectTruth(fields, source);
-  } else if (named === 'executor') {
-    document = parseExecutorTruth(fields, source);
-  } else if (named === 'critic') {
-    document = parseCriticTruth(fields, source);
-  } else if (named === 'analyst') {
-    document = parseAnalystTruth(fields, source);
-  } else if (named === 'security-reviewer') {
-    document = parseSecurityReviewerTruth(fields, source);
-  } else if (named === 'debugger') {
-    document = parseDebuggerTruth(fields, source);
-  } else if (named === 'explore') {
-    document = parseExploreTruth(fields, source);
-  } else {
-    document = parseDocumentSpecialistTruth(fields, source);
-  }
-  return document;
+  const parsers: Record<BenchRole, TruthParser> = {
+    reviewer: parseReviewerTruth,
+    architect: parseArchitectTruth,
+    executor: parseExecutorTruth,
+    critic: parseCriticTruth,
+    analyst: parseAnalystTruth,
+    'security-reviewer': parseSecurityReviewerTruth,
+    debugger: parseDebuggerTruth,
+    explore: parseExploreTruth,
+    'document-specialist': parseDocumentSpecialistTruth,
+  };
+  return parsers[role](fields, source);
 }
