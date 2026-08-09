@@ -57,4 +57,32 @@ describe('readSessionSlots', () => {
       },
     ]);
   });
+
+  it('drops slots naming a different session', async () => {
+    await writeSlotsFile(
+      JSON.stringify([
+        {
+          mode: 'plan',
+          sessionId: 'sess-1',
+          activatedAt: 10,
+          correlatedRunId: null,
+        },
+        {
+          mode: 'autopilot',
+          sessionId: 'sess-2',
+          activatedAt: 20,
+          correlatedRunId: null,
+        },
+      ]),
+    );
+
+    expect(await readSessionSlots(projectDir, 'sess-1')).toEqual([
+      {
+        mode: 'plan',
+        sessionId: 'sess-1',
+        activatedAt: 10,
+        correlatedRunId: null,
+      },
+    ]);
+  });
 });

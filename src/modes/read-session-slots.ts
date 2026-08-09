@@ -20,7 +20,11 @@ export async function readSessionSlots(
       parsed = null;
     }
     if (Array.isArray(parsed)) {
-      activations = parsed.filter(isModeActivation);
+      activations = parsed
+        .filter(isModeActivation)
+        .filter(
+          (entry: ModeActivation): boolean => entry.sessionId === sessionId,
+        );
     }
   }
   return activations;
