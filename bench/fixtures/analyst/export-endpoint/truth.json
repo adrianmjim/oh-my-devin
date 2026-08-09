@@ -25,6 +25,11 @@
       "id": "auth-mechanism",
       "keywords": ["authentication", "identify", "owner"],
       "surface": "assumption"
+    },
+    {
+      "id": "reporting-scope-creep",
+      "keywords": ["filter", "reporting", "separate"],
+      "surface": "risk"
     }
   ]
 }

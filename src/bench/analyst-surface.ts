@@ -1,1 +1,1 @@
-export type AnalystSurface = 'criterion' | 'question' | 'assumption';
+export type AnalystSurface = 'criterion' | 'question' | 'assumption' | 'risk';

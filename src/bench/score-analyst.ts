@@ -32,6 +32,12 @@ export function scoreAnalyst(
         text,
       }),
     ),
+    ...artifact.risks.map(
+      (text: string, index: number): PairingCandidate => ({
+        id: `risk-${index}`,
+        text,
+      }),
+    ),
   ];
 
   const padding: readonly PairingCandidate[] = entries.filter(

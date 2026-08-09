@@ -8,6 +8,7 @@ const VALID: Record<string, unknown> = {
   gaps: [
     { id: 'size-zero', keywords: ['size', 'zero'], surface: 'criterion' },
     { id: 'who-owns', keywords: ['owner', 'retention'], surface: 'question' },
+    { id: 'creep', keywords: ['filter', 'reporting'], surface: 'risk' },
   ],
 };
 
@@ -16,8 +17,9 @@ describe('parseAnalystTruth', () => {
     const truth: AnalystTruthDocument = parseAnalystTruth(VALID, 'truth.json');
 
     expect(truth.role).toBe('analyst');
-    expect(truth.gaps).toHaveLength(2);
+    expect(truth.gaps).toHaveLength(3);
     expect(truth.gaps[0]?.surface).toBe('criterion');
+    expect(truth.gaps[2]?.surface).toBe('risk');
   });
 
   it('rejects gaps that are not a list', () => {
@@ -35,7 +37,7 @@ describe('parseAnalystTruth', () => {
     ).toThrow(BenchFixtureError);
   });
 
-  it('rejects a surface outside the three lists', () => {
+  it('rejects a surface outside the four lists', () => {
     expect(() =>
       parseAnalystTruth(
         {

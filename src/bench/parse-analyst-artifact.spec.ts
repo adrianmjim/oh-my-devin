@@ -28,6 +28,7 @@ describe('parseAnalystArtifact', () => {
     expect(artifact.criteria[0]).toContain('RangeError');
     expect(artifact.questions[0]).toContain('retention');
     expect(artifact.assumptions[0]).toContain('doctor');
+    expect(artifact.risks[0]).toContain('Cap the fixture');
   });
 
   it('reads an analysis whose optional lists are empty', () => {
@@ -43,6 +44,7 @@ describe('parseAnalystArtifact', () => {
 
     expect(artifact.questions).toEqual([]);
     expect(artifact.assumptions).toEqual([]);
+    expect(artifact.risks).toEqual([]);
   });
 
   it('rejects a missing acceptance-criteria list', () => {

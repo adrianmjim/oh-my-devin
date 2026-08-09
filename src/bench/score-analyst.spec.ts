@@ -17,6 +17,18 @@ const EMPTY: AnalystArtifact = {
   criteria: [],
   questions: [],
   assumptions: [],
+  risks: [],
+};
+
+const RISK_TRUTH: AnalystTruthDocument = {
+  role: 'analyst',
+  gaps: [
+    {
+      id: 'reporting-creep',
+      keywords: ['filter', 'reporting'],
+      surface: 'risk',
+    },
+  ],
 };
 
 function scoreOf(scores: readonly DimensionScore[], dimension: string): number {
@@ -63,6 +75,7 @@ describe('scoreAnalyst', () => {
         criteria: ['a size of zero is refused'],
         questions: ['which owner sets retention for these rows'],
         assumptions: [],
+        risks: [],
       },
       TRUTH,
     );
@@ -78,8 +91,53 @@ describe('scoreAnalyst', () => {
         criteria: ['a size of zero is refused'],
         questions: ['should the logo be blue'],
         assumptions: [],
+        risks: [],
       },
       TRUTH,
+    );
+
+    expect(scoreOf(scores, 'false-positive-resistance')).toBe(0);
+  });
+
+  it('credits a scope risk surfaced in the risks list', () => {
+    const scores: readonly DimensionScore[] = score(
+      {
+        ...EMPTY,
+        risks: [
+          'The export grows into reporting once callers ask for filters Record filter requests as separate scope',
+        ],
+      },
+      RISK_TRUTH,
+    );
+
+    expect(scoreOf(scores, 'detection')).toBe(1);
+    expect(scoreOf(scores, 'gap-coverage')).toBe(1);
+    expect(scoreOf(scores, 'false-positive-resistance')).toBe(1);
+  });
+
+  it('credits detection but not coverage for a risk in the wrong list', () => {
+    const scores: readonly DimensionScore[] = score(
+      {
+        ...EMPTY,
+        questions: [
+          'will the export grow into reporting once callers ask for filters',
+        ],
+      },
+      RISK_TRUTH,
+    );
+
+    expect(scoreOf(scores, 'detection')).toBe(1);
+    expect(scoreOf(scores, 'gap-coverage')).toBe(0);
+  });
+
+  it('counts an invented risk as a false positive', () => {
+    const scores: readonly DimensionScore[] = score(
+      {
+        ...EMPTY,
+        criteria: ['the command exits zero'],
+        risks: ['the deadline may slip'],
+      },
+      { role: 'analyst', gaps: [] },
     );
 
     expect(scoreOf(scores, 'false-positive-resistance')).toBe(0);
@@ -91,6 +149,7 @@ describe('scoreAnalyst', () => {
         criteria: ['the command exits zero', 'the report names the model'],
         questions: [],
         assumptions: [],
+        risks: [],
       },
       { role: 'analyst', gaps: [] },
     );
@@ -100,7 +159,12 @@ describe('scoreAnalyst', () => {
 
   it('gives a clean fixture full marks when it invents nothing', () => {
     const scores: readonly DimensionScore[] = score(
-      { criteria: ['the command exits zero'], questions: [], assumptions: [] },
+      {
+        criteria: ['the command exits zero'],
+        questions: [],
+        assumptions: [],
+        risks: [],
+      },
       { role: 'analyst', gaps: [] },
     );
 
@@ -121,6 +185,7 @@ describe('scoreAnalyst', () => {
       criteria: ['a size of zero is refused'],
       questions: ['which owner sets retention'],
       assumptions: [],
+      risks: [],
     };
 
     expect(score(artifact, TRUTH)).toEqual(score(artifact, TRUTH));

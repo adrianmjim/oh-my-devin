@@ -31,5 +31,6 @@ export function parseAnalystArtifact(
     criteria: listOf('acceptanceCriteria', ['check', 'passesWhen']),
     questions: listOf('openQuestions', ['question', 'whyItMatters']),
     assumptions: listOf('assumptions', ['assumption', 'validationMethod']),
+    risks: listOf('scopeRisks', ['risk', 'prevention']),
   };
 }

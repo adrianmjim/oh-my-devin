@@ -22,7 +22,7 @@ export function parseAnalystTruth(
       const surface: unknown = item['surface'];
       if (!isAnalystSurface(surface)) {
         throw new BenchFixtureError(
-          `"${at}.surface" must be "criterion", "question" or "assumption"`,
+          `"${at}.surface" must be "criterion", "question", "assumption" or "risk"`,
         );
       }
       return {
