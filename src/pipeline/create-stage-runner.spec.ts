@@ -87,6 +87,7 @@ function makeDeps(
     clock: (): number => 0,
     userConfigDir,
     memoryBaseDir: '/project',
+    claimRun: (): Promise<void> => Promise.resolve(),
   };
 }
 
@@ -380,5 +381,50 @@ describe('createStageRunner', () => {
       projectDir: '/wt/architect',
       userConfigDir: '/home/u/.config/devin',
     });
+  });
+
+  it('hands the stage role the claim writer', async () => {
+    const worktrees = new FakeWorktrees();
+    let handed: boolean = false;
+    const deps: StageRunnerDeps = makeDeps(
+      (options: RunRoleOptions): Promise<RunReport> => {
+        handed = options.claimRun !== undefined;
+        return Promise.resolve(
+          reportFor('architect', { artifactPath: 'architecture.json' }),
+        );
+      },
+      worktrees,
+    );
+
+    await createStageRunner(deps)({
+      stage: 'architect',
+      reworkFrom: null,
+      inputs: inputs([['requirements', 'build X']]),
+    });
+
+    expect(handed).toBe(true);
+  });
+
+  it('marks the stage run as worktree-provisioned for the claim', async () => {
+    const worktrees = new FakeWorktrees();
+    const seen: RunRoleOptions[] = [];
+    const deps: StageRunnerDeps = makeDeps(
+      (options: RunRoleOptions): Promise<RunReport> => {
+        seen.push(options);
+        return Promise.resolve(
+          reportFor('architect', { artifactPath: 'architecture.json' }),
+        );
+      },
+      worktrees,
+    );
+
+    await createStageRunner(deps)({
+      stage: 'architect',
+      reworkFrom: null,
+      inputs: inputs([['requirements', 'build X']]),
+    });
+
+    expect(seen[0]?.provisionedWorktree).toBe(true);
+    expect(seen[0]?.workingDirectory).toBe('/wt/architect');
   });
 });

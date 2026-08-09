@@ -45,10 +45,10 @@ describe('isContractualSession', () => {
     ).toBe(true);
   });
 
-  it('exempts a session the run has claimed by identity', async () => {
-    await claimRun('run-in-project', {
-      workingDirectory: baseDir,
-      worktreeProvisioned: false,
+  it('exempts a worktree run by the identity it reported', async () => {
+    await claimRun('run-worktree', {
+      workingDirectory: worktree,
+      worktreeProvisioned: true,
       sessionId: 'role-session',
     });
 
@@ -57,11 +57,26 @@ describe('isContractualSession', () => {
     ).toBe(true);
   });
 
-  it('governs the interactive session sharing a run directory', async () => {
+  it('exempts nobody by the identity of a run sharing the project directory', async () => {
     await claimRun('run-in-project', {
       workingDirectory: baseDir,
       worktreeProvisioned: false,
       sessionId: 'role-session',
+    });
+
+    expect(
+      await isContractualSession(baseDir, 'role-session', baseDir, NOW),
+    ).toBe(false);
+    expect(
+      await isContractualSession(baseDir, 'human-session', baseDir, NOW),
+    ).toBe(false);
+  });
+
+  it('governs the interactive session while a project-directory run is live', async () => {
+    await claimRun('run-in-project', {
+      workingDirectory: baseDir,
+      worktreeProvisioned: false,
+      sessionId: null,
     });
 
     expect(

@@ -148,10 +148,6 @@ class RecordingObserver implements RunObserver {
     await Promise.resolve();
   }
 
-  public async claim(): Promise<void> {
-    await Promise.resolve();
-  }
-
   public close(): void {
     this.closeCount += 1;
   }
@@ -175,10 +171,6 @@ class TerminalThrowingObserver implements RunObserver {
     if (event.type === 'terminalOutcome') {
       throw new Error('journal write failed');
     }
-    await Promise.resolve();
-  }
-
-  public async claim(): Promise<void> {
     await Promise.resolve();
   }
 

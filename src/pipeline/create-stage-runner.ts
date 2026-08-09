@@ -28,6 +28,7 @@ export function createStageRunner(deps: StageRunnerDeps): StageRunner {
         clock: deps.clock,
         lookup,
         provisionedWorktree: true,
+        claimRun: deps.claimRun,
         composeMemory: createMemoryComposer(deps.memoryBaseDir, deps.clock()),
       });
 

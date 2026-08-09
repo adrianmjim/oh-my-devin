@@ -53,11 +53,13 @@ import { renderRunListingJson } from '../observability/render-run-listing-json';
 import { renderSnapshotHuman } from '../observability/render-snapshot-human';
 import { renderSnapshotJson } from '../observability/render-snapshot-json';
 import { resolveRunId } from '../observability/resolve-run-id';
+import type { RunClaim } from '../observability/run-claim';
 import type { RunId } from '../observability/run-id';
 import { RUN_ID_ENV } from '../observability/run-id-env';
 import type { RunListing } from '../observability/run-listing';
 import type { RunObserver } from '../observability/run-observer';
 import { RunRecordPaths } from '../observability/run-record-paths';
+import { writeRunClaim } from '../observability/write-run-claim';
 import type { RunSnapshot } from '../observability/run-snapshot';
 import { exitCodeForOutcome } from '../outcome/exit-code-for-outcome';
 import { renderHumanReport } from '../outcome/render-human-report';
@@ -150,6 +152,8 @@ export async function dispatchCliCommand(
         clock,
         runId,
         recorder,
+        claimRun: (claim: RunClaim): Promise<void> =>
+          writeRunClaim(cwd, runId, claim),
         resolved,
       });
       writeStreamLine(
@@ -270,7 +274,7 @@ export async function dispatchCliCommand(
         const options: RunPipelineOptions = {
           team,
           task: command.task,
-          runStage: createProcessStageRunner(cwd, userConfigDir),
+          runStage: createProcessStageRunner(cwd, userConfigDir, runId),
           gate: createStdinGate(reader, (text: string): void => {
             writeStreamLine(process.stdout, text);
           }),
@@ -309,6 +313,7 @@ export async function dispatchCliCommand(
         userConfigDir,
       );
       const seatWorktrees: WorktreePool = new WorktreePool(seatDeps.worktrees);
+      const councilRunId: RunId = generateRunId();
       const reader: Interface = createInterface({ input: process.stdin });
       try {
         const outcome: DeliberationOutcome = await runDeliberation({
@@ -322,7 +327,11 @@ export async function dispatchCliCommand(
           clusterArguments: createEchoClusterer(runner),
           summarizeEvidence: createEvidenceSummarizer(runner),
           launch: createPipelineLauncher({
-            runStage: createProcessStageRunner(cwd, userConfigDir),
+            runStage: createProcessStageRunner(
+              cwd,
+              userConfigDir,
+              councilRunId,
+            ),
             gate: createStdinGate(reader, (text: string): void => {
               writeStreamLine(process.stdout, text);
             }),

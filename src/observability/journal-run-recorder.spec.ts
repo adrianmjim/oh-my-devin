@@ -46,8 +46,6 @@ class StampCheckingWriter extends JournalWriter {
   }
 }
 
-const RUN_ID: string = 'run-1';
-
 const LAUNCHED: ProgressEvent = {
   type: 'runLaunched',
   timestamp: 1000,
@@ -74,7 +72,7 @@ describe('JournalRunRecorder', () => {
 
   beforeEach(async (): Promise<void> => {
     base = await mkdtemp(join(tmpdir(), 'omd-recorder-'));
-    paths = new RunRecordPaths(base, RUN_ID);
+    paths = new RunRecordPaths(base, 'run-1');
     probe = { scheduleCount: 0, cancelCount: 0 };
     const refresher = new LivenessRefresher(
       paths.liveness,
@@ -85,8 +83,6 @@ describe('JournalRunRecorder', () => {
     recorder = new JournalRunRecorder(
       new JournalWriter(paths.journal),
       refresher,
-      base,
-      RUN_ID,
     );
   });
 
@@ -121,7 +117,7 @@ describe('JournalRunRecorder', () => {
       15000,
       probeScheduler(probe),
     );
-    const ordered = new JournalRunRecorder(writer, refresher, base, RUN_ID);
+    const ordered = new JournalRunRecorder(writer, refresher);
 
     await ordered.append(LAUNCHED);
 

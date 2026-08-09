@@ -265,4 +265,44 @@ describe('omd write guard (e2e)', () => {
     expect(answer).toEqual({});
     expect(await auditDecisions()).toEqual([]);
   });
+
+  it('governs the interactive session while a project-directory run is live', async () => {
+    const active: E2eProject = await start('strict');
+    await writeRunClaim(active.dir, 'run-1', {
+      workingDirectory: active.dir,
+      worktreeProvisioned: false,
+      sessionId: null,
+    });
+    await writeFile(
+      join(new RunRecordPaths(active.dir, 'run-1').dir, 'touch'),
+      '',
+      'utf8',
+    );
+
+    const answer: HookOutput = await write('src/index.ts');
+
+    expect(answer.hookSpecificOutput?.permissionDecision).toBe('deny');
+    expect(await auditDecisions()).toEqual(['blocked']);
+  });
+
+  it('exempts no session by a claim that names no worktree', async () => {
+    const active: E2eProject = await start('strict');
+    await writeRunClaim(active.dir, 'run-1', {
+      workingDirectory: active.dir,
+      worktreeProvisioned: false,
+      sessionId: SESSION,
+    });
+    await writeFile(
+      join(new RunRecordPaths(active.dir, 'run-1').dir, 'touch'),
+      '',
+      'utf8',
+    );
+
+    const answer: HookOutput = await write('src/index.ts', SESSION);
+
+    expect(
+      answer.hookSpecificOutput?.permissionDecision,
+      'a directory-shared run must never exempt by identity',
+    ).toBe('deny');
+  });
 });

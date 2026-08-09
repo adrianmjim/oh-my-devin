@@ -88,16 +88,10 @@ class ClockAdvancingRunner implements CommandRunner {
 
 class RecordingObserver implements RunObserver {
   public readonly events: ProgressEvent[] = [];
-  public readonly claims: RunClaim[] = [];
   public closeCount = 0;
 
   public async append(event: ProgressEvent): Promise<void> {
     this.events.push(event);
-    await Promise.resolve();
-  }
-
-  public async claim(claim: RunClaim): Promise<void> {
-    this.claims.push(claim);
     await Promise.resolve();
   }
 
@@ -117,10 +111,6 @@ class TerminalThrowingObserver implements RunObserver {
     if (event.type === 'terminalOutcome') {
       throw new Error('journal write failed');
     }
-    await Promise.resolve();
-  }
-
-  public async claim(): Promise<void> {
     await Promise.resolve();
   }
 
@@ -725,6 +715,7 @@ describe('runRole', () => {
 
 describe('runRole run claim', () => {
   let claimDir: string;
+  let claims: RunClaim[];
 
   async function scaffoldClaim(): Promise<void> {
     const roleDir: string = join(claimDir, '.devin', 'agents', 'reviewer');
@@ -747,10 +738,7 @@ describe('runRole run claim', () => {
     );
   }
 
-  function runClaimRole(
-    recorder: RunObserver,
-    provisionedWorktree: boolean,
-  ): Promise<RunReport> {
+  function runClaimRole(provisionedWorktree: boolean): Promise<RunReport> {
     return runRole({
       roleName: 'reviewer',
       task: 'assess the diff',
@@ -763,13 +751,17 @@ describe('runRole run claim', () => {
       ),
       clock: (): number => 0,
       runId: 'run-claimed',
-      recorder,
+      claimRun: (claim: RunClaim): Promise<void> => {
+        claims.push(claim);
+        return Promise.resolve();
+      },
       provisionedWorktree,
     });
   }
 
   beforeEach(async () => {
     claimDir = await mkdtemp(join(tmpdir(), 'omd-run-claim-'));
+    claims = [];
   });
 
   afterEach(async () => {
@@ -778,35 +770,34 @@ describe('runRole run claim', () => {
 
   it('claims the working directory before the session exists', async () => {
     await scaffoldClaim();
-    const recorder = new RecordingObserver();
-    await runClaimRole(recorder, true);
+    await runClaimRole(true);
 
-    expect(recorder.claims[0]).toEqual({
+    expect(claims[0]).toEqual({
       workingDirectory: claimDir,
       worktreeProvisioned: true,
       sessionId: null,
     });
   });
 
-  it('claims the session identity once the engine reports it', async () => {
+  it('claims the session identity of a run that owns its worktree', async () => {
     await scaffoldClaim();
-    const recorder = new RecordingObserver();
-    await runClaimRole(recorder, true);
+    await runClaimRole(true);
 
-    expect(recorder.claims.at(-1)).toEqual({
+    expect(claims.at(-1)).toEqual({
       workingDirectory: claimDir,
       worktreeProvisioned: true,
       sessionId: 's1',
     });
   });
 
-  it('claims no worktree for a run sharing the project directory', async () => {
+  it('never claims a session id for a run sharing the project directory', async () => {
     await scaffoldClaim();
-    const recorder = new RecordingObserver();
-    await runClaimRole(recorder, false);
+    await runClaimRole(false);
 
-    for (const claim of recorder.claims) {
+    expect(claims.length).toBeGreaterThan(0);
+    for (const claim of claims) {
       expect(claim.worktreeProvisioned).toBe(false);
+      expect(claim.sessionId).toBeNull();
     }
   });
 });

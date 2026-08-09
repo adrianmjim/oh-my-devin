@@ -22,6 +22,7 @@ export async function isContractualSession(
     const claim: RunClaim | null = await readRunClaim(baseDir, runId);
     if (
       claim !== null &&
+      claim.worktreeProvisioned &&
       ((await claimCoversDirectory(claim, cwd)) ||
         (sessionId !== null && claim.sessionId === sessionId))
     ) {
