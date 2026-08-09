@@ -50,6 +50,18 @@ describe('protectedPathsIntact', () => {
     ).resolves.toBe(false);
   });
 
+  it('fails when bytes differ although their decoded text collides', async () => {
+    await writeFile(join(originalDir, 'test/parse.test.js'), Buffer.from([0xff]));
+    await mkdir(dirname(join(treeDir, 'test/parse.test.js')), {
+      recursive: true,
+    });
+    await writeFile(join(treeDir, 'test/parse.test.js'), Buffer.from([0xfe]));
+
+    await expect(
+      protectedPathsIntact(originalDir, treeDir, ['test/parse.test.js']),
+    ).resolves.toBe(false);
+  });
+
   it('fails when a protected file is missing from the post-run tree', async () => {
     await expect(
       protectedPathsIntact(originalDir, treeDir, ['test/parse.test.js']),

@@ -17,7 +17,8 @@ export async function finalizeRoleBench(
     options.mode,
   );
   const requested: boolean =
-    options.mode === 'real' && options.env[BENCH_SAVE_ENV] === '1';
+    options.mode === 'real' &&
+    (options.env[BENCH_SAVE_ENV] ?? '').trim() === '1';
   if (requested) {
     await saveBaseline({
       score: options.score,
