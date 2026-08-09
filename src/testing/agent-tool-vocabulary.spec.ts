@@ -10,7 +10,13 @@ describe('AGENT_TOOL_VOCABULARY', () => {
 
   it('covers the tools a role body must not reach for when ungranted', () => {
     expect(AGENT_TOOL_VOCABULARY).toEqual(
-      expect.arrayContaining(['bash', 'shell', 'browser', 'search']),
+      expect.arrayContaining([
+        'bash',
+        'shell',
+        'browser',
+        'search',
+        'webfetch',
+      ]),
     );
   });
 

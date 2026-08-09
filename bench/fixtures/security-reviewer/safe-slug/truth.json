@@ -1,0 +1,5 @@
+{
+  "role": "security-reviewer",
+  "expectedVerdict": "approve",
+  "vulnerabilities": []
+}

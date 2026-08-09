@@ -8,4 +8,5 @@ export const AGENT_TOOL_VOCABULARY: readonly string[] = [
   'shell',
   'browser',
   'search',
+  'webfetch',
 ];

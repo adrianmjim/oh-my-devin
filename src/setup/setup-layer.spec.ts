@@ -133,7 +133,7 @@ describe('setupLayer', () => {
     expect(executor?.outputSchema).toBe('.devin/schemas/evidence.schema.json');
   });
 
-  it('installs the full canonical trio discoverable without errors', async () => {
+  it('installs the full nine-role catalog discoverable without errors', async () => {
     await setupLayer(dir);
 
     const discovery: RoleDiscovery = await discoverRoles({
@@ -143,7 +143,99 @@ describe('setupLayer', () => {
     expect(discovery.errors).toEqual([]);
     expect(
       [...discovery.roles.map((r: RoleDefinition): string => r.name)].sort(),
-    ).toEqual(['architect', 'executor', 'reviewer']);
+    ).toEqual([
+      'analyst',
+      'architect',
+      'critic',
+      'debugger',
+      'document-specialist',
+      'executor',
+      'explore',
+      'reviewer',
+      'security-reviewer',
+    ]);
+  });
+
+  it('installs a directory and a schema for every evaluator role', async () => {
+    await setupLayer(dir);
+
+    const schemas: Record<string, string> = {
+      critic: 'critique.schema.json',
+      analyst: 'requirements-analysis.schema.json',
+      'security-reviewer': 'security-review.schema.json',
+      debugger: 'diagnosis.schema.json',
+      explore: 'findings-map.schema.json',
+      'document-specialist': 'research-brief.schema.json',
+    };
+    for (const [role, schema] of Object.entries(schemas)) {
+      expect(
+        await exists(join(dir, '.devin', 'agents', role, 'AGENT.md')),
+        role,
+      ).toBe(true);
+      expect(await exists(join(dir, '.devin', 'schemas', schema)), schema).toBe(
+        true,
+      );
+    }
+  });
+
+  it('declares every evaluator artifact-scoped with its own schema', async () => {
+    await setupLayer(dir);
+
+    const discovery: RoleDiscovery = await discoverRoles({
+      projectDir: dir,
+      userConfigDir: null,
+    });
+    const artifacts: Record<string, string> = {
+      critic: 'critique.json',
+      analyst: 'requirements-analysis.json',
+      'security-reviewer': 'security-review.json',
+      debugger: 'diagnosis.json',
+      explore: 'findings-map.json',
+      'document-specialist': 'research-brief.json',
+    };
+    for (const [name, artifact] of Object.entries(artifacts)) {
+      const role: RoleDefinition | undefined = discovery.roles.find(
+        (r: RoleDefinition): boolean => r.name === name,
+      );
+      expect(role, name).toBeDefined();
+      expect(role?.outputArtifact, name).toBe(artifact);
+      expect(role?.outputSchema, name).toBe(
+        `.devin/schemas/${artifact.replace('.json', '.schema.json')}`,
+      );
+      expect(role?.writeScope, name).toBe('artifact');
+    }
+  });
+
+  it('leaves every installed target byte-identical on a second install', async () => {
+    await setupLayer(dir);
+    const paths: readonly string[] = [
+      join('.devin', 'agents', 'critic', 'AGENT.md'),
+      join('.devin', 'agents', 'analyst', 'AGENT.md'),
+      join('.devin', 'agents', 'security-reviewer', 'AGENT.md'),
+      join('.devin', 'agents', 'debugger', 'AGENT.md'),
+      join('.devin', 'agents', 'explore', 'AGENT.md'),
+      join('.devin', 'agents', 'document-specialist', 'AGENT.md'),
+      join('.devin', 'schemas', 'critique.schema.json'),
+      join('.devin', 'schemas', 'requirements-analysis.schema.json'),
+      join('.devin', 'schemas', 'security-review.schema.json'),
+      join('.devin', 'schemas', 'diagnosis.schema.json'),
+      join('.devin', 'schemas', 'findings-map.schema.json'),
+      join('.devin', 'schemas', 'research-brief.schema.json'),
+    ];
+    const before: readonly string[] = await Promise.all(
+      paths.map((path: string): Promise<string> =>
+        readFile(join(dir, path), 'utf8'),
+      ),
+    );
+
+    await setupLayer(dir);
+
+    const after: readonly string[] = await Promise.all(
+      paths.map((path: string): Promise<string> =>
+        readFile(join(dir, path), 'utf8'),
+      ),
+    );
+    expect(after).toEqual(before);
   });
 
   it('names the canonical trio as the installed roles in the rules file', async () => {

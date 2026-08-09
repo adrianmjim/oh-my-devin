@@ -1,0 +1,14 @@
+{
+  "answers": [
+    {
+      "question": "How many times is a transient delivery failure retried?",
+      "answer": "At most five times — the fifth failed attempt is the last, and the sender does not retry a sixth time.",
+      "source": "docs/retries.md"
+    },
+    {
+      "question": "What happens to an event whose retry attempts are exhausted?",
+      "answer": "It is written to the dead-letter table together with the last response status; nothing is discarded silently.",
+      "source": "docs/retries.md"
+    }
+  ]
+}
