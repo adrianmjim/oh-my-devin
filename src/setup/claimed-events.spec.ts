@@ -2,11 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { CLAIMED_EVENTS } from './claimed-events';
 
 describe('CLAIMED_EVENTS', () => {
-  it('claims the three session events the layer hooks', () => {
+  it('claims the session events the layer hooks', () => {
     expect(CLAIMED_EVENTS).toEqual([
       'SessionStart',
       'UserPromptSubmit',
       'Stop',
+      'PreToolUse',
     ]);
   });
 

@@ -1,0 +1,1 @@
+export const MODE_STALENESS_THRESHOLD_MS: number = 1800000;

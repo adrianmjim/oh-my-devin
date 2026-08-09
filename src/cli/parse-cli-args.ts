@@ -4,6 +4,7 @@ import type { CliCommand } from './cli-command';
 import { isFlag } from './is-flag';
 import { parseCouncilRun } from './parse-council-run';
 import { parseMemory } from './parse-memory';
+import { parseHook } from './parse-hook';
 import { parseMode } from './parse-mode';
 import { parsePluginBuild } from './parse-plugin-build';
 import { parseSetupLevel } from './parse-setup-level';
@@ -100,6 +101,8 @@ export function parseCliArgs(argv: readonly string[]): CliCommand {
       return parseMode(rest);
     case 'memory':
       return parseMemory(rest);
+    case 'hook':
+      return parseHook(rest);
     default:
       throw new UsageError(`unknown command "${command}"`);
   }

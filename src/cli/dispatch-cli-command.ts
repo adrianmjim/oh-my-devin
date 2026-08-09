@@ -29,7 +29,18 @@ import { ProcessCommandRunner } from '../engine/process-command-runner';
 import { readRequirements } from '../handoff/read-requirements';
 import type { LayerLookup } from '../layer/layer-lookup';
 import { appendNotepadEntry } from '../memory/append-notepad-entry';
-import { ModeStateStore } from '../modes/mode-state-store';
+import { clearSessionMode } from '../modes/clear-session-mode';
+import { deriveAmbientContext } from '../modes/derive-ambient-context';
+import { deriveStopDecision } from '../modes/derive-stop-decision';
+import { discoverModeBaseDir } from '../modes/discover-mode-base-dir';
+import { handleToolUseEvent } from '../modes/handle-tool-use-event';
+import type { HookEvent } from '../modes/hook-event';
+import type { ModeReport } from '../modes/mode-report';
+import { parseHookEvent } from '../modes/parse-hook-event';
+import { recordSessionSeen } from '../modes/record-session-seen';
+import { renderModeReport } from '../modes/render-mode-report';
+import { renderStopOutput } from '../modes/render-stop-output';
+import { setSessionMode } from '../modes/set-session-mode';
 import { resolveModeState } from '../modes/resolve-mode-state';
 import { createRunRecorder } from '../observability/create-run-recorder';
 import { deriveRunListing } from '../observability/derive-run-listing';
@@ -71,6 +82,8 @@ import type { ElicitedSetupOptions } from '../setup/elicited-setup-options';
 import type { ModeState } from '../setup/mode-state';
 import { renderSetupResult } from '../setup/render-setup-result';
 import { setupLayer } from '../setup/setup-layer';
+import { STOP_PHASE } from '../setup/stop-phase';
+import { TOOL_USE_PHASE } from '../setup/tool-use-phase';
 import type { SetupResult } from '../setup/setup-result';
 import type { TeamDefinition } from '../team/team-definition';
 import { loadTeamDefinition } from '../team/load-team-definition';
@@ -80,6 +93,7 @@ import { CLI_USAGE } from './cli-usage';
 import { deliberationId } from './deliberation-id';
 import { isInteractiveSession } from './is-interactive-session';
 import { readProposalFile } from './read-proposal-file';
+import { readStdinText } from './read-stdin-text';
 import { reportLaunchIdentity } from './report-launch-identity';
 import { reportVersion } from './report-version';
 import { resolveRole } from './resolve-role';
@@ -333,13 +347,58 @@ export async function dispatchCliCommand(
     }
     case 'mode-set': {
       const state: ModeState = resolveModeState(command.mode);
-      await new ModeStateStore(cwd).set(state);
-      writeStreamLine(process.stdout, `mode set: ${state.mode}`);
-      return 0;
+      const report: ModeReport = await setSessionMode(
+        await discoverModeBaseDir(cwd),
+        state.mode,
+        command.runId,
+        command.invocation,
+        Date.now(),
+      );
+      writeStreamLine(process.stdout, renderModeReport(report));
+      return report.kind === 'refused' ? 1 : 0;
     }
     case 'mode-clear': {
-      await new ModeStateStore(cwd).clear();
-      writeStreamLine(process.stdout, 'mode cleared');
+      const target: string | null =
+        command.mode === null ? null : resolveModeState(command.mode).mode;
+      const report: ModeReport = await clearSessionMode(
+        await discoverModeBaseDir(cwd),
+        target,
+        command.invocation,
+        Date.now(),
+      );
+      writeStreamLine(process.stdout, renderModeReport(report));
+      return report.kind === 'refused' ? 1 : 0;
+    }
+    case 'hook': {
+      const event: HookEvent = parseHookEvent(
+        await readStdinText(process.stdin),
+      );
+      const at: number = Date.now();
+      const baseDir: string = await discoverModeBaseDir(cwd);
+      let output: Record<string, unknown>;
+      if (command.phase === TOOL_USE_PHASE) {
+        await handleToolUseEvent(baseDir, event, at);
+        output = {};
+      } else {
+        if (event.sessionId !== null) {
+          await recordSessionSeen(baseDir, event.sessionId, at);
+        }
+        output =
+          command.phase === STOP_PHASE
+            ? renderStopOutput(
+                await deriveStopDecision(baseDir, event.sessionId, at),
+              )
+            : {
+                hookSpecificOutput: {
+                  additionalContext: await deriveAmbientContext(
+                    baseDir,
+                    event.sessionId,
+                    at,
+                  ),
+                },
+              };
+      }
+      writeStreamLine(process.stdout, JSON.stringify(output));
       return 0;
     }
     case 'memory-remember': {

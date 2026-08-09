@@ -10,6 +10,7 @@ describe('ownedCommandsOf', () => {
     expect([...ownedCommandsOf(hooksMap, [])].sort()).toEqual([
       'node run.mjs session-start',
       'node run.mjs stop',
+      'node run.mjs tool-use',
       'node run.mjs user-prompt',
     ]);
   });
