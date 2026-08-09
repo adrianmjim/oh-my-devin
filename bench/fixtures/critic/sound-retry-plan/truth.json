@@ -1,0 +1,5 @@
+{
+  "role": "critic",
+  "expectedVerdict": "approve",
+  "findings": []
+}

@@ -1,0 +1,17 @@
+{
+  "evidence": [
+    {
+      "source": "node test.js",
+      "observation": "AssertionError on the resume case: expected undefined to strictly equal 'abc123'; the two non-resume assertions passed first."
+    },
+    {
+      "source": "read src/session.js",
+      "observation": "The resume branch reads options.resumeId, while test.js passes the identifier as options.id, so the read yields undefined."
+    }
+  ],
+  "rootCause": {
+    "location": "src/session.js:2",
+    "explanation": "On the resume path openSession reads options.resumeId, a property no caller sets — the identifier arrives as options.id — so id becomes undefined and the label interpolates 'session-undefined'.",
+    "fixDirection": "Read the identifier from the property callers actually pass, or accept both spellings, so the resume branch resolves the same field the non-resume branch does."
+  }
+}

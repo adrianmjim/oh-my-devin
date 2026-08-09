@@ -1,0 +1,35 @@
+{
+  "role": "analyst",
+  "gaps": [
+    {
+      "id": "empty-account",
+      "keywords": ["empty", "no records", "header"],
+      "surface": "criterion"
+    },
+    {
+      "id": "non-owner-refused",
+      "keywords": ["owner", "refused", "another account"],
+      "surface": "criterion"
+    },
+    {
+      "id": "large-export-timeout",
+      "keywords": ["synchronous", "timeout", "large"],
+      "surface": "question"
+    },
+    {
+      "id": "which-records",
+      "keywords": ["which records", "columns", "included"],
+      "surface": "question"
+    },
+    {
+      "id": "auth-mechanism",
+      "keywords": ["authentication", "identify", "owner"],
+      "surface": "assumption"
+    },
+    {
+      "id": "reporting-scope-creep",
+      "keywords": ["filter", "reporting", "separate"],
+      "surface": "risk"
+    }
+  ]
+}

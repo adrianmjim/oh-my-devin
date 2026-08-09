@@ -1,0 +1,5 @@
+{
+  "name": "no-telemetry-fixture",
+  "private": true,
+  "type": "module"
+}

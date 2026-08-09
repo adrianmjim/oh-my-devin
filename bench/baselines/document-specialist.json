@@ -1,0 +1,56 @@
+{
+  "role": "document-specialist",
+  "promptDigest": "b0e89d3b1153c317ca9620fcb4fb639146621a162340957d56e4fc72d53408dc",
+  "omdVersion": "0.0.0",
+  "engineVersion": "3000.3.27",
+  "model": "gpt-5.6-luna",
+  "fixtures": [
+    {
+      "fixtureId": "retry-policy",
+      "role": "document-specialist",
+      "model": "gpt-5.6-luna",
+      "dimensions": [
+        {
+          "dimension": "detection",
+          "score": 1
+        },
+        {
+          "dimension": "source-attribution-accuracy",
+          "score": 1
+        },
+        {
+          "dimension": "false-positive-resistance",
+          "score": 1
+        }
+      ],
+      "composite": 1,
+      "artifactValid": true,
+      "failureTier": null,
+      "validationErrors": []
+    },
+    {
+      "fixtureId": "unanswered-quota",
+      "role": "document-specialist",
+      "model": "gpt-5.6-luna",
+      "dimensions": [
+        {
+          "dimension": "detection",
+          "score": 0
+        },
+        {
+          "dimension": "source-attribution-accuracy",
+          "score": 1
+        },
+        {
+          "dimension": "false-positive-resistance",
+          "score": 0
+        }
+      ],
+      "composite": 0.35,
+      "artifactValid": true,
+      "failureTier": null,
+      "validationErrors": []
+    }
+  ],
+  "composite": 0.675
+}

@@ -8,4 +8,9 @@ export type BenchDimension =
   | 'criteria-satisfaction'
   | 'verification-outcome'
   | 'test-integrity'
-  | 'evidence-accuracy';
+  | 'evidence-accuracy'
+  | 'missing-element-coverage'
+  | 'root-cause-localization'
+  | 'file-recall'
+  | 'relationship-coverage'
+  | 'source-attribution-accuracy';

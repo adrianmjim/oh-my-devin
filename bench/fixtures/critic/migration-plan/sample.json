@@ -1,0 +1,26 @@
+{
+  "verdict": "request_changes",
+  "findings": [
+    {
+      "severity": "critical",
+      "category": "present_flaw",
+      "location": "PLAN.md — Step 2, before Step 3",
+      "summary": "Readers are cut over to `email_address` before the backfill runs, so every existing row reads as null for the whole of step 3.",
+      "fix": "Run the backfill before the reader cutover, and cut readers over only once the backfill reports zero remaining rows."
+    },
+    {
+      "severity": "high",
+      "category": "missing_element",
+      "absentElement": "rollback procedure",
+      "summary": "No step says how to undo the change if a step fails midway, which the goal requires.",
+      "fix": "Add a rollback step per phase: revert the reader deploy, and keep `email` until the backfill has been verified."
+    },
+    {
+      "severity": "high",
+      "category": "missing_element",
+      "absentElement": "dual-write window",
+      "summary": "Nothing keeps writes going to both columns during the change, so rows written between the backfill and the cutover diverge.",
+      "fix": "Add a dual-write step before the backfill so both columns stay in step until `email` is dropped."
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "role": "debugger",
+  "promptDigest": "086c504ab10db701b9a2ce1e8eaa88e378173864936e38940a17112dd70dbf86",
+  "omdVersion": "0.0.0",
+  "engineVersion": "3000.3.27",
+  "model": "gpt-5.6-luna",
+  "fixtures": [
+    {
+      "fixtureId": "resume-id",
+      "role": "debugger",
+      "model": "gpt-5.6-luna",
+      "dimensions": [
+        {
+          "dimension": "root-cause-localization",
+          "score": 1
+        },
+        {
+          "dimension": "detection",
+          "score": 1
+        },
+        {
+          "dimension": "false-positive-resistance",
+          "score": 1
+        }
+      ],
+      "composite": 1,
+      "artifactValid": true,
+      "failureTier": null,
+      "validationErrors": []
+    },
+    {
+      "fixtureId": "stable-suite",
+      "role": "debugger",
+      "model": "gpt-5.6-luna",
+      "dimensions": [
+        {
+          "dimension": "root-cause-localization",
+          "score": 1
+        },
+        {
+          "dimension": "detection",
+          "score": 1
+        },
+        {
+          "dimension": "false-positive-resistance",
+          "score": 1
+        }
+      ],
+      "composite": 1,
+      "artifactValid": true,
+      "failureTier": null,
+      "validationErrors": []
+    }
+  ],
+  "composite": 1
+}

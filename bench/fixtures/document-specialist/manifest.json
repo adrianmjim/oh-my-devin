@@ -1,0 +1,8 @@
+{
+  "role": "document-specialist",
+  "hypothesis": "The document-specialist prompt makes every answer traceable to the page it was read from and makes an unanswerable question a reportable outcome: answers present in the corpus are returned against the file that carries them, and a question the corpus never addresses draws a not-found statement naming what was consulted rather than a plausible invention.",
+  "fixtures": [
+    { "id": "retry-policy", "clean": false },
+    { "id": "unanswered-quota", "clean": true }
+  ]
+}

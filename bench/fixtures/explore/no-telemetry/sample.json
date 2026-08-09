@@ -1,0 +1,12 @@
+{
+  "findings": [],
+  "relationships": [],
+  "nothingFound": {
+    "searched": [
+      "every file under src/ read in full: only normalizeSlug and total are defined",
+      "grep for telemetry, analytics, track, metric, and report across the tree",
+      "grep for fetch, http, https, and any network client — none present",
+      "the package manifest for a telemetry or analytics dependency — none declared"
+    ]
+  }
+}

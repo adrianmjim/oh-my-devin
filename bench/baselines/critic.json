@@ -1,0 +1,64 @@
+{
+  "role": "critic",
+  "promptDigest": "ca4b6097171847f43876525e309815161a18d7808bcd7a0cb438dca243b797f6",
+  "omdVersion": "0.0.0",
+  "engineVersion": "3000.3.27",
+  "model": "gpt-5.6-luna",
+  "fixtures": [
+    {
+      "fixtureId": "migration-plan",
+      "role": "critic",
+      "model": "gpt-5.6-luna",
+      "dimensions": [
+        {
+          "dimension": "detection",
+          "score": 1
+        },
+        {
+          "dimension": "missing-element-coverage",
+          "score": 0.5
+        },
+        {
+          "dimension": "false-positive-resistance",
+          "score": 0.33333333333333337
+        },
+        {
+          "dimension": "verdict-accuracy",
+          "score": 1
+        }
+      ],
+      "composite": 0.6833333333333333,
+      "artifactValid": true,
+      "failureTier": null,
+      "validationErrors": []
+    },
+    {
+      "fixtureId": "sound-retry-plan",
+      "role": "critic",
+      "model": "gpt-5.6-luna",
+      "dimensions": [
+        {
+          "dimension": "detection",
+          "score": 1
+        },
+        {
+          "dimension": "missing-element-coverage",
+          "score": 1
+        },
+        {
+          "dimension": "false-positive-resistance",
+          "score": 0
+        },
+        {
+          "dimension": "verdict-accuracy",
+          "score": 0
+        }
+      ],
+      "composite": 0.6,
+      "artifactValid": true,
+      "failureTier": null,
+      "validationErrors": []
+    }
+  ],
+  "composite": 0.6416666666666666
+}

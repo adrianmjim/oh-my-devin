@@ -1,0 +1,10 @@
+{
+  "answers": [],
+  "notFound": {
+    "sourcesConsulted": [
+      "docs/index.md — lists only retries.md and transports.md",
+      "docs/retries.md — read in full: attempt ceiling and dead-letter handling only, no quota",
+      "docs/transports.md — read in full: transports and request timeout only, no quota"
+    ]
+  }
+}
