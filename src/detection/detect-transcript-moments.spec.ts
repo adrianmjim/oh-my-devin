@@ -3,7 +3,10 @@ import type { DetectedMoment } from './detected-moment';
 import { detectTranscriptMoments } from './detect-transcript-moments';
 import type { TranscriptMessage } from './transcript-message';
 
-function message(role: TranscriptMessage['role'], text: string): TranscriptMessage {
+function message(
+  role: TranscriptMessage['role'],
+  text: string,
+): TranscriptMessage {
   return { role, text, recordedAt: 1 };
 }
 

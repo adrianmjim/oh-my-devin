@@ -5,9 +5,7 @@ import { DIRECTIVE_MARKERS } from './directive-markers';
 describe('DIRECTIVE_MARKERS', () => {
   it('carries the phrases a durable directive is stated with', () => {
     expect(
-      DIRECTIVE_MARKERS.map(
-        (marker: DirectiveMarker): string => marker.phrase,
-      ),
+      DIRECTIVE_MARKERS.map((marker: DirectiveMarker): string => marker.phrase),
     ).toContain('from now on');
   });
 

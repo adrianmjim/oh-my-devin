@@ -21,13 +21,11 @@ export function stageMatchedRules(
   );
   return [
     ...held,
-    ...matched.map(
-      (rule: RuleEntry): StagedRule => ({
-        text: rule.text,
-        hash: rule.hash,
-        stagedAt: now,
-        deliveredAt: null,
-      }),
-    ),
+    ...matched.map((rule: RuleEntry): StagedRule => ({
+      text: rule.text,
+      hash: rule.hash,
+      stagedAt: now,
+      deliveredAt: null,
+    })),
   ];
 }

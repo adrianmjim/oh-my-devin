@@ -19,9 +19,9 @@ function candidate(
 
 describe('pendingCandidates', () => {
   it('proposes a staged candidate that was never delivered', () => {
-    expect(
-      pendingCandidates([candidate('live', 5_000)], 1_000),
-    ).toHaveLength(1);
+    expect(pendingCandidates([candidate('live', 5_000)], 1_000)).toHaveLength(
+      1,
+    );
   });
 
   it('never proposes a candidate twice', () => {

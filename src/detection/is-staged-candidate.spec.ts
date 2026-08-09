@@ -6,7 +6,8 @@ describe('isStagedCandidate', () => {
     expect(
       isStagedCandidate({
         principle: 'In this project, always lint.',
-        confirmingCommand: 'omd memory remember "In this project, always lint."',
+        confirmingCommand:
+          'omd memory remember "In this project, always lint."',
         score: 0.8,
         expiresAt: 5_000,
         deliveredAt: null,

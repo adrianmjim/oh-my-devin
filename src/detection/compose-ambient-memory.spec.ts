@@ -139,7 +139,11 @@ describe('composeAmbientMemory', () => {
   });
 
   it('bounds every class it carries', async () => {
-    for (let index: number = 0; index < AMBIENT_PRIORITY_ENTRY_CAP + 3; index++) {
+    for (
+      let index: number = 0;
+      index < AMBIENT_PRIORITY_ENTRY_CAP + 3;
+      index++
+    ) {
       await appendNotepadEntry(
         projectDir,
         'priority',

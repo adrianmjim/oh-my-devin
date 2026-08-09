@@ -3,7 +3,8 @@ export function globToRegExp(glob: string): RegExp {
   let index: number = 0;
   while (index < glob.length) {
     const character: string = glob.charAt(index);
-    const doubled: boolean = character === '*' && glob.charAt(index + 1) === '*';
+    const doubled: boolean =
+      character === '*' && glob.charAt(index + 1) === '*';
     const rooted: boolean = doubled && glob.charAt(index + 2) === '/';
     if (rooted) {
       source = `${source}(?:.*/)?`;

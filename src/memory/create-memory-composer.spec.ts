@@ -62,7 +62,10 @@ describe('createMemoryComposer', () => {
   it('composes both classes when both are declared', async () => {
     const compose: MemoryComposer = createMemoryComposer(projectDir, 100);
 
-    const delivery: MemoryDelivery = await compose(['profile', 'notepad'], ASSIGNMENT);
+    const delivery: MemoryDelivery = await compose(
+      ['profile', 'notepad'],
+      ASSIGNMENT,
+    );
 
     expect(delivery.profile).not.toBeNull();
     expect(delivery.notepad).toHaveLength(1);
@@ -145,8 +148,14 @@ describe('createMemoryComposer', () => {
   it('composes identical content for every caller of the same selection', async () => {
     const compose: MemoryComposer = createMemoryComposer(projectDir, 100);
 
-    const first: MemoryDelivery = await compose(['profile', 'notepad'], ASSIGNMENT);
-    const second: MemoryDelivery = await compose(['profile', 'notepad'], ASSIGNMENT);
+    const first: MemoryDelivery = await compose(
+      ['profile', 'notepad'],
+      ASSIGNMENT,
+    );
+    const second: MemoryDelivery = await compose(
+      ['profile', 'notepad'],
+      ASSIGNMENT,
+    );
 
     expect(JSON.stringify(second)).toBe(JSON.stringify(first));
   });

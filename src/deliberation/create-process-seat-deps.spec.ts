@@ -58,7 +58,10 @@ describe('createProcessSeatDeps', () => {
     await appendNotepadEntry(baseDir, 'manual', 'the gate is manual', 5);
     const deps: SeatSessionDeps = createProcessSeatDeps(baseDir, null);
 
-    const delivery: MemoryDelivery = await deps.composeMemory(['notepad'], 'the seat assignment');
+    const delivery: MemoryDelivery = await deps.composeMemory(
+      ['notepad'],
+      'the seat assignment',
+    );
 
     expect(delivery.notepad[0]?.text).toBe('the gate is manual');
   });
@@ -66,10 +69,16 @@ describe('createProcessSeatDeps', () => {
   it('serves every seat one snapshot of the store', async () => {
     await appendNotepadEntry(baseDir, 'manual', 'the first note', 5);
     const deps: SeatSessionDeps = createProcessSeatDeps(baseDir, null);
-    const first: MemoryDelivery = await deps.composeMemory(['notepad'], 'the seat assignment');
+    const first: MemoryDelivery = await deps.composeMemory(
+      ['notepad'],
+      'the seat assignment',
+    );
 
     await appendNotepadEntry(baseDir, 'manual', 'a mid-council note', 9);
-    const second: MemoryDelivery = await deps.composeMemory(['notepad'], 'the seat assignment');
+    const second: MemoryDelivery = await deps.composeMemory(
+      ['notepad'],
+      'the seat assignment',
+    );
 
     expect(second).toEqual(first);
     expect(second.notepad).toHaveLength(1);

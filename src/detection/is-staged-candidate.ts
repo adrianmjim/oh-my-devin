@@ -10,6 +10,7 @@ export function isStagedCandidate(value: unknown): value is StagedCandidate {
     typeof candidate.confirmingCommand === 'string' &&
     typeof candidate.score === 'number' &&
     typeof candidate.expiresAt === 'number' &&
-    (candidate.deliveredAt === null || typeof candidate.deliveredAt === 'number')
+    (candidate.deliveredAt === null ||
+      typeof candidate.deliveredAt === 'number')
   );
 }

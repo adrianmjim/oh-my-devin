@@ -14,9 +14,9 @@ function entry(
 
 describe('admitKnowledgeEntry', () => {
   it('admits an entry the class does not hold yet', () => {
-    expect(admitKnowledgeEntry([], entry('the gate is manual', 10))).toHaveLength(
-      1,
-    );
+    expect(
+      admitKnowledgeEntry([], entry('the gate is manual', 10)),
+    ).toHaveLength(1);
   });
 
   it('collapses identical text to a single entry', () => {

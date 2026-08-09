@@ -9,6 +9,7 @@ export function isStagedRule(value: unknown): value is StagedRule {
     typeof candidate.text === 'string' &&
     typeof candidate.hash === 'string' &&
     typeof candidate.stagedAt === 'number' &&
-    (candidate.deliveredAt === null || typeof candidate.deliveredAt === 'number')
+    (candidate.deliveredAt === null ||
+      typeof candidate.deliveredAt === 'number')
   );
 }

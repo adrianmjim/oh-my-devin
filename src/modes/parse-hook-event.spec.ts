@@ -8,7 +8,12 @@ describe('parseHookEvent', () => {
       JSON.stringify({ session_id: 'sess-1' }),
     );
 
-    expect(event).toEqual({ sessionId: 'sess-1', command: null });
+    expect(event).toEqual({
+      sessionId: 'sess-1',
+      command: null,
+      path: null,
+      prompt: null,
+    });
   });
 
   it('reads the command a tool-use payload carries', () => {
@@ -22,18 +27,49 @@ describe('parseHookEvent', () => {
     expect(event).toEqual({
       sessionId: 'sess-1',
       command: 'omd mode set plan',
+      path: null,
+      prompt: null,
     });
+  });
+
+  it('reads the path a tool-use payload carries', () => {
+    expect(
+      parseHookEvent(
+        JSON.stringify({
+          session_id: 'sess-1',
+          tool_input: { file_path: 'src/api/export-endpoint.ts' },
+        }),
+      ).path,
+    ).toBe('src/api/export-endpoint.ts');
+  });
+
+  it('reads the prompt a prompt-submission payload carries', () => {
+    expect(
+      parseHookEvent(
+        JSON.stringify({
+          session_id: 'sess-1',
+          prompt: 'can you deploy the api tonight',
+        }),
+      ).prompt,
+    ).toBe('can you deploy the api tonight');
   });
 
   it('reads nothing out of an unparseable payload', () => {
     expect(parseHookEvent('not json at all')).toEqual({
       sessionId: null,
       command: null,
+      path: null,
+      prompt: null,
     });
   });
 
   it('reads nothing out of an empty payload', () => {
-    expect(parseHookEvent('')).toEqual({ sessionId: null, command: null });
+    expect(parseHookEvent('')).toEqual({
+      sessionId: null,
+      command: null,
+      path: null,
+      prompt: null,
+    });
   });
 
   it('reads no session id that is not a safe path segment', () => {
@@ -53,6 +89,24 @@ describe('parseHookEvent', () => {
       parseHookEvent(
         JSON.stringify({ session_id: 'sess-1', tool_input: { path: 'a.ts' } }),
       ).command,
+    ).toBeNull();
+  });
+
+  it('reads no path when the tool input carries none', () => {
+    expect(
+      parseHookEvent(
+        JSON.stringify({
+          session_id: 'sess-1',
+          tool_input: { command: 'ls' },
+        }),
+      ).path,
+    ).toBeNull();
+  });
+
+  it('reads no prompt of the wrong type', () => {
+    expect(
+      parseHookEvent(JSON.stringify({ session_id: 'sess-1', prompt: 7 }))
+        .prompt,
     ).toBeNull();
   });
 });

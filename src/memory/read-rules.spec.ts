@@ -46,7 +46,11 @@ describe('readRules', () => {
 
   it('drops entries omd does not recognize', async () => {
     await mkdir(paths.dir, { recursive: true });
-    await writeFile(paths.rules, JSON.stringify([{ text: 'no globs' }]), 'utf8');
+    await writeFile(
+      paths.rules,
+      JSON.stringify([{ text: 'no globs' }]),
+      'utf8',
+    );
 
     expect(await readRules(projectDir)).toEqual([]);
   });

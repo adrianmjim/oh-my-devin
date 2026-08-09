@@ -1,6 +1,4 @@
-import { AMBIENT_PRIORITY_ENTRY_CAP } from '../memory/ambient-priority-entry-cap';
-import type { NotepadEntry } from '../memory/notepad-entry';
-import { readNotepad } from '../memory/read-notepad';
+import { deliverAmbientMemory } from '../detection/deliver-ambient-memory';
 import { deriveRunListing } from '../observability/derive-run-listing';
 import { LIVENESS_STALL_THRESHOLD_MS } from '../observability/liveness-stall-threshold-ms';
 import type { RunListing } from '../observability/run-listing';
@@ -11,6 +9,7 @@ import type { SessionId } from './session-id';
 export async function deriveAmbientContext(
   baseDir: string,
   sessionId: SessionId | null,
+  prompt: string,
   now: number,
 ): Promise<string> {
   const modes: string = await deriveSessionInjection(baseDir, sessionId, now);
@@ -34,16 +33,9 @@ export async function deriveAmbientContext(
       ].join('\n'),
     );
   }
-  const notes: readonly NotepadEntry[] = (await readNotepad(baseDir))
-    .filter((entry: NotepadEntry): boolean => entry.kind === 'priority')
-    .slice(-AMBIENT_PRIORITY_ENTRY_CAP);
-  if (notes.length > 0) {
-    sections.push(
-      [
-        'Project memory (omd, priority notes):',
-        ...notes.map((entry: NotepadEntry): string => `- ${entry.text}`),
-      ].join('\n'),
-    );
+  const memory: string = await deliverAmbientMemory(baseDir, prompt, now);
+  if (memory !== '') {
+    sections.push(memory);
   }
   return sections.join('\n\n');
 }

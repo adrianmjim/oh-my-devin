@@ -45,7 +45,9 @@ describe('readTranscriptSlice', () => {
       'CREATE TABLE message_nodes (row_id INTEGER PRIMARY KEY AUTOINCREMENT, session_id TEXT NOT NULL, node_id INTEGER NOT NULL, parent_node_id INTEGER, chat_message TEXT NOT NULL, created_at INTEGER NOT NULL, metadata TEXT)',
     );
     database
-      .prepare('INSERT INTO refinery_schema_history(version, name) VALUES (?, ?)')
+      .prepare(
+        'INSERT INTO refinery_schema_history(version, name) VALUES (?, ?)',
+      )
       .run(schemaVersion, 'seeded');
     let nodeId: number = 0;
     for (const message of messages) {
@@ -70,7 +72,12 @@ describe('readTranscriptSlice', () => {
 
   it('reads the session’s messages behind the boundary', () => {
     seed([
-      { sessionId: 's1', role: 'user', content: 'why did that fail', createdAt: 10 },
+      {
+        sessionId: 's1',
+        role: 'user',
+        content: 'why did that fail',
+        createdAt: 10,
+      },
       {
         sessionId: 's1',
         role: 'assistant',
@@ -93,7 +100,12 @@ describe('readTranscriptSlice', () => {
   it('reads only the session the pipe event belongs to', () => {
     seed([
       { sessionId: 's1', role: 'user', content: 'mine', createdAt: 10 },
-      { sessionId: 's2', role: 'user', content: 'another session', createdAt: 20 },
+      {
+        sessionId: 's2',
+        role: 'user',
+        content: 'another session',
+        createdAt: 20,
+      },
     ]);
 
     const result: TranscriptReadResult = readTranscriptSlice(

@@ -152,7 +152,10 @@ describe('createStageRunner', () => {
       if (handed?.composeMemory === undefined) {
         throw new Error('the stage carried no memory composer');
       }
-      const delivery: MemoryDelivery = await handed.composeMemory(['notepad'], 'the stage assignment');
+      const delivery: MemoryDelivery = await handed.composeMemory(
+        ['notepad'],
+        'the stage assignment',
+      );
       expect(delivery.notepad[0]?.text).toBe('the gate is manual');
     } finally {
       await rm(base, { recursive: true, force: true });

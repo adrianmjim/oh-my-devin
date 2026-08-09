@@ -42,7 +42,9 @@ describe('matchKnowledge', () => {
   });
 
   it('matches an entry carrying any one of its triggers', () => {
-    expect(matchKnowledge([DEPLOY], 'cut the release branch')).toEqual([DEPLOY]);
+    expect(matchKnowledge([DEPLOY], 'cut the release branch')).toEqual([
+      DEPLOY,
+    ]);
   });
 
   it('bounds the ambient selection', () => {
