@@ -186,6 +186,21 @@ describe('stageDetectedMoments', () => {
     ]);
   });
 
+  it('keeps both stagings when two sessions stage at once', async () => {
+    seed([
+      { sessionId: 'sess-1', role: 'assistant', content: ASSISTANT_DIRECTIVE },
+      { sessionId: 'sess-2', role: 'assistant', content: ASSISTANT_DIRECTIVE },
+    ]);
+
+    await Promise.all([
+      stageDetectedMoments(projectDir, 'sess-1', DIRECTIVE, storePath, 100),
+      stageDetectedMoments(projectDir, 'sess-2', DIRECTIVE, storePath, 100),
+    ]);
+
+    expect(await principles()).toHaveLength(4);
+    expect(await readTranscriptCursors(projectDir)).toHaveLength(2);
+  });
+
   it('stages a moment only once however often the prompt repeats it', async () => {
     await stageDetectedMoments(projectDir, 'sess-1', DIRECTIVE, storePath, 100);
 

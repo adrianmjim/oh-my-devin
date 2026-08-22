@@ -111,6 +111,31 @@ describe('handleToolUseEvent', () => {
     ]);
   });
 
+  it('keeps both stagings when the writes of two sessions overlap', async () => {
+    await writeRules(projectDir, [EXPORT_RULE]);
+
+    await Promise.all([
+      handleToolUseEvent(
+        projectDir,
+        event({ sessionId: 'sess-1', path: 'src/api/export-endpoint.ts' }),
+        500,
+        {},
+      ),
+      handleToolUseEvent(
+        projectDir,
+        event({ sessionId: 'sess-2', path: 'src/api/export-endpoint.ts' }),
+        500,
+        {},
+      ),
+    ]);
+
+    expect(
+      (await readStagedRules(projectDir))
+        .map((entry: StagedRule): string | null => entry.sessionId)
+        .sort(),
+    ).toEqual(['sess-1', 'sess-2']);
+  });
+
   it('stages no rule the touched path matches nothing of', async () => {
     await writeRules(projectDir, [EXPORT_RULE]);
 

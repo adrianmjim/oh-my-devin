@@ -202,10 +202,14 @@ describe('omd memory detection (e2e)', () => {
     return output.hookSpecificOutput?.additionalContext ?? '';
   }
 
-  async function touch(started: E2eProject, path: string): Promise<void> {
+  async function touch(
+    started: E2eProject,
+    path: string,
+    sessionId: string = 'sess-1',
+  ): Promise<void> {
     await runHook(started, 'tool-use', {
       hook_event_name: 'PreToolUse',
-      session_id: 'sess-1',
+      session_id: sessionId,
       tool_input: { file_path: path },
     });
   }
@@ -388,6 +392,23 @@ describe('omd memory detection (e2e)', () => {
 
     expect(other).not.toContain(EXPORT_RULE.text);
     expect(own).toContain(EXPORT_RULE.text);
+  });
+
+  it('keeps the stagings of both sessions when their writes overlap', async () => {
+    const started: E2eProject = await startProject();
+    const paths: MemoryStorePaths = new MemoryStorePaths(started.dir);
+    await mkdir(paths.dir, { recursive: true });
+    await writeFile(paths.rules, JSON.stringify([EXPORT_RULE]), 'utf8');
+
+    await Promise.all([
+      touch(started, 'src/api/export-endpoint.ts'),
+      touch(started, 'src/api/import-endpoint.ts', 'sess-2'),
+    ]);
+
+    expect(await injectionFor(started, 'carry on')).toContain(EXPORT_RULE.text);
+    expect(await injectionFor(started, 'carry on', 'sess-2')).toContain(
+      EXPORT_RULE.text,
+    );
   });
 
   it('drops a delivered staging once a later write rebuilds the state', async () => {

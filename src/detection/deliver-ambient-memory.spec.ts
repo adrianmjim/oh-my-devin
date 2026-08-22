@@ -216,6 +216,29 @@ describe('deliverAmbientMemory', () => {
     );
   });
 
+  it('marks both deliveries when two sessions deliver at once', async () => {
+    const other: AmbientQuery = {
+      sessionId: 'sess-2',
+      prompt: 'anything',
+      phase: 'prompt-submission',
+    };
+    await writeRules(projectDir, [EXPORT_RULE]);
+    await writeStagedRules(projectDir, [
+      stagedRule(EXPORT_RULE),
+      stagedRule(EXPORT_RULE, 'sess-2'),
+    ]);
+
+    await Promise.all([
+      deliverAmbientMemory(projectDir, query('anything'), 100),
+      deliverAmbientMemory(projectDir, other, 100),
+    ]);
+
+    expect(await deliverAmbientMemory(projectDir, query('anything'), 200)).toBe(
+      '',
+    );
+    expect(await deliverAmbientMemory(projectDir, other, 200)).toBe('');
+  });
+
   it('carries no repeat of a proposal an earlier injection delivered', async () => {
     await writeStagedCandidates(projectDir, [
       stageCandidate(
