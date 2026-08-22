@@ -18,6 +18,12 @@ export function renderMemoryDelivery(delivery: MemoryDelivery): string {
       lines.push(`- [${entry.kind}] ${entry.text}`);
     }
   }
+  if (delivery.knowledge.length > 0) {
+    lines.push('Knowledge:');
+    for (const entry of delivery.knowledge) {
+      lines.push(`- ${entry.text}`);
+    }
+  }
   return lines.length === 0
     ? ''
     : ['Project memory (omd, read-only):', ...lines].join('\n');

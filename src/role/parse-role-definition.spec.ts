@@ -287,6 +287,37 @@ describe('parseRoleDefinition', () => {
     expect(() => parseRoleDefinition(md, 'x')).toThrow(/omd-memory/);
   });
 
+  it('parses the knowledge class as contractual vocabulary', () => {
+    const md: string = [
+      '---',
+      'omd-output: o.json',
+      'omd-schema: s.json',
+      'omd-max-turns: 3',
+      'omd-memory:',
+      '  - knowledge',
+      '---',
+      'body',
+    ].join('\n');
+
+    expect(parseRoleDefinition(md, 'x').memorySelection).toEqual(['knowledge']);
+  });
+
+  it('throws on the rules class, which is not contractual vocabulary', () => {
+    const md: string = [
+      '---',
+      'omd-output: o.json',
+      'omd-schema: s.json',
+      'omd-max-turns: 3',
+      'omd-memory:',
+      '  - rules',
+      '---',
+      'body',
+    ].join('\n');
+
+    expect(() => parseRoleDefinition(md, 'x')).toThrow(RoleDefinitionError);
+    expect(() => parseRoleDefinition(md, 'x')).toThrow(/omd-memory/);
+  });
+
   it('throws on a memory selection that is not a list', () => {
     const md: string = [
       '---',

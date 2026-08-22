@@ -5,4 +5,5 @@ export interface SessionConfig {
   readonly model: string | null;
   readonly posture: ApprovalPosture;
   readonly workingDirectory: string;
+  readonly env: NodeJS.ProcessEnv | null;
 }

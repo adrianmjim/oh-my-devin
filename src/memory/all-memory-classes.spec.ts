@@ -3,7 +3,12 @@ import { ALL_MEMORY_CLASSES } from './all-memory-classes';
 
 describe('ALL_MEMORY_CLASSES', () => {
   it('enumerates the v1 memory class vocabulary', () => {
-    expect(ALL_MEMORY_CLASSES).toEqual(['profile', 'notepad']);
+    expect(ALL_MEMORY_CLASSES).toEqual([
+      'profile',
+      'notepad',
+      'knowledge',
+      'rules',
+    ]);
   });
 
   it('holds no duplicate class', () => {

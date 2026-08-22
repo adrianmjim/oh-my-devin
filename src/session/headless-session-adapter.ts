@@ -40,7 +40,9 @@ export class HeadlessSessionAdapter implements TurnSender {
       posture: this.config.posture,
       resumeSessionId,
     };
-    const invocation: CommandInvocation = this.engine.turnInvocation(turn);
+    const invocation: CommandInvocation = this.withSessionEnv(
+      this.engine.turnInvocation(turn),
+    );
     const result: CommandResult = await this.runner.run(invocation);
 
     const sessionId: string | null =
@@ -63,8 +65,16 @@ export class HeadlessSessionAdapter implements TurnSender {
     return this.sessionId;
   }
 
+  private withSessionEnv(invocation: CommandInvocation): CommandInvocation {
+    return this.config.env === null
+      ? invocation
+      : { ...invocation, env: this.config.env };
+  }
+
   private async discoverSessionId(): Promise<string | null> {
-    const invocation: CommandInvocation = this.engine.listInvocation();
+    const invocation: CommandInvocation = this.withSessionEnv(
+      this.engine.listInvocation(),
+    );
     const result: CommandResult = await this.runner.run(invocation);
     const sessions: readonly SessionListing[] = this.engine.parseSessionListing(
       result.stdout,

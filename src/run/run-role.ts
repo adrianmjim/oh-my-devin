@@ -16,6 +16,7 @@ import type { FailureTier } from '../outcome/failure-tier';
 import type { RunReport } from '../outcome/run-report';
 import { generateRunId } from '../observability/generate-run-id';
 import type { RunId } from '../observability/run-id';
+import { RUN_ID_ENV } from '../observability/run-id-env';
 import type { RunObserver } from '../observability/run-observer';
 import { attemptRepair } from '../repair/attempt-repair';
 import type { RoleDefinition } from '../role/role-definition';
@@ -94,6 +95,7 @@ export async function runRole(options: RunRoleOptions): Promise<RunReport> {
         model: options.model ?? role.model,
         posture,
         workingDirectory: options.workingDirectory,
+        env: { [RUN_ID_ENV]: runId },
       },
     );
     const budget: BudgetEnforcer = new BudgetEnforcer(

@@ -32,6 +32,31 @@ describe('ProcessCommandRunner', () => {
     expect(result.exitCode).toBeNull();
   });
 
+  it('exports the invocation env to the child', async () => {
+    const result: CommandResult = await new ProcessCommandRunner('/').run({
+      command: process.execPath,
+      args: [
+        '-e',
+        "process.stdout.write(process.env['OMD_RUNNER_PROBE'] ?? '')",
+      ],
+      env: { OMD_RUNNER_PROBE: 'probe-value' },
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toBe('probe-value');
+  });
+
+  it('keeps the parent environment visible alongside the invocation env', async () => {
+    const result: CommandResult = await new ProcessCommandRunner('/').run({
+      command: process.execPath,
+      args: ['-e', "process.stdout.write(process.env['PATH'] ?? '')"],
+      env: { OMD_RUNNER_PROBE: 'probe-value' },
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).not.toBe('');
+  });
+
   it('rejects when the command cannot be spawned', async () => {
     await expect(
       new ProcessCommandRunner('/').run({

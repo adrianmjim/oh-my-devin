@@ -1,4 +1,5 @@
 import { mkdir } from 'node:fs/promises';
+import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { createInterface } from 'node:readline';
 import type { Interface } from 'node:readline';
@@ -25,6 +26,8 @@ import { runDeliberation } from '../deliberation/run-deliberation';
 import type { SeatSessionDeps } from '../deliberation/seat-session-deps';
 import type { DoctorReport } from '../doctor/doctor-report';
 import { runDoctor } from '../doctor/run-doctor';
+import { stageDetectedMoments } from '../detection/stage-detected-moments';
+import { transcriptStorePath } from '../detection/transcript-store-path';
 import { ProcessCommandRunner } from '../engine/process-command-runner';
 import { readRequirements } from '../handoff/read-requirements';
 import type { LayerLookup } from '../layer/layer-lookup';
@@ -84,6 +87,7 @@ import { renderSetupResult } from '../setup/render-setup-result';
 import { setupLayer } from '../setup/setup-layer';
 import { STOP_PHASE } from '../setup/stop-phase';
 import { TOOL_USE_PHASE } from '../setup/tool-use-phase';
+import { USER_PROMPT_PHASE } from '../setup/user-prompt-phase';
 import type { SetupResult } from '../setup/setup-result';
 import type { TeamDefinition } from '../team/team-definition';
 import { loadTeamDefinition } from '../team/load-team-definition';
@@ -377,11 +381,21 @@ export async function dispatchCliCommand(
       const baseDir: string = await discoverModeBaseDir(cwd);
       let output: Record<string, unknown>;
       if (command.phase === TOOL_USE_PHASE) {
-        await handleToolUseEvent(baseDir, event, at);
+        await handleToolUseEvent(baseDir, event, at, process.env);
         output = {};
       } else {
         if (event.sessionId !== null) {
           await recordSessionSeen(baseDir, event.sessionId, at);
+        }
+        const prompt: string = event.prompt ?? '';
+        if (command.phase === USER_PROMPT_PHASE) {
+          await stageDetectedMoments(
+            baseDir,
+            event.sessionId,
+            prompt,
+            transcriptStorePath(process.env, homedir()),
+            at,
+          );
         }
         output =
           command.phase === STOP_PHASE
@@ -392,7 +406,14 @@ export async function dispatchCliCommand(
                 hookSpecificOutput: {
                   additionalContext: await deriveAmbientContext(
                     baseDir,
-                    event.sessionId,
+                    {
+                      sessionId: event.sessionId,
+                      prompt,
+                      phase:
+                        command.phase === USER_PROMPT_PHASE
+                          ? 'prompt-submission'
+                          : 'session-start',
+                    },
                     at,
                   ),
                 },

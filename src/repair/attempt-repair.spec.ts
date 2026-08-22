@@ -17,6 +17,7 @@ const CONFIG: SessionConfig = {
   model: null,
   posture: 'artifact-write',
   workingDirectory: '/repo/a',
+  env: null,
 };
 const LISTING: CommandResult = turn(
   '[{"id":"s1","working_directory":"/repo/a"}]',

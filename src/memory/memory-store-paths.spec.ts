@@ -10,11 +10,19 @@ describe('MemoryStorePaths', () => {
     expect(paths.dir).toBe(join('/project', ...MEMORY_SUBTREE_SEGMENTS));
     expect(paths.notepad.startsWith(`${paths.dir}${join('/', '')}`)).toBe(true);
     expect(paths.profile.startsWith(`${paths.dir}${join('/', '')}`)).toBe(true);
+    expect(paths.knowledge.startsWith(`${paths.dir}${join('/', '')}`)).toBe(
+      true,
+    );
+    expect(paths.rules.startsWith(`${paths.dir}${join('/', '')}`)).toBe(true);
   });
 
   it('keeps the classes in separate files', () => {
     const paths: MemoryStorePaths = new MemoryStorePaths('/project');
 
     expect(paths.notepad).not.toBe(paths.profile);
+    expect(
+      new Set([paths.notepad, paths.profile, paths.knowledge, paths.rules])
+        .size,
+    ).toBe(4);
   });
 });

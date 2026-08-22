@@ -189,6 +189,30 @@ describe('runRole', () => {
     expect(report.sessionId).toBe('s1');
   });
 
+  it('exports the run identity to every engine invocation', async () => {
+    await scaffold(8);
+    const runner = new FakeRunner(
+      artifactPath,
+      [{ write: JSON.stringify({ verdict: 'pass' }) }],
+      dir,
+    );
+
+    await runRole({
+      roleName: 'reviewer',
+      task: 'assess the diff',
+      workingDirectory: dir,
+      model: null,
+      runner,
+      clock: (): number => 0,
+      runId: 'run-42',
+    });
+
+    expect(runner.invocations.length).toBeGreaterThan(1);
+    for (const invocation of runner.invocations) {
+      expect(invocation.env).toEqual({ OMD_RUN_ID: 'run-42' });
+    }
+  });
+
   it('repairs a first-turn invalid artifact and succeeds', async () => {
     await scaffold(8);
     const report: RunReport = await run([

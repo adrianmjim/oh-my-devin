@@ -1,5 +1,5 @@
 import { parse as parseYaml } from 'yaml';
-import { isMemoryClass } from '../memory/is-memory-class';
+import { isContractualMemoryClass } from '../memory/is-contractual-memory-class';
 import type { MemoryClass } from '../memory/memory-class';
 import { withoutRegionMarkers } from '../ownership/without-region-markers';
 import type { ContextPolicy } from './context-policy';
@@ -165,9 +165,9 @@ export function parseRoleDefinition(
       return fail(`"omd-memory" must be a list of memory classes`);
     }
     return value.map((item: unknown, index: number): MemoryClass => {
-      if (!isMemoryClass(item)) {
+      if (!isContractualMemoryClass(item)) {
         return fail(
-          `"omd-memory[${index}]" is not a memory class: ${JSON.stringify(item)}`,
+          `"omd-memory[${index}]" is not a contractual memory class: ${JSON.stringify(item)}`,
         );
       }
       return item;
