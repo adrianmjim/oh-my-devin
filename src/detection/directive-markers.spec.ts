@@ -9,6 +9,15 @@ describe('DIRECTIVE_MARKERS', () => {
     ).toContain('from now on');
   });
 
+  it('carries the inflected forms a preference is stated with', () => {
+    const phrases: readonly string[] = DIRECTIVE_MARKERS.map(
+      (marker: DirectiveMarker): string => marker.phrase,
+    );
+
+    expect(phrases).toContain('prefers');
+    expect(phrases).toContain('preferred');
+  });
+
   it('weights every marker inside the unit interval', () => {
     for (const marker of DIRECTIVE_MARKERS) {
       expect(marker.phrase).toBe(marker.phrase.toLowerCase());

@@ -1,3 +1,4 @@
+import { matchesTrigger } from '../memory/matches-trigger';
 import type { DirectiveMarker } from './directive-marker';
 import { DIRECTIVE_MARKERS } from './directive-markers';
 
@@ -5,7 +6,7 @@ export function scoreMoment(text: string): number {
   const normalized: string = text.toLowerCase();
   const weight: number = DIRECTIVE_MARKERS.reduce(
     (held: number, marker: DirectiveMarker): number =>
-      normalized.includes(marker.phrase) && marker.weight > held
+      matchesTrigger(normalized, marker.phrase) && marker.weight > held
         ? marker.weight
         : held,
     0,

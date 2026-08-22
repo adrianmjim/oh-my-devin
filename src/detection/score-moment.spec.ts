@@ -17,6 +17,27 @@ describe('scoreMoment', () => {
     expect(scoreMoment('why did the linter fail on that branch')).toBe(0);
   });
 
+  it('scores a marker carried only inside a longer word at zero', () => {
+    expect(
+      scoreMoment('whenever the build runs the cache is warmed first'),
+    ).toBe(0);
+    expect(
+      scoreMoment('nevertheless the old parser stays in place for now'),
+    ).toBe(0);
+    expect(scoreMoment('we do nothing special for the staging cluster')).toBe(
+      0,
+    );
+  });
+
+  it('scores the inflected forms a preference is stated with', () => {
+    expect(
+      scoreMoment('the team prefers tabs over spaces in every file'),
+    ).toBeGreaterThanOrEqual(QUALITY_GATE_THRESHOLD);
+    expect(
+      scoreMoment('the preferred branch name carries the ticket number'),
+    ).toBeGreaterThanOrEqual(QUALITY_GATE_THRESHOLD);
+  });
+
   it('keeps every score inside the unit interval', () => {
     const scores: readonly number[] = [
       'always never remember from now on make sure to prefer this over that in every case without exception',

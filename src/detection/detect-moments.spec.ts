@@ -22,6 +22,12 @@ describe('detectMoments', () => {
     expect(detectMoments('why did the linter fail on that branch')).toEqual([]);
   });
 
+  it('discards prose carrying a marker only inside a longer word', () => {
+    expect(
+      detectMoments('whenever the build runs the cache is warmed first'),
+    ).toEqual([]);
+  });
+
   it('states every candidate as a principle, never as a verbatim excerpt', () => {
     const source: string =
       'ok so, never merge to main without a green pipeline, please';

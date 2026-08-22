@@ -9,4 +9,6 @@ export const DIRECTIVE_MARKERS: readonly DirectiveMarker[] = [
   { phrase: "don't", weight: 0.4 },
   { phrase: 'make sure', weight: 0.4 },
   { phrase: 'prefer', weight: 0.4 },
+  { phrase: 'prefers', weight: 0.4 },
+  { phrase: 'preferred', weight: 0.4 },
 ];
