@@ -8,7 +8,7 @@ import {
   rm,
   writeFile,
 } from 'node:fs/promises';
-import { dirname, join, resolve } from 'node:path';
+import { delimiter, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { ArtifactValidation } from '../artifact/artifact-validation';
@@ -16,6 +16,7 @@ import { validateArtifact } from '../artifact/validate-artifact';
 import type { CommandResult } from '../engine/command-result';
 import { MemoryStorePaths } from '../memory/memory-store-paths';
 import { SMOKE_SCRATCH_DIR } from '../testing/smoke-scratch-dir';
+import { writeOmdShimBin } from '../testing/write-omd-shim-bin';
 
 const smokeEnabled: boolean = process.env['OMD_SMOKE'] === '1';
 
@@ -130,13 +131,20 @@ describe("omd's own flows smoke suite", () => {
 
   describe.runIf(smokeEnabled)('against the installed Devin CLI', () => {
     let scratchDir: string;
+    let binDir: string;
+    let inheritedPath: string;
 
     beforeAll(async () => {
       await mkdir(SMOKE_SCRATCH_DIR, { recursive: true });
       scratchDir = await mkdtemp(join(SMOKE_SCRATCH_DIR, 'omd-flows-smoke-'));
+      binDir = join(scratchDir, '.omd-smoke-bin');
+      await writeOmdShimBin(binDir);
+      inheritedPath = process.env['PATH'] ?? '';
+      process.env['PATH'] = `${binDir}${delimiter}${inheritedPath}`;
     });
 
     afterAll(async () => {
+      process.env['PATH'] = inheritedPath;
       await rm(scratchDir, { recursive: true, force: true });
     });
 
