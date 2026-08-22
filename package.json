@@ -24,7 +24,7 @@
     "oh-my-devin"
   ],
   "type": "module",
-  "packageManager": "pnpm@11.20.0",
+  "packageManager": "pnpm@11.22.0",
   "engines": {
     "node": ">=22.14"
   },
