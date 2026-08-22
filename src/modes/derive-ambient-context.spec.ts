@@ -128,6 +128,7 @@ describe('deriveAmbientContext', () => {
         hash: contentHash('export endpoints stay paginated'),
         sessionId: 'sess-1',
         stagedAt: 50,
+        expiresAt: 10_000,
         deliveredAt: null,
       },
     ]);
@@ -154,6 +155,7 @@ describe('deriveAmbientContext', () => {
         hash: contentHash('export endpoints stay paginated'),
         sessionId: 'sess-1',
         stagedAt: 50,
+        expiresAt: 10_000,
         deliveredAt: null,
       },
     ]);

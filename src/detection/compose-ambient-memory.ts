@@ -31,6 +31,6 @@ export async function composeAmbientMemory(
     priority: selectPriorityEntries(notepad),
     proposals: pendingCandidates(staged, query.sessionId, now),
     knowledge: matchKnowledge(knowledge, query.prompt),
-    rules: pendingStagedRules(rules, query.sessionId),
+    rules: pendingStagedRules(rules, query.sessionId, now),
   };
 }

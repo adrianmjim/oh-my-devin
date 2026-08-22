@@ -4,6 +4,8 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { DetectionStatePaths } from '../detection/detection-state-paths';
 import { readStagedRules } from '../detection/read-staged-rules';
+import { RULE_EXPIRY_WINDOW_MS } from '../detection/rule-expiry-window-ms';
+import { writeStagedRules } from '../detection/write-staged-rules';
 import type { StagedRule } from '../detection/staged-rule';
 import { contentHash } from '../memory/content-hash';
 import type { RuleEntry } from '../memory/rule-entry';
@@ -103,6 +105,7 @@ describe('handleToolUseEvent', () => {
         hash: EXPORT_RULE.hash,
         sessionId: 'sess-1',
         stagedAt: 500,
+        expiresAt: 500 + RULE_EXPIRY_WINDOW_MS,
         deliveredAt: null,
       },
     ]);
@@ -156,6 +159,29 @@ describe('handleToolUseEvent', () => {
     const staged: readonly StagedRule[] = await readStagedRules(projectDir);
     expect(staged).toHaveLength(1);
     expect(staged[0]?.stagedAt).toBe(500);
+  });
+
+  it('drops a delivered staging when a later event rebuilds the state', async () => {
+    await writeRules(projectDir, [EXPORT_RULE]);
+    await writeStagedRules(projectDir, [
+      {
+        text: EXPORT_RULE.text,
+        hash: EXPORT_RULE.hash,
+        sessionId: 'sess-1',
+        stagedAt: 500,
+        expiresAt: 10_000,
+        deliveredAt: 550,
+      },
+    ]);
+
+    await handleToolUseEvent(
+      projectDir,
+      event({ sessionId: 'sess-2', path: 'docs/readme.md' }),
+      600,
+      {},
+    );
+
+    expect(await readStagedRules(projectDir)).toEqual([]);
   });
 
   it('stages nothing when the store holds no rule', async () => {

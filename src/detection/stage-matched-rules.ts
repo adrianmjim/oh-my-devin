@@ -1,5 +1,6 @@
 import { matchRules } from '../memory/match-rules';
 import type { RuleEntry } from '../memory/rule-entry';
+import { RULE_EXPIRY_WINDOW_MS } from './rule-expiry-window-ms';
 import type { StagedRule } from './staged-rule';
 
 export function stageMatchedRules(
@@ -15,7 +16,9 @@ export function stageMatchedRules(
   );
   const held: readonly StagedRule[] = staged.filter(
     (entry: StagedRule): boolean =>
-      entry.sessionId !== sessionId || !restaged.includes(entry.hash),
+      entry.deliveredAt === null &&
+      entry.expiresAt > now &&
+      (entry.sessionId !== sessionId || !restaged.includes(entry.hash)),
   );
   return [
     ...held,
@@ -24,6 +27,7 @@ export function stageMatchedRules(
       hash: rule.hash,
       sessionId,
       stagedAt: now,
+      expiresAt: now + RULE_EXPIRY_WINDOW_MS,
       deliveredAt: null,
     })),
   ];

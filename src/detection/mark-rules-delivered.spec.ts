@@ -7,7 +7,14 @@ function staged(
   deliveredAt: number | null = null,
   sessionId: string | null = 'sess-1',
 ): StagedRule {
-  return { text, hash: text, sessionId, stagedAt: 100, deliveredAt };
+  return {
+    text,
+    hash: text,
+    sessionId,
+    stagedAt: 100,
+    expiresAt: 10_000,
+    deliveredAt,
+  };
 }
 
 describe('markRulesDelivered', () => {

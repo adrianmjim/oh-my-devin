@@ -14,6 +14,7 @@ import type { RuleEntry } from '../memory/rule-entry';
 import { createE2eProject } from '../testing/create-e2e-project';
 import type { DevinStubScript } from '../testing/devin-stub-script';
 import type { E2eProject } from '../testing/e2e-project';
+import { readStagedRules } from './read-staged-rules';
 import { SUPPORTED_TRANSCRIPT_SCHEMA_VERSION } from './supported-transcript-schema-version';
 
 interface HookSpecificOutput {
@@ -387,5 +388,18 @@ describe('omd memory detection (e2e)', () => {
 
     expect(other).not.toContain(EXPORT_RULE.text);
     expect(own).toContain(EXPORT_RULE.text);
+  });
+
+  it('drops a delivered staging once a later write rebuilds the state', async () => {
+    const started: E2eProject = await startProject();
+    const paths: MemoryStorePaths = new MemoryStorePaths(started.dir);
+    await mkdir(paths.dir, { recursive: true });
+    await writeFile(paths.rules, JSON.stringify([EXPORT_RULE]), 'utf8');
+    await touch(started, 'src/api/export-endpoint.ts');
+    await injectionFor(started, 'carry on');
+
+    await touch(started, 'docs/readme.md');
+
+    expect(await readStagedRules(started.dir)).toEqual([]);
   });
 });

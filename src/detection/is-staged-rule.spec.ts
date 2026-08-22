@@ -9,6 +9,7 @@ describe('isStagedRule', () => {
         hash: 'abc',
         sessionId: 'sess-1',
         stagedAt: 100,
+        expiresAt: 10_000,
         deliveredAt: null,
       }),
     ).toBe(true);
@@ -21,6 +22,7 @@ describe('isStagedRule', () => {
         hash: 'abc',
         sessionId: null,
         stagedAt: 100,
+        expiresAt: 10_000,
         deliveredAt: null,
       }),
     ).toBe(true);
@@ -37,5 +39,17 @@ describe('isStagedRule', () => {
       }),
     ).toBe(false);
     expect(isStagedRule(null)).toBe(false);
+  });
+
+  it('rejects a staging predating the expiry contract', () => {
+    expect(
+      isStagedRule({
+        text: 'a rule',
+        hash: 'abc',
+        sessionId: 'sess-1',
+        stagedAt: 100,
+        deliveredAt: null,
+      }),
+    ).toBe(false);
   });
 });

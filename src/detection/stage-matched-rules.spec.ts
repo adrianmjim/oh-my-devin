@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { contentHash } from '../memory/content-hash';
+import { RULE_EXPIRY_WINDOW_MS } from './rule-expiry-window-ms';
 import type { RuleEntry } from '../memory/rule-entry';
 import { stageMatchedRules } from './stage-matched-rules';
 import type { StagedRule } from './staged-rule';
@@ -39,6 +40,18 @@ describe('stageMatchedRules', () => {
     expect(staged[0]?.sessionId).toBe('sess-1');
   });
 
+  it('stamps the expiry window at staging', () => {
+    const staged: readonly StagedRule[] = stageMatchedRules(
+      [],
+      [MIGRATIONS],
+      'db/migrations/001.sql',
+      'sess-1',
+      1_000,
+    );
+
+    expect(staged[0]?.expiresAt).toBe(1_000 + RULE_EXPIRY_WINDOW_MS);
+  });
+
   it('stages nothing for a path no rule governs', () => {
     expect(
       stageMatchedRules([], [MIGRATIONS], 'src/index.ts', 'sess-1', 1_000),
@@ -52,6 +65,7 @@ describe('stageMatchedRules', () => {
         hash: MIGRATIONS.hash,
         sessionId: 'sess-1',
         stagedAt: 500,
+        expiresAt: 10_000,
         deliveredAt: 800,
       },
     ];
@@ -76,6 +90,7 @@ describe('stageMatchedRules', () => {
         hash: MIGRATIONS.hash,
         sessionId: 'sess-other',
         stagedAt: 500,
+        expiresAt: 10_000,
         deliveredAt: null,
       },
     ];
@@ -92,6 +107,46 @@ describe('stageMatchedRules', () => {
     expect(
       staged.map((entry: StagedRule): string | null => entry.sessionId),
     ).toEqual(['sess-other', 'sess-1']);
+  });
+
+  it('drops a delivered staging of any session on rebuild', () => {
+    const delivered: readonly StagedRule[] = [
+      {
+        text: MIGRATIONS.text,
+        hash: MIGRATIONS.hash,
+        sessionId: 'sess-other',
+        stagedAt: 500,
+        expiresAt: 10_000,
+        deliveredAt: 800,
+      },
+    ];
+
+    expect(
+      stageMatchedRules(
+        delivered,
+        [MIGRATIONS],
+        'src/index.ts',
+        'sess-1',
+        1_000,
+      ),
+    ).toEqual([]);
+  });
+
+  it('drops an expired staging on rebuild', () => {
+    const expired: readonly StagedRule[] = [
+      {
+        text: MIGRATIONS.text,
+        hash: MIGRATIONS.hash,
+        sessionId: 'sess-other',
+        stagedAt: 500,
+        expiresAt: 900,
+        deliveredAt: null,
+      },
+    ];
+
+    expect(
+      stageMatchedRules(expired, [MIGRATIONS], 'src/index.ts', 'sess-1', 1_000),
+    ).toEqual([]);
   });
 
   it('leaves the staging it was given untouched', () => {

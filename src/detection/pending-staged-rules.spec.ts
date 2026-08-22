@@ -8,19 +8,32 @@ function staged(
   deliveredAt: number | null = null,
   sessionId: string | null = 'sess-1',
 ): StagedRule {
-  return { text, hash: text, sessionId, stagedAt: 100, deliveredAt };
+  return {
+    text,
+    hash: text,
+    sessionId,
+    stagedAt: 100,
+    expiresAt: 10_000,
+    deliveredAt,
+  };
 }
 
 describe('pendingStagedRules', () => {
   it('delivers a rule staged and not yet delivered', () => {
     expect(
-      pendingStagedRules([staged('review migrations')], 'sess-1'),
+      pendingStagedRules([staged('review migrations')], 'sess-1', 200),
     ).toHaveLength(1);
   });
 
   it('never repeats a rule while the same staging stands', () => {
     expect(
-      pendingStagedRules([staged('review migrations', 900)], 'sess-1'),
+      pendingStagedRules([staged('review migrations', 900)], 'sess-1', 200),
+    ).toEqual([]);
+  });
+
+  it('delivers an expired staging no longer', () => {
+    expect(
+      pendingStagedRules([staged('review migrations')], 'sess-1', 10_000),
     ).toEqual([]);
   });
 
@@ -29,13 +42,18 @@ describe('pendingStagedRules', () => {
       pendingStagedRules(
         [staged('review migrations', null, 'sess-other')],
         'sess-1',
+        200,
       ),
     ).toEqual([]);
   });
 
   it('delivers a rule no session claims to any session', () => {
     expect(
-      pendingStagedRules([staged('review migrations', null, null)], 'sess-1'),
+      pendingStagedRules(
+        [staged('review migrations', null, null)],
+        'sess-1',
+        200,
+      ),
     ).toHaveLength(1);
   });
 
@@ -46,7 +64,7 @@ describe('pendingStagedRules', () => {
     ];
 
     expect(
-      pendingStagedRules(held, null).map(
+      pendingStagedRules(held, null, 200).map(
         (entry: StagedRule): string => entry.text,
       ),
     ).toEqual(['unclaimed']);
@@ -58,7 +76,7 @@ describe('pendingStagedRules', () => {
       (_unused: unknown, index: number): StagedRule => staged(`rule ${index}`),
     );
 
-    expect(pendingStagedRules(many, 'sess-1')).toHaveLength(
+    expect(pendingStagedRules(many, 'sess-1', 200)).toHaveLength(
       AMBIENT_RULE_ENTRY_CAP,
     );
   });

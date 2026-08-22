@@ -32,6 +32,7 @@ describe('readStagedRules', () => {
           hash: 'abc',
           sessionId: 'sess-1',
           stagedAt: 100,
+          expiresAt: 10_000,
           deliveredAt: null,
         },
       ]),

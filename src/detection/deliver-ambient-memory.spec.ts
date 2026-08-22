@@ -48,6 +48,7 @@ function stagedRule(
     hash: rule.hash,
     sessionId,
     stagedAt: 50,
+    expiresAt: 10_000,
     deliveredAt: null,
   };
 }
@@ -279,6 +280,20 @@ describe('deliverAmbientMemory', () => {
     );
     expect(atPrompt).toContain('export endpoints stay paginated');
     expect(atPrompt).toContain('In this project, always tag.');
+  });
+
+  it('carries an expired rule no longer', async () => {
+    await writeRules(projectDir, [EXPORT_RULE]);
+    const staged: StagedRule = stagedRule(EXPORT_RULE);
+    await writeStagedRules(projectDir, [staged]);
+
+    expect(
+      await deliverAmbientMemory(
+        projectDir,
+        query('anything'),
+        staged.expiresAt + 1,
+      ),
+    ).toBe('');
   });
 
   it('carries an expired proposal no longer', async () => {
