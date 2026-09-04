@@ -7,6 +7,7 @@ import type { CommandResult } from '../engine/command-result';
 import type { CommandRunner } from '../engine/command-runner';
 import { EngineError } from '../engine/engine-error';
 import type { ProgressEvent } from '../observability/progress-event';
+import type { RunClaim } from '../observability/run-claim';
 import type { RunObserver } from '../observability/run-observer';
 import type { RunReport } from '../outcome/run-report';
 import { resolveRunInvocation } from './resolve-run-invocation';
@@ -709,5 +710,94 @@ describe('runRole', () => {
 
     expect(recorder.events).toHaveLength(0);
     expect(recorder.closeCount).toBe(1);
+  });
+});
+
+describe('runRole run claim', () => {
+  let claimDir: string;
+  let claims: RunClaim[];
+
+  async function scaffoldClaim(): Promise<void> {
+    const roleDir: string = join(claimDir, '.devin', 'agents', 'reviewer');
+    await mkdir(roleDir, { recursive: true });
+    await writeFile(
+      join(roleDir, 'AGENT.md'),
+      [
+        '---',
+        'omd-output: review.json',
+        'omd-schema: review.schema.json',
+        'omd-max-turns: 8',
+        '---',
+        'You are the reviewer.',
+      ].join('\n'),
+      'utf8',
+    );
+    await writeFile(
+      join(claimDir, 'review.schema.json'),
+      JSON.stringify(SCHEMA),
+    );
+  }
+
+  function runClaimRole(provisionedWorktree: boolean): Promise<RunReport> {
+    return runRole({
+      roleName: 'reviewer',
+      task: 'assess the diff',
+      workingDirectory: claimDir,
+      model: null,
+      runner: new FakeRunner(
+        join(claimDir, 'review.json'),
+        [{ write: JSON.stringify({ verdict: 'pass' }) }],
+        claimDir,
+      ),
+      clock: (): number => 0,
+      runId: 'run-claimed',
+      claimRun: (claim: RunClaim): Promise<void> => {
+        claims.push(claim);
+        return Promise.resolve();
+      },
+      provisionedWorktree,
+    });
+  }
+
+  beforeEach(async () => {
+    claimDir = await mkdtemp(join(tmpdir(), 'omd-run-claim-'));
+    claims = [];
+  });
+
+  afterEach(async () => {
+    await rm(claimDir, { recursive: true, force: true });
+  });
+
+  it('claims the working directory before the session exists', async () => {
+    await scaffoldClaim();
+    await runClaimRole(true);
+
+    expect(claims[0]).toEqual({
+      workingDirectory: claimDir,
+      worktreeProvisioned: true,
+      sessionId: null,
+    });
+  });
+
+  it('claims the session identity of a run that owns its worktree', async () => {
+    await scaffoldClaim();
+    await runClaimRole(true);
+
+    expect(claims.at(-1)).toEqual({
+      workingDirectory: claimDir,
+      worktreeProvisioned: true,
+      sessionId: 's1',
+    });
+  });
+
+  it('never claims a session id for a run sharing the project directory', async () => {
+    await scaffoldClaim();
+    await runClaimRole(false);
+
+    expect(claims.length).toBeGreaterThan(0);
+    for (const claim of claims) {
+      expect(claim.worktreeProvisioned).toBe(false);
+      expect(claim.sessionId).toBeNull();
+    }
   });
 });

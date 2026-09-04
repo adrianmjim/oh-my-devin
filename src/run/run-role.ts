@@ -68,8 +68,15 @@ export async function runRole(options: RunRoleOptions): Promise<RunReport> {
     role.outputArtifact,
   );
 
+  const worktreeProvisioned: boolean = options.provisionedWorktree ?? false;
+
   let bundleDir: string | null = null;
   try {
+    await options.claimRun?.({
+      workingDirectory: options.workingDirectory,
+      worktreeProvisioned,
+      sessionId: null,
+    });
     await recorder?.append({
       type: 'runLaunched',
       timestamp: options.clock(),
@@ -104,6 +111,13 @@ export async function runRole(options: RunRoleOptions): Promise<RunReport> {
 
     const initial: SessionTurnResult = await adapter.sendTurn(options.task);
     budget.recordTurn();
+    if (worktreeProvisioned) {
+      await options.claimRun?.({
+        workingDirectory: options.workingDirectory,
+        worktreeProvisioned,
+        sessionId: adapter.currentSessionId,
+      });
+    }
     await recordTurnCompleted(recorder, options.clock(), budget.turnsUsed - 1);
 
     let denyRule: string | null = detectDeny(initial);

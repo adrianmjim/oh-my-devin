@@ -30,6 +30,7 @@ import { readRequirements } from '../handoff/read-requirements';
 import type { LayerLookup } from '../layer/layer-lookup';
 import { appendNotepadEntry } from '../memory/append-notepad-entry';
 import { clearSessionMode } from '../modes/clear-session-mode';
+import { userConfigPath } from '../guard/user-config-path';
 import { deriveAmbientContext } from '../modes/derive-ambient-context';
 import { deriveStopDecision } from '../modes/derive-stop-decision';
 import { discoverModeBaseDir } from '../modes/discover-mode-base-dir';
@@ -52,11 +53,13 @@ import { renderRunListingJson } from '../observability/render-run-listing-json';
 import { renderSnapshotHuman } from '../observability/render-snapshot-human';
 import { renderSnapshotJson } from '../observability/render-snapshot-json';
 import { resolveRunId } from '../observability/resolve-run-id';
+import type { RunClaim } from '../observability/run-claim';
 import type { RunId } from '../observability/run-id';
 import { RUN_ID_ENV } from '../observability/run-id-env';
 import type { RunListing } from '../observability/run-listing';
 import type { RunObserver } from '../observability/run-observer';
 import { RunRecordPaths } from '../observability/run-record-paths';
+import { writeRunClaim } from '../observability/write-run-claim';
 import type { RunSnapshot } from '../observability/run-snapshot';
 import { exitCodeForOutcome } from '../outcome/exit-code-for-outcome';
 import { renderHumanReport } from '../outcome/render-human-report';
@@ -149,6 +152,8 @@ export async function dispatchCliCommand(
         clock,
         runId,
         recorder,
+        claimRun: (claim: RunClaim): Promise<void> =>
+          writeRunClaim(cwd, runId, claim),
         resolved,
       });
       writeStreamLine(
@@ -269,7 +274,7 @@ export async function dispatchCliCommand(
         const options: RunPipelineOptions = {
           team,
           task: command.task,
-          runStage: createProcessStageRunner(cwd, userConfigDir),
+          runStage: createProcessStageRunner(cwd, userConfigDir, runId),
           gate: createStdinGate(reader, (text: string): void => {
             writeStreamLine(process.stdout, text);
           }),
@@ -308,6 +313,7 @@ export async function dispatchCliCommand(
         userConfigDir,
       );
       const seatWorktrees: WorktreePool = new WorktreePool(seatDeps.worktrees);
+      const councilRunId: RunId = generateRunId();
       const reader: Interface = createInterface({ input: process.stdin });
       try {
         const outcome: DeliberationOutcome = await runDeliberation({
@@ -321,7 +327,11 @@ export async function dispatchCliCommand(
           clusterArguments: createEchoClusterer(runner),
           summarizeEvidence: createEvidenceSummarizer(runner),
           launch: createPipelineLauncher({
-            runStage: createProcessStageRunner(cwd, userConfigDir),
+            runStage: createProcessStageRunner(
+              cwd,
+              userConfigDir,
+              councilRunId,
+            ),
             gate: createStdinGate(reader, (text: string): void => {
               writeStreamLine(process.stdout, text);
             }),
@@ -377,8 +387,13 @@ export async function dispatchCliCommand(
       const baseDir: string = await discoverModeBaseDir(cwd);
       let output: Record<string, unknown>;
       if (command.phase === TOOL_USE_PHASE) {
-        await handleToolUseEvent(baseDir, event, at);
-        output = {};
+        output = await handleToolUseEvent(
+          baseDir,
+          cwd,
+          userConfigPath(userConfigDir),
+          event,
+          at,
+        );
       } else {
         if (event.sessionId !== null) {
           await recordSessionSeen(baseDir, event.sessionId, at);

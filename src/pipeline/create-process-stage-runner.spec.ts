@@ -16,12 +16,14 @@ describe('createProcessStageRunner', () => {
   });
 
   it('builds a stage runner bound to the base directory', () => {
-    expect(typeof createProcessStageRunner(baseDir, null)).toBe('function');
+    expect(typeof createProcessStageRunner(baseDir, null, 'run-1')).toBe(
+      'function',
+    );
   });
 
   it('builds a separate runner per call', () => {
-    expect(createProcessStageRunner(baseDir, null)).not.toBe(
-      createProcessStageRunner(baseDir, null),
+    expect(createProcessStageRunner(baseDir, null, 'run-1')).not.toBe(
+      createProcessStageRunner(baseDir, null, 'run-1'),
     );
   });
 });

@@ -1,3 +1,4 @@
+import { deliverGuardNotices } from '../guard/deliver-guard-notices';
 import { AMBIENT_PRIORITY_ENTRY_CAP } from '../memory/ambient-priority-entry-cap';
 import type { NotepadEntry } from '../memory/notepad-entry';
 import { readNotepad } from '../memory/read-notepad';
@@ -33,6 +34,10 @@ export async function deriveAmbientContext(
         ),
       ].join('\n'),
     );
+  }
+  const notices: string = await deliverGuardNotices(baseDir, sessionId);
+  if (notices !== '') {
+    sections.push(notices);
   }
   const notes: readonly NotepadEntry[] = (await readNotepad(baseDir))
     .filter((entry: NotepadEntry): boolean => entry.kind === 'priority')

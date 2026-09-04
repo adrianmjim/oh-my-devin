@@ -2,6 +2,8 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { writePendingNotices } from '../guard/write-pending-notices';
+import { readPendingNotices } from '../guard/read-pending-notices';
 import { appendNotepadEntry } from '../memory/append-notepad-entry';
 import { deriveAmbientContext } from './derive-ambient-context';
 import { recordSessionSeen } from './record-session-seen';
@@ -73,5 +75,31 @@ describe('deriveAmbientContext', () => {
     expect(await deriveAmbientContext(projectDir, null, 100)).toBe(
       'Oh My Devin layer active.',
     );
+  });
+
+  it('carries a warned write notice on the next prompt', async () => {
+    await writePendingNotices(projectDir, 'sess-1', [
+      { tool: 'edit', filePath: 'src/a.ts', noticedAt: 1 },
+    ]);
+
+    const context: string = await deriveAmbientContext(
+      projectDir,
+      'sess-1',
+      110,
+    );
+
+    expect(context).toContain('src/a.ts');
+  });
+
+  it('carries no notice for that write on a later prompt', async () => {
+    await writePendingNotices(projectDir, 'sess-1', [
+      { tool: 'edit', filePath: 'src/a.ts', noticedAt: 1 },
+    ]);
+    await deriveAmbientContext(projectDir, 'sess-1', 110);
+
+    const later: string = await deriveAmbientContext(projectDir, 'sess-1', 120);
+
+    expect(later).not.toContain('src/a.ts');
+    expect(await readPendingNotices(projectDir, 'sess-1')).toEqual([]);
   });
 });

@@ -39,6 +39,14 @@ describe('RunRecordPaths', () => {
     );
   });
 
+  it('resolves the run claim inside the record directory', () => {
+    const paths = new RunRecordPaths(baseDir, runId);
+
+    expect(paths.claim).toBe(
+      join(baseDir, '.omd', 'runs', runId, 'claim.json'),
+    );
+  });
+
   it('keeps records for distinct run identities in separate directories', () => {
     const first = new RunRecordPaths(baseDir, 'run-a');
     const second = new RunRecordPaths(baseDir, 'run-b');
